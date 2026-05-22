@@ -6202,14 +6202,16 @@ body.canvas-hidden #kbd-resizer {
    CHORD READOUT  (Tonal.js powered, inline in topbar)
 ───────────────────────────────────────── */
 
-/* Slot host — pinned just outside the right edge of .ts-status so the chord
-   pill's variable width ("C" → "F♯m7♭5") doesn't widen the centered status row
-   and shove the kicker/title sideways every chord change. */
+/* Slot host — an in-flow flex item at the right end of .ts-status. It used to
+   be absolutely positioned at `left: 100%` so a variable-width chord pill
+   ("C" → "F♯m7♭5") wouldn't shove the centered title every chord change. But
+   once the status track became minmax(0, 1fr) (so the title truncates instead
+   of overflowing), that absolute anchor floated over .ts-end and collided with
+   the action buttons. Keeping it in-flow guarantees it stays inside the grid
+   track. The jitter the absolute hack avoided is instead handled by giving the
+   readout a fixed width below, so chord-to-chord changes don't reflow. */
 .ts-chord-slot {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
+  flex: 0 0 auto;
   margin-left: 8px;
   display: inline-flex;
   align-items: center;
@@ -6238,9 +6240,12 @@ body.canvas-hidden #kbd-resizer {
     transform 0.22s var(--ease-out),
     border-color 0.2s ease,
     background 0.2s ease;
-  /* Stable width so neighbouring pills don't jitter as the chord text grows
-     or shrinks (e.g. "C" → "F♯m7♭5"). */
-  min-width: 56px;
+  /* Fixed width (not just a min) — now that the readout sits in the status
+     flow, a stable box keeps the title from reflowing as the chord text grows
+     or shrinks ("C" → "F♯m7♭5"). Overflow is centred and clipped for the rare
+     extra-long symbol rather than widening the row. */
+  width: 76px;
+  overflow: hidden;
 }
 
 .ts-chord-readout--on {
