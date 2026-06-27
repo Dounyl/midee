@@ -20,6 +20,7 @@ import {
   speedToPps,
   trimAudioBuffer,
 } from './export/exportMath'
+import { keySignatureLabel, transposeMidiFile } from './core/music/KeySignature'
 // VideoExporter pulls Mediabunny; OfflineAudioRenderer pulls Tone + instruments.
 // Both are dynamic-imported from startExport(). Import order matters: load the
 // offline-audio module first when audio is needed — do not block Tone on the
@@ -66,6 +67,7 @@ import { InstrumentMenu } from './ui/InstrumentMenu'
 import { KeyboardResizer } from './ui/KeyboardResizer'
 import type { SessionAction } from './ui/PostSessionModal'
 import { showError, showSuccess } from './ui/Toast'
+import { ConsolePanel } from './ui/ConsolePanel'
 import { TrackPanel } from './ui/TrackPanel'
 import { installViewportClassSync } from './ui/utils'
 import { whenIdle } from './whenIdle'
@@ -110,6 +112,7 @@ export class App {
     }),
   )
   private controls!: Controls
+  private consolePanel!: ConsolePanel
   trackPanel!: TrackPanel
   private exportHandle = lazyHandle(() =>
     import('./ui/ExportModal').then(({ ExportModal }) => {
@@ -149,6 +152,8 @@ export class App {
   private modeContext!: ModeContext
   private loadingEl: HTMLElement | null = null
   private currentExporter: VideoExporter | null = null
+  private baseMidi: import('./core/midi/types').MidiFile | null = null
+  private transposeSemitones = 0
   // Throttle chord recomputation: only run when at least this many ms have
   // passed since the last call, OR the active-pitch set materially changed.
   private chordLastRunMs = 0
@@ -322,6 +327,7 @@ export class App {
         track('export_opened', { has_midi: this.store.state.loadedMidi !== null })
         void this.openExportModal()
       },
+      onTransposeChange: (semitones: number) => this.handleTransposeChange(semitones),
       onOpenFile: () => this.openFilePicker(),
       onModeRequest: (mode) => this.requestMode(mode),
       onLearnThis: () => this.enterLearnWithCurrentMidi(),
@@ -404,6 +410,14 @@ export class App {
       () => this.openFilePicker(),
     )
     this.trackPanel.setTrigger(this.controls.tracksButton)
+    this.consolePanel = new ConsolePanel(
+      overlay,
+      (value) => this.handleTransposeChange(value),
+      () => {
+        const next = this.baseMidi?.keySignature?.tonic === 'C' ? 0 : this.resolveResetToC()
+        this.handleTransposeChange(next)
+      },
+    )
 
     this.instrumentMenu = new InstrumentMenu(this.controls.instrumentSlot, overlay)
     this.instrumentMenu.onSelect = (id) => this.setInstrumentById(id)
@@ -508,6 +522,11 @@ export class App {
       watch(
         () => this.store.state.status,
         (status) => {
+          this.consolePanel?.updateState(
+            this.store.state.mode === 'play' && status === 'paused' && this.baseMidi !== null,
+            this.baseMidi?.keySignature ?? null,
+            this.transposeSemitones,
+          )
           // Drives the synth for Play/Live only. Learn runs its own status
           // signal on `LearnState` and drives the synth from `LearnController`
           // so the two modes never race for control of the scheduler.
@@ -529,6 +548,16 @@ export class App {
               this.synth.liveReleaseAll()
             }
           }
+        },
+      ),
+      watch(
+        () => this.store.state.loadedMidi,
+        () => {
+          this.consolePanel?.updateState(
+            this.store.state.mode === 'play' && this.store.state.status === 'paused' && this.baseMidi !== null,
+            this.baseMidi?.keySignature ?? null,
+            this.transposeSemitones,
+          )
         },
       ),
       watch(
@@ -823,6 +852,9 @@ export class App {
       // drives renderer.loadMidi, trackPanel.render, document.title, and
       // dropzone.hide off the new loadedMidi.
       this.store.completePlayLoad(midi)
+      this.baseMidi = midi
+      this.transposeSemitones = 0
+      this.consolePanel.updateState(false, midi.keySignature ?? null, 0)
       this.resetPlaybackTelemetry()
       trackMidiLoaded({
         source,
@@ -1314,6 +1346,9 @@ export class App {
     this.renderer.clearMidi()
     this.synth.load(midi).catch((err) => console.error('SynthEngine.load failed:', err))
     this.store.completePlayLoad(midi)
+    this.baseMidi = midi
+    this.transposeSemitones = 0
+    this.consolePanel.updateState(false, midi.keySignature ?? null, 0)
     // Typing keyboard stays on — users can play along with their own session.
     this.keyboardInput.enable()
     this.renderer.loadMidi(midi)
@@ -1341,6 +1376,40 @@ export class App {
 
   private metronomeBpm(): number {
     return this.metronome.bpm.value
+  }
+
+  private handleTransposeChange(semitones: number): void {
+    if (this.store.state.mode !== 'play' || this.store.state.status !== 'paused') return
+    const base = this.baseMidi ?? this.store.state.loadedMidi
+    if (!base) return
+    const next = Math.trunc(semitones)
+    if (next === this.transposeSemitones) return
+    this.transposeSemitones = next
+    const midi = transposeMidiFile(base, next)
+    this.store.replaceLoadedMidi(midi)
+    this.renderer.loadMidi(midi)
+    this.trackPanel.render(midi)
+    this.consolePanel.updateState(true, base.keySignature ?? null, next)
+  }
+
+  private resolveResetToC(): number {
+    const tonic = this.baseMidi?.keySignature?.tonic
+    if (!tonic) return 0
+    const map: Record<string, number> = {
+      C: 0,
+      'C#': 11,
+      D: 10,
+      'D#': 9,
+      E: 8,
+      F: 7,
+      'F#': 6,
+      G: 5,
+      'G#': 4,
+      A: 3,
+      'A#': 2,
+      B: 1,
+    }
+    return map[tonic] ?? 0
   }
 
   // ── Chord overlay ──────────────────────────────────────────────────────
@@ -1507,6 +1576,7 @@ export class App {
     this.metronome.dispose()
     this.chordOverlay.dispose()
     this.customizeMenu.dispose()
+    this.consolePanel.dispose()
     this.clock.dispose()
     this.renderer.destroy()
     this.synth.dispose()

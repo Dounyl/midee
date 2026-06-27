@@ -1,4 +1,5 @@
 import { t } from '../i18n'
+import { For } from 'solid-js'
 import type { LiveLooperState } from '../midi/LiveLooper'
 import type { MidiDeviceStatus } from '../midi/MidiInputManager'
 import type { AppMode } from '../store/state'

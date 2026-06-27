@@ -52,6 +52,7 @@ export interface ControlsOptions {
   onOpenTracks?: () => void
   onRecord?: () => void
   onOpenFile?: () => void
+  onTransposeChange?: (semitones: number) => void
   onLearnThis?: () => void
   onModeRequest?: (mode: Exclude<AppMode, 'home'>) => void
   onHome?: () => void
@@ -137,7 +138,6 @@ export class Controls {
     const [volume, setVolumeSig] = createSignal(store.state.volume ?? 0.8)
     const [speed, setSpeedSig] = createSignal(store.state.speed ?? 1)
     const [zoom, setZoomSig] = createSignal(ZOOM_DEFAULT)
-
     const [uiStore, setUi] = createStore<UiStoreShape>({
       context: {
         kicker: t('topStrip.context.ready.kicker'),
@@ -162,7 +162,6 @@ export class Controls {
     this.setVolume = setVolumeSig
     this.setSpeed = setSpeedSig
     this.setZoom = setZoomSig
-
     // One Solid root hosts the three sibling views (TopStrip, HUD, KeyHint).
     // Single owner tree, single error-boundary scope, single schedule cycle —
     // and the views still render as DOM siblings under `opts.container`
@@ -677,7 +676,6 @@ export class Controls {
   private refreshUi(): void {
     const { store } = this.opts.services
     const mode = store.state.mode
-
     this.renderContext(mode, store.state.loadedMidi?.name ?? null)
   }
 

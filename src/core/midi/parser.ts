@@ -1,4 +1,5 @@
-import type { MidiFile, MidiNote, MidiTrack } from './types'
+import type { MidiFile, MidiKeySignature, MidiNote, MidiTrack } from './types'
+import { inferMidiKeySignature } from '../music/KeySignature'
 
 // `@tonejs/midi` is ~25 KB gz and only used inside this module + MidiEncoding.
 // Both entry points (file picker, record export) are user-driven and already
@@ -73,13 +74,42 @@ export async function parseMidiFile(source: File | ArrayBuffer, name?: string): 
   const rawTimeSig = midi.header.timeSignatures[0]?.timeSignature ?? [4, 4]
   const num = rawTimeSig[0] ?? 4
   const den = rawTimeSig[1] ?? 4
-
   const rawName = name ?? (source instanceof File ? source.name : 'Untitled')
-  return {
+  const inferredKeySignature = inferMidiKeySignature({
     name: rawName.replace(/\.mid[i]?$/i, ''),
     duration: midi.duration,
     bpm,
     timeSignature: [num, den] as [number, number],
     tracks,
+  })
+  const headerKeySignature = midi.header.keySignatures[0]
+    ? {
+        tonic: midi.header.keySignatures[0].key ?? 'C',
+        mode: midi.header.keySignatures[0].scale === 'minor' ? ('minor' as const) : ('major' as const),
+        source: 'midi' as const,
+        confidence: 1,
+      }
+    : null
+  const keySignature =
+    shouldPreferInferredKeySignature(inferredKeySignature, headerKeySignature)
+      ? inferredKeySignature
+      : headerKeySignature
+  return {
+    name: rawName.replace(/\.mid[i]?$/i, ''),
+    duration: midi.duration,
+    bpm,
+    timeSignature: [num, den] as [number, number],
+    keySignature,
+    tracks,
   }
+}
+
+function shouldPreferInferredKeySignature(
+  inferred: MidiKeySignature | null,
+  fromHeader: MidiKeySignature | null,
+): boolean {
+  if (!inferred) return false
+  if (!fromHeader) return true
+  if (inferred.tonic === fromHeader.tonic && inferred.mode === fromHeader.mode) return false
+  return inferred.confidence >= 0.18
 }
