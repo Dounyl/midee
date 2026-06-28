@@ -164,7 +164,7 @@ function track(id: string, notes: MidiNote[]): MidiTrack {
 
 function makeMidi(tracks: MidiTrack[], bpm = 120): MidiFile {
   const duration = Math.max(0, ...tracks.flatMap((t) => t.notes.map((n) => n.time + n.duration)))
-  return { name: 'test.mid', duration, bpm, timeSignature: [4, 4], tracks }
+  return { name: 'test.mid', duration, bpm, timeSignature: [4, 4], keySignature: null, tracks }
 }
 
 // Build a SynthEngine with its instrument loaded so play() doesn't await a

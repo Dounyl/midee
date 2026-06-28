@@ -295,6 +295,24 @@ export class PlayAlongEngine {
     if (enabled) this.applyRampedSpeed()
   }
 
+  replaceMidi(midi: MidiFile): void {
+    this.currentMidi = midi
+    const currentTime = this.opts.services.clock.currentTime
+    this.practice.loadMidi(midi)
+    this.applyHand(midi)
+    this.practice.notifySeek(currentTime)
+    this.heldEligible.clear()
+    this.pressedPitches.clear()
+    batch(() => {
+      this.setState({
+        duration: midi.duration,
+        currentTime,
+        loopRegion: null,
+        loopMark: null,
+      })
+    })
+  }
+
   setLoopFromBars(
     bars: number | null,
     playhead: number,

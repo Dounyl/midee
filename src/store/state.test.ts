@@ -5,7 +5,7 @@ import { createAppStore, resolveInitialAppMode, SKIP_HOME_INTRO_STORAGE_KEY } fr
 import { watch } from './watch'
 
 function fakeMidi(name = 'demo.mid', duration = 12.5): MidiFile {
-  return { name, duration, bpm: 120, timeSignature: [4, 4], tracks: [] }
+  return { name, duration, bpm: 120, timeSignature: [4, 4], keySignature: null, tracks: [] }
 }
 
 describe('createEventSignal', () => {

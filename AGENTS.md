@@ -72,7 +72,3 @@ Longer plans live in **`docs/`** — open the specific doc when needed; don’t 
 ## When this file grows
 
 Add a rule only after an agent **repeats** the same mistake. Otherwise put detail in `docs/` or comments next to the tricky code.
-
-## Other rules
-
-- Never commit the code, when user asks for commit msg, just print it in code block

@@ -68,6 +68,10 @@ export class ExerciseRunner {
     return this.currentDescriptor?.id ?? null
   }
 
+  replaceMidi(midi: import('../../core/midi/types').MidiFile): void {
+    this.currentExercise?.onMidiReplaced?.(midi)
+  }
+
   async launch(descriptor: ExerciseDescriptor): Promise<void> {
     if (this.currentExercise) this.close('abandoned')
 

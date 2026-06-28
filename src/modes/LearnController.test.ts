@@ -87,6 +87,7 @@ function makeMidi(name = 'test.mid'): MidiFile {
     duration: 30,
     bpm: 120,
     timeSignature: [4, 4] as [number, number],
+    keySignature: null,
     tracks: [],
   }
 }

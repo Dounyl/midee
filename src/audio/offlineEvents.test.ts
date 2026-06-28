@@ -26,6 +26,7 @@ const midi = (tracks: MidiTrack[]): MidiFile => ({
   duration: 4,
   tracks,
   timeSignature: [4, 4],
+  keySignature: null,
 })
 
 describe('buildOfflineEvents', () => {

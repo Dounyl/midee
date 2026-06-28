@@ -1,6 +1,7 @@
 import { saveLocalMidi } from '../core/midiLibrary'
 import { parseMidiFile } from '../core/midi/parser'
-import type { MidiFile } from '../core/midi/types'
+import type { MidiFile, MidiKeySignature } from '../core/midi/types'
+import { transposeMidiFile } from '../core/music/KeySignature'
 import { fetchSampleMidi, getSample } from '../core/samples'
 import { t } from '../i18n'
 import type { ExerciseDescriptor } from '../learn/core/Exercise'
@@ -63,6 +64,8 @@ export class LearnController {
   // time `enter()` runs, the cached MIDI is the cleanest way to hand context
   // across the async boundary.
   private pendingMidi: MidiFile | null = null
+  private baseMidi: MidiFile | null = null
+  private transposeSemitones = 0
 
   constructor(private ctx: ModeContext) {
     this.hub = createLearnHub()
@@ -123,6 +126,7 @@ export class LearnController {
         (status) => this.onStatusChange(status),
       ),
     )
+    this.ctx.updateConsolePanel()
 
     if (!wasAlreadyLearn) trackEvent('learn_mode_entered', { from })
 
@@ -167,10 +171,52 @@ export class LearnController {
     this.ctx.services.renderer.setLiveNotesVisible(true)
     // Clear Learn-owned MIDI + transport so a future re-entry starts fresh.
     this.learnState.clearMidi()
+    this.baseMidi = null
+    this.transposeSemitones = 0
     this.runner = null
     this.view.set('hub')
     // Drop the topbar context — we're leaving Learn, the next mode owns it.
     this.ctx.setLearnFileName(null)
+    this.ctx.updateConsolePanel()
+  }
+
+  getConsoleState(): {
+    enabled: boolean
+    baseKey: MidiKeySignature | null
+    current: number
+  } {
+    return {
+      enabled: this.isTransposeEnabled(),
+      baseKey: this.baseMidi?.keySignature ?? null,
+      current: this.transposeSemitones,
+    }
+  }
+
+  setTranspose(semitones: number): void {
+    if (!this.isTransposeEnabled()) return
+    if (!this.baseMidi) return
+    const next = Math.trunc(semitones)
+    if (next === this.transposeSemitones) return
+    this.transposeSemitones = next
+    const midi = transposeMidiFile(this.baseMidi, next)
+    const currentTime = this.ctx.services.clock.currentTime
+    const status = this.learnState.state.status
+    this.ctx.services.clock.pause()
+    this.ctx.services.synth.pause()
+    this.ctx.services.synth.load(midi).catch((err) => {
+      console.error('[LearnController] SynthEngine.load failed:', err)
+    })
+    this.learnState.setState({
+      loadedMidi: midi,
+      duration: midi.duration,
+      currentTime,
+      status,
+    })
+    this.ctx.services.clock.seek(currentTime)
+    this.ctx.services.synth.seek(currentTime)
+    this.ctx.services.renderer.loadMidi(midi)
+    this.runner?.replaceMidi(midi)
+    this.ctx.updateConsolePanel()
   }
 
   // ── Loaders ─────────────────────────────────────────────────────────────
@@ -247,6 +293,8 @@ export class LearnController {
     this.ctx.services.synth.pause()
     this.ctx.services.renderer.clearMidi()
     this.learnState.clearMidi()
+    this.baseMidi = midi
+    this.transposeSemitones = 0
     // Load the synth asynchronously — we don't await so the hub reflects the
     // new MIDI immediately while samples finish downloading in the background.
     this.ctx.services.synth.load(midi).catch((err) => {
@@ -255,6 +303,7 @@ export class LearnController {
     this.learnState.completeLoad(midi)
     // Update the topbar so the user sees what they're learning.
     this.ctx.setLearnFileName(midi.name)
+    this.ctx.updateConsolePanel()
     // Auto-launch Play-Along on every MIDI load. Loading a MIDI in Learn is
     // a strong signal of intent ("I want to play this piece") — making the
     // user click "Start" again afterward is friction. The runner closes
@@ -344,6 +393,7 @@ export class LearnController {
     } else if (status === 'paused') {
       synth.pause()
     }
+    this.ctx.updateConsolePanel()
   }
 
   // ── Host element management ────────────────────────────────────────────
@@ -387,7 +437,18 @@ export class LearnController {
     this.ctx.services.clock.seek(0)
     this.ctx.services.synth.pause()
     this.learnState.clearMidi()
+    this.baseMidi = null
+    this.transposeSemitones = 0
     this.ctx.setLearnFileName(null)
+    this.ctx.updateConsolePanel()
+  }
+
+  private isTransposeEnabled(): boolean {
+    return (
+      this.learnState.state.loadedMidi !== null &&
+      this.learnState.state.status !== 'playing' &&
+      this.learnState.state.status !== 'loading'
+    )
   }
 
   private showExerciseView(): void {

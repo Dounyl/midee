@@ -16,10 +16,12 @@ interface PanelProps {
   enabled: () => boolean
   baseKey: () => MidiKeySignature | null
   current: () => number
+  labelsVisible: () => boolean
   registerTriggerEl: (el: HTMLButtonElement) => void
   onToggle: () => void
   onChange: (value: number) => void
   onResetToC: () => void
+  onToggleLabels: (visible: boolean) => void
   registerPanelEl: (el: HTMLElement) => void
 }
 
@@ -30,8 +32,11 @@ function ConsolePanelView(props: PanelProps) {
 
   createEffect(() => {
     const value = String(props.current())
+    options()
     queueMicrotask(() => {
-      if (selectEl && selectEl.value !== value) selectEl.value = value
+      if (!selectEl) return
+      const selectedIndex = Array.from(selectEl.options).findIndex((opt) => opt.value === value)
+      if (selectedIndex >= 0) selectEl.selectedIndex = selectedIndex
     })
   })
 
@@ -60,7 +65,7 @@ function ConsolePanelView(props: PanelProps) {
         ref={(el) => props.registerPanelEl(el)}
       >
         <div class="panel-header">
-          <span class="panel-label">{t('console.transpose')}</span>
+          <span class="panel-label">{t('topStrip.console')}</span>
         </div>
         <div class="console-body">
           <div class="console-row">
@@ -102,6 +107,25 @@ function ConsolePanelView(props: PanelProps) {
           <div class="console-sub">
             {props.enabled() ? t('console.transpose.enabled') : t('console.transpose.disabled')}
           </div>
+          <div class="console-row">
+            <span class="console-label">{t('console.labels')}</span>
+            <button
+              class="console-toggle"
+              classList={{ 'console-toggle--on': props.labelsVisible() }}
+              type="button"
+              aria-pressed={props.labelsVisible()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                props.onToggleLabels(!props.labelsVisible())
+              }}
+            >
+              {props.labelsVisible() ? t('console.labels.on') : t('console.labels.off')}
+            </button>
+          </div>
+          <div class="console-sub">
+            {props.labelsVisible() ? t('console.labels.visible') : t('console.labels.hidden')}
+          </div>
         </div>
       </div>
     </div>
@@ -120,6 +144,7 @@ export class ConsolePanel {
   private readonly setEnabled: (v: boolean) => void
   private readonly setBaseKey: (v: MidiKeySignature | null) => void
   private readonly setCurrent: (v: number) => void
+  private readonly setLabelsVisible: (v: boolean) => void
 
   private onKey = (e: KeyboardEvent): void => {
     if (e.key === 'Escape' && this.isOpenFn()) this.close()
@@ -134,12 +159,14 @@ export class ConsolePanel {
     container: HTMLElement,
     onChange: (value: number) => void,
     onResetToC: () => void,
+    onToggleLabels: (visible: boolean) => void,
   ) {
     const [isOpen, setIsOpen] = createSignal(false)
     const [isSheet, setIsSheet] = createSignal(false)
     const [enabled, setEnabled] = createSignal(false)
     const [baseKey, setBaseKey] = createSignal<MidiKeySignature | null>(null)
     const [current, setCurrent] = createSignal(0)
+    const [labelsVisible, setLabelsVisible] = createSignal(false)
 
     this.isOpenFn = isOpen
     this.setIsOpen = setIsOpen
@@ -147,6 +174,7 @@ export class ConsolePanel {
     this.setEnabled = setEnabled
     this.setBaseKey = setBaseKey
     this.setCurrent = setCurrent
+    this.setLabelsVisible = setLabelsVisible
 
     const wrapper = document.createElement('div')
     container.appendChild(wrapper)
@@ -159,12 +187,14 @@ export class ConsolePanel {
           enabled={enabled}
           baseKey={baseKey}
           current={current}
+          labelsVisible={labelsVisible}
           registerTriggerEl={(el) => {
             this.trigger = el
           }}
           onToggle={() => this.toggle()}
           onChange={onChange}
           onResetToC={onResetToC}
+          onToggleLabels={onToggleLabels}
           registerPanelEl={(el) => {
             this.panelEl = el
           }}
@@ -174,10 +204,16 @@ export class ConsolePanel {
     )
   }
 
-  updateState(enabled: boolean, baseKey: MidiKeySignature | null, current: number): void {
+  updateState(
+    enabled: boolean,
+    baseKey: MidiKeySignature | null,
+    current: number,
+    labelsVisible: boolean,
+  ): void {
     this.setEnabled(enabled)
     this.setBaseKey(baseKey)
     this.setCurrent(current)
+    this.setLabelsVisible(labelsVisible)
   }
 
   toggle(): void {

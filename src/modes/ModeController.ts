@@ -24,6 +24,7 @@ export interface ModeContext {
   // direct Controls reference so the import graph stays one-way (modes
   // never reach into UI directly).
   setLearnFileName: (name: string | null) => void
+  updateConsolePanel: () => void
 }
 
 // Live-mode entry options. Used by `setNextLiveOpts()` in LiveMode to

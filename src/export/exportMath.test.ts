@@ -35,6 +35,7 @@ function midiWith(...trackPitches: number[][]): MidiFile {
     duration: 10,
     bpm: 120,
     timeSignature: [4, 4],
+    keySignature: null,
     tracks: trackPitches.map(track),
   }
 }

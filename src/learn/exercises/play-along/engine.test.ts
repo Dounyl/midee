@@ -85,6 +85,7 @@ function makeMidi(): MidiFile {
     duration: 60,
     bpm: 120,
     timeSignature: [4, 4],
+    keySignature: null,
     tracks: [
       {
         id: 'rh',
@@ -114,6 +115,7 @@ function makeSplitHandMidi(): MidiFile {
     duration: 12,
     bpm: 120,
     timeSignature: [4, 4],
+    keySignature: null,
     tracks: [
       {
         id: 'lh',
@@ -356,6 +358,7 @@ describe('PlayAlongEngine', () => {
       duration: 30,
       bpm: 120,
       timeSignature: [4, 4],
+      keySignature: null,
       tracks: [
         {
           id: 'rh',

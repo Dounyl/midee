@@ -1,4 +1,5 @@
 import type { BusNoteEvent } from '../../core/input/InputBus'
+import type { MidiFile } from '../../core/midi/types'
 import type { ExerciseContext } from './ExerciseContext'
 import type { ExerciseResult } from './Result'
 
@@ -59,6 +60,7 @@ export interface Exercise {
   onNoteOn?(evt: BusNoteEvent): void
   onNoteOff?(evt: BusNoteEvent): void
   onTick?(time: number): void
+  onMidiReplaced?(midi: MidiFile): void
 
   // Final result. Called by the runner after `stop`. Return `null` if the
   // session produced nothing meaningful (e.g. user bailed in under a second).

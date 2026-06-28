@@ -10,10 +10,16 @@ import { EmptyMidiError, parseMidiFile } from './parser'
 // Same approach as MidiEncoding.test.ts — proven to work in vitest/Node.
 async function makeBuf(
   notes: Array<{ midi: number; time: number; duration: number; velocity?: number }>,
-  opts: { bpm?: number; channel?: number; trackName?: string } = {},
+  opts: {
+    bpm?: number
+    channel?: number
+    trackName?: string
+    keySignature?: { key: string; scale: 'major' | 'minor' }
+  } = {},
 ): Promise<ArrayBuffer> {
   const midi = new Midi()
   if (opts.bpm != null) midi.header.setTempo(opts.bpm)
+  if (opts.keySignature) midi.header.keySignatures.push({ ticks: 0, ...opts.keySignature })
   const track = midi.addTrack()
   if (opts.trackName) track.name = opts.trackName
   if (opts.channel != null) track.channel = opts.channel
@@ -102,6 +108,64 @@ describe('parseMidiFile — shape', () => {
     const result = await parseMidiFile(buf, 'test')
     // @tonejs/midi defaults or our fallback both produce [4, 4]
     expect(result.timeSignature).toEqual([4, 4])
+  })
+
+  it('falls back to inference when key-signature metadata omits the tonic', async () => {
+    const buf = await makeBuf(
+      [
+        { midi: 67, time: 1, duration: 0.5 },
+        { midi: 71, time: 1.5, duration: 0.5 },
+        { midi: 74, time: 2, duration: 0.5 },
+        { midi: 79, time: 2.5, duration: 0.5 },
+      ],
+      {
+        keySignature: { key: 'G', scale: 'major' },
+      },
+    )
+    const result = await parseMidiFile(buf, 'test')
+    expect(result.keySignature).toMatchObject({
+      tonic: 'G',
+      mode: 'major',
+      source: 'inferred',
+    })
+    expect(result.keySignature?.confidence ?? 0).toBeGreaterThan(0)
+  })
+
+  it('infers minor keys correctly when header scale exists but tonic is unavailable', async () => {
+    const buf = await makeBuf(
+      [
+        { midi: 66, time: 1, duration: 0.5 },
+        { midi: 69, time: 1.5, duration: 0.5 },
+        { midi: 73, time: 2, duration: 0.5 },
+        { midi: 76, time: 2.5, duration: 0.5 },
+      ],
+      {
+        keySignature: { key: 'F#', scale: 'minor' },
+      },
+    )
+    const result = await parseMidiFile(buf, 'test')
+    expect(result.keySignature).toMatchObject({
+      tonic: 'F#',
+      mode: 'minor',
+      source: 'inferred',
+    })
+    expect(result.keySignature?.confidence ?? 0).toBeGreaterThan(0)
+  })
+
+  it('infers a key signature when the MIDI header has none', async () => {
+    const buf = await makeBuf([
+      { midi: 60, time: 1, duration: 0.5 },
+      { midi: 64, time: 1.5, duration: 0.5 },
+      { midi: 67, time: 2, duration: 0.5 },
+      { midi: 72, time: 2.5, duration: 0.5 },
+    ])
+    const result = await parseMidiFile(buf, 'test')
+    expect(result.keySignature).toMatchObject({
+      tonic: 'C',
+      mode: 'major',
+      source: 'inferred',
+    })
+    expect(result.keySignature?.confidence ?? 0).toBeGreaterThan(0)
   })
 
   it('assigns sequential track IDs based on the filtered (non-empty) track order', async () => {

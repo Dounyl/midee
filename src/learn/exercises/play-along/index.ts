@@ -7,6 +7,7 @@
 
 import { getContext } from 'tone'
 import type { BusNoteEvent } from '../../../core/input/InputBus'
+import type { MidiFile } from '../../../core/midi/types'
 import { t } from '../../../i18n'
 import { watch } from '../../../store/watch'
 import type { Exercise, ExerciseDescriptor } from '../../core/Exercise'
@@ -164,6 +165,11 @@ class PlayAlongExercise implements Exercise {
     // Routed so the engine can maintain its `pressedPitches` set for the
     // legato held-tick bonus. No score side-effect on its own.
     this.engine.onNoteOff(evt)
+  }
+
+  onMidiReplaced(midi: MidiFile): void {
+    this.ctx.services.renderer.loadMidi(midi)
+    this.engine.replaceMidi(midi)
   }
 
   result(): ExerciseResult | null {

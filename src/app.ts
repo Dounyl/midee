@@ -21,7 +21,7 @@ import {
   speedToPps,
   trimAudioBuffer,
 } from './export/exportMath'
-import { keySignatureLabel, transposeMidiFile } from './core/music/KeySignature'
+import { transposeDeltaToTonic, transposeMidiFile } from './core/music/KeySignature'
 // VideoExporter pulls Mediabunny; OfflineAudioRenderer pulls Tone + instruments.
 // Both are dynamic-imported from startExport(). Import order matters: load the
 // offline-audio module first when audio is needed — do not block Tone on the
@@ -160,6 +160,7 @@ export class App {
   private chordLastRunMs = 0
   private chordLastSig = ''
   private chordOverlayOn = false
+  private pitchLabelsVisible = pitchLabelsStore.load()
 
   private themeIndex = themeIndexStore.load()
   private instrumentIndex = instrumentIndexStore.load()
@@ -205,6 +206,7 @@ export class App {
     this.renderer.attachClock(this.clock)
     this.renderer.setLiveNoteStore(this.liveNotes)
     this.renderer.setLoopNoteStore(this.loopNotes)
+    this.renderer.setPitchLabelsVisible(this.pitchLabelsVisible)
 
     this.midiInput = new MidiInputManager(this.clock)
     this.keyboardInput = new ComputerKeyboardInput(this.clock)
@@ -415,11 +417,10 @@ export class App {
     this.consolePanel = new ConsolePanel(
       overlay,
       (value) => this.handleTransposeChange(value),
-      () => {
-        const next = this.baseMidi?.keySignature?.tonic === 'C' ? 0 : this.resolveResetToC()
-        this.handleTransposeChange(next)
-      },
+      () => this.handleTransposeChange(this.resolveResetToC()),
+      (visible) => this.setPitchLabelsVisible(visible),
     )
+    this.syncConsolePanel()
 
     this.instrumentMenu = new InstrumentMenu(this.controls.instrumentSlot, overlay)
     this.instrumentMenu.onSelect = (id) => this.setInstrumentById(id)
@@ -524,11 +525,7 @@ export class App {
       watch(
         () => this.store.state.status,
         (status) => {
-          this.consolePanel?.updateState(
-            this.store.state.mode === 'play' && status === 'paused' && this.baseMidi !== null,
-            this.baseMidi?.keySignature ?? null,
-            this.transposeSemitones,
-          )
+          this.syncConsolePanel()
           // Drives the synth for Play/Live only. Learn runs its own status
           // signal on `LearnState` and drives the synth from `LearnController`
           // so the two modes never race for control of the scheduler.
@@ -555,11 +552,13 @@ export class App {
       watch(
         () => this.store.state.loadedMidi,
         () => {
-          this.consolePanel?.updateState(
-            this.store.state.mode === 'play' && this.store.state.status === 'paused' && this.baseMidi !== null,
-            this.baseMidi?.keySignature ?? null,
-            this.transposeSemitones,
-          )
+          this.syncConsolePanel()
+        },
+      ),
+      watch(
+        () => this.store.state.mode,
+        () => {
+          this.syncConsolePanel()
         },
       ),
       watch(
@@ -672,6 +671,7 @@ export class App {
       openLocalMidi: (id, target) => void this.openLocalMidi(id, target),
       primeInteractiveAudio: () => this.primeInteractiveAudio(),
       setLearnFileName: (name) => this.controls.updateLearnFileName(name),
+      updateConsolePanel: () => this.syncConsolePanel(),
     }
 
     if (skipHomeIntroStore.load()) this.services.store.enterPlayLanding()
@@ -860,7 +860,7 @@ export class App {
       this.store.completePlayLoad(midi)
       this.baseMidi = midi
       this.transposeSemitones = 0
-      this.consolePanel.updateState(false, midi.keySignature ?? null, 0)
+      this.syncConsolePanel()
       this.resetPlaybackTelemetry()
       trackMidiLoaded({
         source,
@@ -1425,7 +1425,7 @@ export class App {
     this.store.completePlayLoad(midi)
     this.baseMidi = midi
     this.transposeSemitones = 0
-    this.consolePanel.updateState(false, midi.keySignature ?? null, 0)
+    this.syncConsolePanel()
     // Typing keyboard stays on — users can play along with their own session.
     this.keyboardInput.enable()
     this.renderer.loadMidi(midi)
@@ -1456,7 +1456,11 @@ export class App {
   }
 
   private handleTransposeChange(semitones: number): void {
-    if (this.store.state.mode !== 'play' || this.store.state.status !== 'paused') return
+    if (this.store.state.mode === 'learn') {
+      this.learnControllerHandle.peek()?.setTranspose(semitones)
+      return
+    }
+    if (!this.isTransposeEnabled()) return
     const base = this.baseMidi ?? this.store.state.loadedMidi
     if (!base) return
     const next = Math.trunc(semitones)
@@ -1466,27 +1470,58 @@ export class App {
     this.store.replaceLoadedMidi(midi)
     this.renderer.loadMidi(midi)
     this.trackPanel.render(midi)
-    this.consolePanel.updateState(true, base.keySignature ?? null, next)
+    this.syncConsolePanel()
+  }
+
+  private syncConsolePanel(): void {
+    if (this.store.state.mode === 'learn') {
+      const state = this.learnControllerHandle.peek()?.getConsoleState() ?? {
+        enabled: false,
+        baseKey: null,
+        current: 0,
+      }
+      this.consolePanel?.updateState(
+        state.enabled,
+        state.baseKey,
+        state.current,
+        this.pitchLabelsVisible,
+      )
+      return
+    }
+
+    const baseKey = this.store.state.mode === 'play' ? (this.baseMidi?.keySignature ?? null) : null
+    this.consolePanel?.updateState(
+      this.isTransposeEnabled(),
+      baseKey,
+      this.transposeSemitones,
+      this.pitchLabelsVisible,
+    )
+  }
+
+  private isTransposeEnabled(): boolean {
+    return (
+      this.store.state.mode === 'play' &&
+      this.baseMidi !== null &&
+      this.store.state.status !== 'playing' &&
+      this.store.state.status !== 'loading' &&
+      this.store.state.status !== 'exporting'
+    )
+  }
+
+  private setPitchLabelsVisible(visible: boolean): void {
+    if (this.pitchLabelsVisible === visible) return
+    this.pitchLabelsVisible = visible
+    pitchLabelsStore.save(visible)
+    this.renderer.setPitchLabelsVisible(visible)
+    this.syncConsolePanel()
   }
 
   private resolveResetToC(): number {
-    const tonic = this.baseMidi?.keySignature?.tonic
-    if (!tonic) return 0
-    const map: Record<string, number> = {
-      C: 0,
-      'C#': 11,
-      D: 10,
-      'D#': 9,
-      E: 8,
-      F: 7,
-      'F#': 6,
-      G: 5,
-      'G#': 4,
-      A: 3,
-      'A#': 2,
-      B: 1,
-    }
-    return map[tonic] ?? 0
+    const key =
+      this.store.state.mode === 'learn'
+        ? (this.learnControllerHandle.peek()?.getConsoleState().baseKey ?? null)
+        : (this.baseMidi?.keySignature ?? null)
+    return transposeDeltaToTonic(key, 'C')
   }
 
   // ── Chord overlay ──────────────────────────────────────────────────────
@@ -1694,6 +1729,7 @@ const metronomeBpmStore = numberPersisted('midee.metronomeBpm', 120, 40, 240)
 // boolean store treats "no preference" as the fallback (true), and only
 // an explicit "false" turns it off.
 const chordOverlayStore = booleanPersisted('midee.chordOverlay', true)
+const pitchLabelsStore = booleanPersisted('midee.pitchLabels', false)
 const skipHomeIntroStore = booleanPersisted(SKIP_HOME_INTRO_STORAGE_KEY, false)
 
 // Strips characters that misbehave in filenames across Windows/macOS/Linux.

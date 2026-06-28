@@ -1,6 +1,7 @@
 import type { Application } from 'pixi.js'
-import { Container, Graphics, RenderTexture, Sprite, Texture, TilingSprite } from 'pixi.js'
-import { isBlackKey, MIDI_MAX, MIDI_MIN } from '../core/midi/types'
+import { Container, Graphics, RenderTexture, Sprite, Text, Texture, TilingSprite } from 'pixi.js'
+import { isBlackKey, MIDI_MAX, MIDI_MIN, type MidiKeySignature } from '../core/midi/types'
+import { pitchToKeyboardLabels } from '../core/music/jianpu'
 import type { Theme } from './theme'
 import type { Viewport } from './viewport'
 
@@ -67,6 +68,9 @@ export class KeyboardRenderer {
   private whiteTexture: RenderTexture | null = null
   private blackSprite: Sprite | null = null
   private blackTexture: RenderTexture | null = null
+  private keyLabelLayer: Container
+  private keySignature: MidiKeySignature | null = null
+  private labelsVisible = true
 
   // Per-frame active overlays — one per key colour (white vs black) so we
   // can insert the black sprite between them for automatic clipping.
@@ -103,6 +107,8 @@ export class KeyboardRenderer {
   ) {
     this.container = new Container()
     this.container.label = 'keyboard'
+    this.keyLabelLayer = new Container()
+    this.keyLabelLayer.label = 'keyboard-labels'
 
     this.whiteActiveLayer = new Graphics()
     this.whiteActiveLayer.label = 'keyboard-active-white'
@@ -119,6 +125,7 @@ export class KeyboardRenderer {
     this.container.addChild(this.whiteActiveLayer)
     this.container.addChild(this.blackPracticeHintLayer)
     this.container.addChild(this.blackActiveLayer)
+    this.container.addChild(this.keyLabelLayer)
   }
 
   // Build or rebuild the static keyboard textures.
@@ -137,7 +144,7 @@ export class KeyboardRenderer {
     // a theme re-apply or redundant rebuildStaticLayers() into a no-op.
     const sig =
       `${canvasWidth}x${keyboardHeight}|${pitchMin ?? 21}-${pitchMax ?? 108}|` +
-      `${this.theme.whiteKey}.${this.theme.blackKey}.${this.theme.keyBorder}|y=${yOffset}`
+      `${this.theme.whiteKey}.${this.theme.blackKey}.${this.theme.keyBorder}|y=${yOffset}|ks=${this.keySignatureCacheKey()}|labels=${this.labelsVisible ? 1 : 0}`
     if (sig === this.lastBuildSignature && this.whiteSprite && this.blackSprite) {
       // Positions may still need to be re-cached if the caller swapped the
       // Viewport instance — but sig encodes every positional input, so
@@ -157,6 +164,9 @@ export class KeyboardRenderer {
     this.whiteSprite?.destroy()
     this.blackTexture?.destroy()
     this.blackSprite?.destroy()
+    this.keyLabelLayer.removeChildren().forEach((child) => {
+      child.destroy()
+    })
 
     // ─── White bake ──────────────────────────────────────────────────
     // bg + white keys + depth cues + ivory wash + ivory grain noise.
@@ -289,6 +299,8 @@ export class KeyboardRenderer {
     this.whiteActiveLayer.y = yOffset
     this.blackPracticeHintLayer.y = yOffset
     this.blackActiveLayer.y = yOffset
+    this.keyLabelLayer.y = yOffset
+    this.buildKeyLabels(positions, keyboardHeight)
     // Force a redraw of the hint layer on the next setPracticeHints call —
     // the geometry depends on the freshly-built viewport.
     this.practiceSignature = ''
@@ -298,6 +310,66 @@ export class KeyboardRenderer {
   // tinted with the color of the track/source it came from. Routes white and
   // black presses to separate Graphics layers so the black static sprite can
   // clip the white overlay by sitting on top of it in the z-stack.
+  private buildKeyLabels(
+    positions: Map<number, { x: number; width: number }>,
+    keyboardHeight: number,
+  ): void {
+    if (!this.labelsVisible) return
+
+    for (let pitch = MIDI_MIN; pitch <= MIDI_MAX; pitch++) {
+      const pos = positions.get(pitch)
+      if (!pos) continue
+      const labels = pitchToKeyboardLabels(pitch, this.keySignature)
+      if (!labels) continue
+
+      const black = isBlackKey(pitch)
+      const primaryFontSize = black
+        ? Math.max(10, Math.min(15, pos.width * 0.62))
+        : Math.max(13, Math.min(19, pos.width * 0.5))
+      const secondaryFontSize = black
+        ? Math.max(8, Math.round(primaryFontSize * 0.78))
+        : Math.max(10, Math.round(primaryFontSize * 0.8))
+      const primaryFill = black ? 0xf8f1e3 : 0x221910
+      const secondaryFill = black ? 0xd8ccba : 0x5f4d3e
+      const centerX = pos.x + pos.width / 2
+      const primary = new Text({
+        text: labels.jianpu,
+        style: {
+          fontFamily: 'Inter, sans-serif',
+          fontSize: primaryFontSize,
+          fontWeight: '800',
+          fill: primaryFill,
+          align: 'center',
+          ...(black ? { stroke: { color: 0x000000, width: 1.5 } } : {}),
+        },
+      })
+      primary.anchor.set(0.5)
+      primary.x = centerX
+      primary.y = black
+        ? keyboardHeight * 0.22
+        : keyboardHeight - Math.max(34, primaryFontSize + secondaryFontSize + 9)
+      primary.alpha = black ? 0.95 : 0.98
+
+      const secondary = new Text({
+        text: labels.noteName,
+        style: {
+          fontFamily: 'Inter, sans-serif',
+          fontSize: secondaryFontSize,
+          fontWeight: '600',
+          fill: secondaryFill,
+          align: 'center',
+          ...(black ? { stroke: { color: 0x000000, width: 1 } } : {}),
+        },
+      })
+      secondary.anchor.set(0.5)
+      secondary.x = centerX
+      secondary.y = black ? keyboardHeight * 0.42 : primary.y + primaryFontSize * 0.92 + 3
+      secondary.alpha = black ? 0.84 : 0.88
+
+      this.keyLabelLayer.addChild(primary, secondary)
+    }
+  }
+
   drawActiveKeys(activeByPitch: Map<number, number>, viewport: Viewport): void {
     const sig = this.signatureFor(activeByPitch)
     if (!this.activeLayerDirty && sig === this.lastSignature) return
@@ -347,6 +419,23 @@ export class KeyboardRenderer {
     // Practice hint colours follow the active theme accent.
     this.practiceTheme = theme
     this.practiceSignature = ''
+  }
+
+  setKeySignature(keySignature: MidiKeySignature | null): void {
+    if (this.keySignatureCacheKey() === this.keySignatureCacheKey(keySignature)) return
+    this.keySignature = keySignature
+    this.lastBuildSignature = ''
+  }
+
+  setLabelsVisible(visible: boolean): void {
+    if (this.labelsVisible === visible) return
+    this.labelsVisible = visible
+    this.lastBuildSignature = ''
+  }
+
+  private keySignatureCacheKey(keySignature: MidiKeySignature | null = this.keySignature): string {
+    if (!keySignature) return ''
+    return `${keySignature.tonic}:${keySignature.mode}`
   }
 
   // Public hook for the parent renderer to swap in the current practice-mode

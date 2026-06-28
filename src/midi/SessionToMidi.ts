@@ -63,6 +63,7 @@ export function sessionToMidiFile(
     duration,
     bpm,
     timeSignature: [4, 4],
+    keySignature: null,
     tracks: [track],
   }
 }

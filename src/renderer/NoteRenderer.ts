@@ -1,6 +1,7 @@
-import { Container, Graphics } from 'pixi.js'
+import { Container, Graphics, Text } from 'pixi.js'
 import { GlowFilter } from 'pixi-filters'
-import type { MidiTrack } from '../core/midi/types'
+import type { MidiKeySignature, MidiTrack } from '../core/midi/types'
+import { pitchToJianpuLabel } from '../core/music/jianpu'
 import { getTrackColor, type Theme } from './theme'
 import { type Viewport, visibleNoteRange } from './viewport'
 
@@ -9,18 +10,25 @@ import { type Viewport, visibleNoteRange } from './viewport'
 // so the expensive GlowFilter only runs over a small subset each frame.
 
 const PRACTICE_INACTIVE_ALPHA_SCALE = 0.24
+const NOTE_LABEL_BOTTOM_INSET = 12
 
 export class NoteRenderer {
   readonly container: Container
 
   private trackGraphics = new Map<string, Graphics>()
+  private labelContainer: Container
+  private labelPool: Text[] = []
   private glowContainer: Container
   private glowGraphics: Graphics
   private glowFilter: GlowFilter
+  private keySignature: MidiKeySignature | null = null
+  private labelsVisible = true
 
   constructor(private theme: Theme) {
     this.container = new Container()
     this.container.label = 'notes'
+    this.labelContainer = new Container()
+    this.labelContainer.label = 'note-labels'
 
     this.glowContainer = new Container()
     this.glowContainer.label = 'note-glow'
@@ -36,6 +44,7 @@ export class NoteRenderer {
 
     this.glowGraphics = new Graphics()
     this.glowContainer.addChild(this.glowGraphics)
+    this.container.addChild(this.labelContainer)
     this.container.addChild(this.glowContainer)
   }
 
@@ -55,8 +64,9 @@ export class NoteRenderer {
       if (!this.trackGraphics.has(track.id)) {
         const g = new Graphics()
         g.label = `notes-${track.id}`
-        // Insert before the glow container so glow renders on top.
-        this.container.addChildAt(g, this.container.children.indexOf(this.glowContainer))
+        // Insert before the label layer so labels stay above note bodies and
+        // below the expensive active-note glow.
+        this.container.addChildAt(g, this.container.children.indexOf(this.labelContainer))
         this.trackGraphics.set(track.id, g)
       }
     }
@@ -75,11 +85,13 @@ export class NoteRenderer {
     const { noteRadius } = this.theme
     const nowLineY = viewport.nowLineY
     this.glowGraphics.clear()
+    this.resetLabelPool()
 
     let activeCount = 0
     let sumR = 0,
       sumG = 0,
       sumB = 0
+    let labelIndex = 0
 
     const visStart = currentTime - viewport.trailSeconds - 0.5
     const visEnd = currentTime + viewport.lookaheadSeconds + 0.5
@@ -118,6 +130,7 @@ export class NoteRenderer {
 
         g.roundRect(x, y, w, h, noteRadius)
         g.fill({ color: noteColor, alpha })
+        labelIndex = this.drawNoteLabel(labelIndex, note.pitch, x, y, w, h, noteColor, alpha)
 
         if (
           !practiceInactive &&
@@ -146,16 +159,82 @@ export class NoteRenderer {
     }
   }
 
+  private resetLabelPool(): void {
+    for (const label of this.labelPool) label.visible = false
+  }
+
+  private drawNoteLabel(
+    index: number,
+    pitch: number,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    noteColor: number,
+    alpha: number,
+  ): number {
+    if (!this.labelsVisible) return index
+    if (w < 12 || h < 14) return index
+
+    const text = this.labelAt(index)
+    const fontSize = Math.max(10, Math.min(18, Math.min(w * 0.72, h * 0.42)))
+    text.text = pitchToJianpuLabel(pitch, this.keySignature)
+    text.style = {
+      fontFamily: 'Inter, sans-serif',
+      fontSize,
+      fontWeight: '700',
+      fill: 0xffffff,
+      align: 'center',
+      stroke: { color: noteColor, width: 3 },
+    }
+    text.x = x + w / 2
+    // Keep labels visually anchored near the foot of the note so short and
+    // long waterfalls share the same bottom spacing.
+    text.y = y + h - NOTE_LABEL_BOTTOM_INSET
+    text.alpha = Math.min(1, alpha + 0.18)
+    text.visible = true
+    return index + 1
+  }
+
+  private labelAt(index: number): Text {
+    const existing = this.labelPool[index]
+    if (existing) return existing
+
+    const label = new Text({
+      text: '',
+      style: {
+        fontFamily: 'Inter, sans-serif',
+        fontSize: 12,
+        fontWeight: '700',
+        fill: 0xffffff,
+        align: 'center',
+      },
+    })
+    label.anchor.set(0.5)
+    this.labelPool.push(label)
+    this.labelContainer.addChild(label)
+    return label
+  }
+
   updateTheme(theme: Theme): void {
     this.theme = theme
     this.glowFilter.distance = theme.noteGlowDistance
     this.glowFilter.outerStrength = theme.noteGlowStrength
   }
 
+  setKeySignature(keySignature: MidiKeySignature | null): void {
+    this.keySignature = keySignature
+  }
+
+  setLabelsVisible(visible: boolean): void {
+    this.labelsVisible = visible
+  }
+
   clear(): void {
     this.trackGraphics.forEach((g) => {
       g.clear()
     })
+    this.resetLabelPool()
     this.glowGraphics.clear()
     this.glowContainer.visible = false
   }

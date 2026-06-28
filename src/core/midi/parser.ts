@@ -1,5 +1,5 @@
-import type { MidiFile, MidiKeySignature, MidiNote, MidiTrack } from './types'
 import { inferMidiKeySignature } from '../music/KeySignature'
+import type { MidiFile, MidiKeySignature, MidiNote, MidiTrack } from './types'
 
 // `@tonejs/midi` is ~25 KB gz and only used inside this module + MidiEncoding.
 // Both entry points (file picker, record export) are user-driven and already
@@ -35,6 +35,24 @@ const TRACK_COLORS = [
   0xe11d48, // rose
   0x14b8a6, // teal
 ]
+
+function parseHeaderKeySignature(raw: unknown): MidiKeySignature | null {
+  if (!raw || typeof raw !== 'object') return null
+  const rec = raw as { key?: unknown; scale?: unknown }
+  const rawKey = typeof rec.key === 'string' ? rec.key.trim() : ''
+  const scale = typeof rec.scale === 'string' ? rec.scale.trim().toLowerCase() : ''
+  if (!rawKey) return null
+  const key = rawKey
+    .replace(/\u266d/g, 'b')
+    .replace(/\u266f/g, '#')
+    .replace(/^([a-gA-G])/, (letter) => letter.toUpperCase())
+  return {
+    tonic: key,
+    mode: scale === 'minor' ? 'minor' : 'major',
+    source: 'midi',
+    confidence: 1,
+  }
+}
 
 export async function parseMidiFile(source: File | ArrayBuffer, name?: string): Promise<MidiFile> {
   const buffer = source instanceof ArrayBuffer ? source : await source.arrayBuffer()
@@ -75,25 +93,18 @@ export async function parseMidiFile(source: File | ArrayBuffer, name?: string): 
   const num = rawTimeSig[0] ?? 4
   const den = rawTimeSig[1] ?? 4
   const rawName = name ?? (source instanceof File ? source.name : 'Untitled')
+  const headerKeySignature = parseHeaderKeySignature(midi.header.keySignatures[0])
   const inferredKeySignature = inferMidiKeySignature({
     name: rawName.replace(/\.mid[i]?$/i, ''),
     duration: midi.duration,
     bpm,
     timeSignature: [num, den] as [number, number],
+    keySignature: headerKeySignature,
     tracks,
   })
-  const headerKeySignature = midi.header.keySignatures[0]
-    ? {
-        tonic: midi.header.keySignatures[0].key ?? 'C',
-        mode: midi.header.keySignatures[0].scale === 'minor' ? ('minor' as const) : ('major' as const),
-        source: 'midi' as const,
-        confidence: 1,
-      }
-    : null
-  const keySignature =
-    shouldPreferInferredKeySignature(inferredKeySignature, headerKeySignature)
-      ? inferredKeySignature
-      : headerKeySignature
+  const keySignature = shouldPreferInferredKeySignature(inferredKeySignature, headerKeySignature)
+    ? inferredKeySignature
+    : headerKeySignature
   return {
     name: rawName.replace(/\.mid[i]?$/i, ''),
     duration: midi.duration,

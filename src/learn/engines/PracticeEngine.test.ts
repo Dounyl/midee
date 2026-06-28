@@ -33,6 +33,7 @@ function midiWithNotes(notes: Array<{ pitch: number; time: number }>): MidiFile 
     duration: 10,
     bpm: 120,
     timeSignature: [4, 4],
+    keySignature: null,
     tracks: [
       {
         id: 'rh',
@@ -258,6 +259,7 @@ describe('PracticeEngine step building and peekNextStep', () => {
       duration: 10,
       bpm: 120,
       timeSignature: [4, 4],
+      keySignature: null,
       tracks: [
         {
           id: 'dr',
@@ -308,6 +310,7 @@ function midiWithTwoTracks(): MidiFile {
     duration: 10,
     bpm: 120,
     timeSignature: [4, 4],
+    keySignature: null,
     tracks: [
       {
         id: 'rh',

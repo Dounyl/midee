@@ -4053,6 +4053,41 @@ body {
   cursor: default;
 }
 
+.console-toggle {
+  min-width: 72px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(12, 12, 22, 0.84);
+  color: var(--text-muted);
+  padding: 0 12px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.12s var(--ease-spring),
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+
+.console-toggle:hover,
+.console-toggle:focus-visible {
+  color: var(--text);
+  border-color: var(--border-hi);
+}
+
+.console-toggle:active {
+  transform: scale(0.96);
+}
+
+.console-toggle--on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .console-sub {
   font-family: var(--font);
   font-size: 11px;

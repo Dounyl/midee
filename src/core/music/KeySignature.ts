@@ -103,7 +103,8 @@ export function transposeDeltaToTonic(
   const from = pitchClassIndex(key.tonic)
   const to = pitchClassIndex(tonic)
   if (from < 0 || to < 0) return 0
-  return wrap12(to - from)
+  const upward = wrap12(to - from)
+  return upward > 6 ? upward - 12 : upward
 }
 
 export function keySignatureAtOffset(

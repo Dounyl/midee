@@ -114,6 +114,7 @@ export class PianoRollRenderer {
   // the user has already pressed for the current step.
   private practiceHintPending: ReadonlySet<number> | null = null
   private practiceHintAccepted: ReadonlySet<number> | null = null
+  private pitchLabelsVisible = true
 
   // External RenderLayers (Learn-mode overlays, future sheet-music cursor,
   // etc.) kept sorted by `zIndex` ascending so a single forward iteration
@@ -177,6 +178,7 @@ export class PianoRollRenderer {
     stage.addChild(this.beatGrid.graphics)
 
     this.noteRenderer = new NoteRenderer(this.theme)
+    this.noteRenderer.setLabelsVisible(this.pitchLabelsVisible)
     stage.addChild(this.noteRenderer.container)
 
     this.liveNoteRenderer = new LiveNoteRenderer(this.theme)
@@ -187,6 +189,7 @@ export class PianoRollRenderer {
     stage.addChild(this.nowLineGraphics)
 
     this.keyboardRenderer = new KeyboardRenderer(this.app, this.theme)
+    this.keyboardRenderer.setLabelsVisible(this.pitchLabelsVisible)
     stage.addChild(this.keyboardRenderer.container)
 
     this.particles = new ParticleSystem()
@@ -250,10 +253,13 @@ export class PianoRollRenderer {
     this.midi = midi
     this.visibleTrackIds = new Set(midi.tracks.map((t) => t.id))
     this.practiceFocusTrackIds = null
+    this.keyboardRenderer.setKeySignature(midi.keySignature ?? null)
+    this.noteRenderer.setKeySignature(midi.keySignature ?? null)
     this.noteRenderer.setTracks(midi.tracks)
     this.particles.clear()
     this.prevActive.clear()
     this.currActive.clear()
+    this.rebuildStaticLayers()
     this.renderStaticFrame(0)
   }
 
@@ -261,6 +267,8 @@ export class PianoRollRenderer {
     this.midi = null
     this.visibleTrackIds.clear()
     this.practiceFocusTrackIds = null
+    this.keyboardRenderer.setKeySignature(null)
+    this.noteRenderer.setKeySignature(null)
     this.noteRenderer.setTracks([])
     this.noteRenderer.clear()
     this.liveNoteRenderer.clear()
@@ -270,6 +278,7 @@ export class PianoRollRenderer {
     this.scheduledEmitNext.clear()
     this.liveEmitNext.clear()
     this.beatGrid.clear()
+    this.rebuildStaticLayers()
     this.renderStaticFrame(0)
   }
 
@@ -327,6 +336,15 @@ export class PianoRollRenderer {
 
   setParticleStyle(style: import('./ParticleSystem').ParticleStyle): void {
     this.particles.setStyle(style)
+  }
+
+  setPitchLabelsVisible(visible: boolean): void {
+    if (this.pitchLabelsVisible === visible) return
+    this.pitchLabelsVisible = visible
+    this.noteRenderer.setLabelsVisible(visible)
+    this.keyboardRenderer.setLabelsVisible(visible)
+    this.rebuildStaticLayers()
+    this.renderStaticFrame(this.lastRenderTime)
   }
 
   setTheme(theme: Theme): void {
