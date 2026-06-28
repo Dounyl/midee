@@ -1,4 +1,0 @@
-interface:
-  display_name: "Fork Git Workflow"
-  short_description: "Fork branching and PR hygiene for this repo."
-  default_prompt: "Use $fork-git-workflow to set up or audit this repo's fork, branch, and PR workflow."
