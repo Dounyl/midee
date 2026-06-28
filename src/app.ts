@@ -3,6 +3,7 @@ import { INSTRUMENTS, SynthEngine } from './audio/SynthEngine'
 import { MasterClock } from './core/clock/MasterClock'
 import { type BusNoteEvent, InputBus } from './core/input/InputBus'
 import { lazyHandle } from './core/lazyHandle'
+import { loadLocalMidi, recordSamplePlayback, saveLocalMidi } from './core/midiLibrary'
 import { parseMidiFile } from './core/midi/parser'
 import { detectChord } from './core/music/ChordDetector'
 import {
@@ -41,7 +42,7 @@ import { MODE_CAPTURES_LIVE, type ModeContext } from './modes/ModeController'
 import { PARTICLE_STYLES } from './renderer/ParticleSystem'
 import { PianoRollRenderer } from './renderer/PianoRollRenderer'
 import { THEMES, type Theme } from './renderer/theme'
-import type { AppMode, AppStore } from './store/state'
+import { SKIP_HOME_INTRO_STORAGE_KEY, type AppMode, type AppStore } from './store/state'
 import { watch } from './store/watch'
 import {
   categorizeMidiDevice,
@@ -296,13 +297,13 @@ export class App {
       },
       () => this.enterLiveMode(),
       (sampleId) => {
-        if (this.store.state.mode === 'learn') {
-          void this.ensureLearnController().then((c) => c.loadSample(sampleId))
-        } else {
-          void this.loadSample(sampleId)
-        }
+        void this.openSample(sampleId, this.store.state.mode === 'learn' ? 'learn' : 'play')
       },
+      (sampleId) => void this.openSample(sampleId, 'learn'),
       () => this.store.setState('mode', 'learn'),
+      skipHomeIntroStore.load(),
+      (next) => skipHomeIntroStore.save(next),
+      this.store.state.mode !== 'home',
     )
 
     this.controls = new Controls({
@@ -323,6 +324,7 @@ export class App {
         void this.openExportModal()
       },
       onOpenFile: () => this.openFilePicker(),
+      onOpenLocalMidi: (id, target) => void this.openLocalMidi(id, target),
       onModeRequest: (mode) => this.requestMode(mode),
       onLearnThis: () => this.enterLearnWithCurrentMidi(),
       onHome: () => this.enterHomeMode(),
@@ -637,13 +639,14 @@ export class App {
       keyboardInput: this.keyboardInput,
       midiInput: this.midiInput,
       resetInteractionState: () => this.resetInteractionState(),
-      openFilePicker: () => this.openFilePicker(),
+      openFilePicker: (target) => this.openFilePicker(target),
+      openLocalMidi: (id, target) => void this.openLocalMidi(id, target),
       primeInteractiveAudio: () => this.primeInteractiveAudio(),
       setLearnFileName: (name) => this.controls.updateLearnFileName(name),
     }
 
-    // Start in home. <HomeMode/>'s onMount handles the side effects.
-    this.services.store.enterHome()
+    if (skipHomeIntroStore.load()) this.services.store.enterPlayLanding()
+    else this.services.store.enterHome()
     void this.autoConnectMidi()
   }
 
@@ -813,6 +816,9 @@ export class App {
 
     try {
       const midi = await parseMidiFile(file)
+      await saveLocalMidi(file, midi).catch((err) => {
+        console.warn('[loadMidi] saveLocalMidi failed', err)
+      })
       this.synth.load(midi).catch((err) => {
         console.error('SynthEngine.load failed:', err)
         // Visuals load but there's no sound — a silent session-killer that
@@ -846,6 +852,8 @@ export class App {
         this.renderer.loadMidi(previousMidi)
         this.trackPanel.render(previousMidi)
         this.dropzone.hide()
+      } else if (previousMode === 'play') {
+        this.store.enterPlayLanding()
       } else if (previousMode === 'live') {
         this.enterLiveMode(false)
       } else if (previousMode === 'home') this.enterHomeMode()
@@ -1121,13 +1129,8 @@ export class App {
             void this.loadMidi(file, 'picker')
           }
         },
-        onSample: (id) => {
-          if (resolveTarget() === 'learn') {
-            void this.ensureLearnController().then((c) => c.loadSample(id))
-          } else {
-            void this.loadSample(id)
-          }
-        },
+        onSamplePlay: (id) => void this.openSample(id, 'play'),
+        onSamplePractice: (id) => void this.openSample(id, 'learn'),
       })
     })
   }
@@ -1157,6 +1160,7 @@ export class App {
       this.showError(t('error.sample.fetchFailed'))
       return
     }
+    recordSamplePlayback(sampleId)
     this.loadSessionAsFile(midi)
     this.resetPlaybackTelemetry()
     trackMidiLoaded({
@@ -1174,6 +1178,79 @@ export class App {
         this.store.setState('status', 'playing')
       }
     }, 250)
+  }
+
+  async openSample(sampleId: string, target: 'play' | 'learn'): Promise<void> {
+    if (target === 'learn') {
+      const sample = getSample(sampleId)
+      if (!sample) return
+      this.primeInteractiveAudio()
+      try {
+        const midi = await fetchSampleMidi(sample)
+        recordSamplePlayback(sampleId)
+        const controller = await this.ensureLearnController()
+        if (this.store.state.mode === 'learn') await controller.loadPreparedMidi(midi)
+        else {
+          controller.queueMidi(midi)
+          this.store.setState('mode', 'learn')
+        }
+        trackMidiLoaded({
+          source: 'sample',
+          target: 'learn',
+          sampleId,
+          trackCount: midi.tracks.length,
+          noteCount: countNotes(midi),
+          durationS: Math.round(midi.duration),
+        })
+      } catch (err) {
+        console.error('[openSample] learn fetch failed', err)
+        trackEvent('sample_load_failed', { sample_id: sampleId, target: 'learn' })
+        this.showError(t('error.sample.fetchFailed'))
+      }
+      return
+    }
+    await this.loadSample(sampleId)
+  }
+
+  async openLocalMidi(id: string, target: 'play' | 'learn'): Promise<void> {
+    try {
+      this.primeInteractiveAudio()
+      const midi = await loadLocalMidi(id)
+      if (target === 'learn') {
+        const controller = await this.ensureLearnController()
+        if (this.store.state.mode === 'learn') await controller.loadPreparedMidi(midi)
+        else {
+          controller.queueMidi(midi)
+          this.store.setState('mode', 'learn')
+        }
+        trackMidiLoaded({
+          source: 'picker',
+          target: 'learn',
+          trackCount: midi.tracks.length,
+          noteCount: countNotes(midi),
+          durationS: Math.round(midi.duration),
+        })
+        return
+      }
+      this.loadSessionAsFile(midi)
+      this.resetPlaybackTelemetry()
+      trackMidiLoaded({
+        source: 'picker',
+        target: 'play',
+        trackCount: midi.tracks.length,
+        noteCount: countNotes(midi),
+        durationS: Math.round(midi.duration),
+      })
+      setTimeout(() => {
+        if (this.store.state.mode === 'play' && this.store.state.status !== 'playing') {
+          this.clock.play()
+          this.store.setState('status', 'playing')
+        }
+      }, 120)
+    } catch (err) {
+      console.error('[openLocalMidi] failed', err)
+      this.showError(t('error.midi.parseFailed'))
+    }
   }
 
   private requestMode(mode: Exclude<AppMode, 'home'>): void {
@@ -1201,7 +1278,7 @@ export class App {
     // file-pick time and (if we came here from Learn) route the file back
     // into Learn instead of opening it in Play. The user clicked Play; honor
     // that even if their mode hasn't flipped yet.
-    this.openFilePicker('play')
+    this.store.enterPlayLanding()
   }
 
   // Hands the currently-loaded Play MIDI off to Learn and switches modes.
@@ -1547,6 +1624,7 @@ const metronomeBpmStore = numberPersisted('midee.metronomeBpm', 120, 40, 240)
 // boolean store treats "no preference" as the fallback (true), and only
 // an explicit "false" turns it off.
 const chordOverlayStore = booleanPersisted('midee.chordOverlay', true)
+const skipHomeIntroStore = booleanPersisted(SKIP_HOME_INTRO_STORAGE_KEY, false)
 
 // Strips characters that misbehave in filenames across Windows/macOS/Linux.
 // Falls back to a constant if the result is empty.

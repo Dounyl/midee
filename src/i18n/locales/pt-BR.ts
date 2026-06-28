@@ -18,6 +18,7 @@ const ptBR: Messages = {
   'home.midi.blocked': 'Ative o MIDI na barra superior',
   'home.midi.unavailable': 'Web MIDI indisponível neste navegador',
   'home.midi.disconnected': 'Sem dispositivo MIDI — teclado e mouse também funcionam',
+  'home.skipIntro': 'Não mostrar esta abertura novamente; entrar em Tocar por padrão.',
   'home.metaLink.blog': 'Leia o blog',
   'home.metaLink.github': 'Código no GitHub',
   'home.metaLink.discord': 'Entre na comunidade do Discord',
@@ -205,6 +206,7 @@ const ptBR: Messages = {
   // ── Learn hub ───────────────────────────────────────────────
   'learn.hub.recommended': 'Recomendado',
   'learn.hub.uploadMidi': 'Enviar um MIDI',
+  'learn.hub.library': 'Prática recente',
   'learn.hub.startWith': 'Começar · {name}',
   'learn.hub.explore': 'Explorar',
   'learn.hub.comingSoon': 'Em breve',
@@ -380,6 +382,18 @@ const ptBR: Messages = {
   'midiPicker.dropTitle': 'Solte um arquivo MIDI aqui',
   'midiPicker.dropSub': 'ou clique para escolher do seu computador',
   'midiPicker.samplesLabel': 'Ou explore um exemplo',
+  'midiLibrary.homeLabel': 'Sua biblioteca MIDI',
+  'midiLibrary.pickerLabel': 'Sua biblioteca MIDI',
+  'midiLibrary.play': 'Tocar',
+  'midiLibrary.practice': 'Praticar',
+  'midiLibrary.empty': 'Seus MIDI enviados aparecerão aqui.',
+  'midiLibrary.emptyHome':
+    'Envie um MIDI uma vez e volte aqui quando quiser para tocar ou praticar.',
+  'midiLibrary.emptyPicker':
+    'Envie um MIDI uma vez e ele ficará aqui para replay ou prática rápida.',
+  'midiLibrary.emptyLearn': 'Envie um MIDI para começar sua biblioteca de prática.',
+  'midiLibrary.metaTracks': '{count} faixas',
+  'midiLibrary.metaNotes': '{count} notas',
 
   // ── Instrument menu ─────────────────────────────────────────
   'instrument.title': 'Instrumento',

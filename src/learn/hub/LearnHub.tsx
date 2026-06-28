@@ -8,8 +8,6 @@ import { createMountHandle } from '../ui/mountComponent'
 import { StreakRowView } from '../ui/StreakRow'
 import { CATALOG } from './catalog'
 
-// Looked up by ExerciseDescriptor.category. Returns the localised label —
-// callers read it inline so locale flips swap labels without remount.
 export function categoryLabel(cat: ExerciseCategory): string {
   switch (cat) {
     case 'play-along':
@@ -29,23 +27,12 @@ export function categoryLabel(cat: ExerciseCategory): string {
 
 export interface LearnHubOptions {
   progress: LearnProgressStore
-  // Reads `loadedMidi` for the Play-Along hero state — Learn has its own
-  // MIDI store, independent of `AppStore`, so Play's currently-loaded piece
-  // never bleeds into the hub CTA.
   learnState: LearnState
-  // The hub delegates launching to the controller so it doesn't import the
-  // runner directly. Kept as a thin handoff.
   launchExercise: (descriptor: ExerciseDescriptor) => void
-  // Opens the unified MIDI picker (file + bundled samples). Sample selection
-  // routes through the picker → LearnController.loadSample, which auto-launches
-  // Play-Along, so the hub doesn't need a separate sample handler anymore.
   onOpenFilePicker: () => void
+  onOpenLocalMidi: (id: string) => void
 }
 
-// Catalog ordering. Play-along is the Hero up top so it's NOT repeated in
-// Explore. Ear-training (intervals) leads the rest — it's the only fully
-// implemented secondary exercise; sight-read/theory/etc. fall in below as
-// "coming soon" cards.
 const CATEGORY_ORDER: ExerciseCategory[] = [
   'ear-training',
   'sight-reading',
@@ -78,13 +65,11 @@ function Hero(props: LearnHubOptions) {
   const featured = CATALOG.find((d) => d.id === 'play-along')
   if (!featured) return null
   const loaded = () => props.learnState.state.loadedMidi
-  // Hide the category kicker when it would just repeat the title (e.g.
-  // "Play along" hero card whose category is also "Play along") — show the
-  // localised "Recommended" instead.
   const kicker = (): string => {
     const label = categoryLabel(featured.category)
     return label.toLowerCase() === featured.title.toLowerCase() ? t('learn.hub.recommended') : label
   }
+
   return (
     <div class="hero-card" data-category={featured.category}>
       <div class="hero-card__badge" innerHTML={CATEGORY_ICON[featured.category]} />
@@ -135,6 +120,7 @@ function Grid(props: { launchExercise: (d: ExerciseDescriptor) => void }) {
     }
     return map
   })
+
   return (
     <For each={CATEGORY_ORDER}>
       {(cat) => {

@@ -1,4 +1,4 @@
-import { createEffect, createMemo, onCleanup, onMount, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { t } from '../../../i18n'
 import { watch } from '../../../store/watch'
 import { FloatingHud } from '../../../ui/FloatingHud'
@@ -135,7 +135,13 @@ function PlayAlongHudView(props: PlayAlongHudOptions) {
   })
   onCleanup(tickUnsub)
 
-  const isWaitOn = () => engine.practice.isEnabled
+  const [practiceStatus, setPracticeStatus] = createSignal(engine.practice.status.value)
+  onMount(() => {
+    const off = engine.practice.status.subscribe((status) => setPracticeStatus(status))
+    onCleanup(off)
+  })
+
+  const isWaitOn = () => practiceStatus().enabled
   const isRampOn = () => engine.state.tempoRampEnabled
 
   const loopBandStyle = createMemo<Record<string, string>>(() => {

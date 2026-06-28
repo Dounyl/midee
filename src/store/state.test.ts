@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MidiFile } from '../core/midi/types'
 import { createEventSignal } from './eventSignal'
-import { createAppStore } from './state'
+import { createAppStore, resolveInitialAppMode, SKIP_HOME_INTRO_STORAGE_KEY } from './state'
 import { watch } from './watch'
 
 function fakeMidi(name = 'demo.mid', duration = 12.5): MidiFile {
@@ -59,6 +59,23 @@ describe('createAppStore', () => {
     expect(store.state.duration).toBe(0)
     expect(store.state.currentTime).toBe(0)
     expect(store.state.status).toBe('idle')
+  })
+
+  it('enterPlayLanding opens the play surface without requiring a MIDI', () => {
+    const store = createAppStore()
+    store.enterPlayLanding()
+    expect(store.state.mode).toBe('play')
+    expect(store.state.status).toBe('idle')
+    expect(store.state.loadedMidi).toBeNull()
+    expect(store.state.duration).toBe(0)
+    expect(store.state.currentTime).toBe(0)
+  })
+
+  it('can start directly on the play landing', () => {
+    const store = createAppStore({ initialMode: 'play' })
+    expect(store.state.mode).toBe('play')
+    expect(store.state.status).toBe('idle')
+    expect(store.state.loadedMidi).toBeNull()
   })
 
   it('completePlayLoad stores the MIDI and flips to play/ready', () => {
@@ -154,6 +171,18 @@ describe('createAppStore', () => {
     // watch() defers the initial read — only the post-batch snapshot fires.
     expect(snapshots.length).toBe(1)
     expect(snapshots[0]).toEqual({ mode: 'home', status: 'idle' })
+  })
+})
+
+describe('resolveInitialAppMode', () => {
+  it('starts on play when skip-home-intro is enabled', () => {
+    localStorage.setItem(SKIP_HOME_INTRO_STORAGE_KEY, 'true')
+    expect(resolveInitialAppMode()).toBe('play')
+  })
+
+  it('falls back to home when the preference is absent', () => {
+    localStorage.removeItem(SKIP_HOME_INTRO_STORAGE_KEY)
+    expect(resolveInitialAppMode()).toBe('home')
   })
 })
 

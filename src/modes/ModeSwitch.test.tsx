@@ -32,12 +32,11 @@ describe('ModeSwitch', () => {
     await vi.waitFor(() => expect(ctx.ensureLearnController).toHaveBeenCalledOnce())
   })
 
-  it('routes to the file picker when entering play with no MIDI loaded', () => {
+  it('renders the play landing without forcing the file picker when no MIDI is loaded', () => {
     const { ctx } = renderWithApp(() => <ModeSwitch />)
-    // PlayMode.onMount with status='ready' (default) + no loadedMidi opens the
-    // picker rather than rendering a stale surface.
     ctx.store.setState({ mode: 'play' })
-    expect(ctx.openFilePicker).toHaveBeenCalledOnce()
+    expect(ctx.openFilePicker).not.toHaveBeenCalled()
+    expect(ctx.services.renderer.clearMidi).toHaveBeenCalledTimes(2)
   })
 
   it('does not open the picker when play mode has a loaded MIDI', () => {

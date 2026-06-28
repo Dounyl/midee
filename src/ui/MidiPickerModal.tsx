@@ -12,7 +12,8 @@ import { SamplesGrid } from './SamplesGrid'
 
 interface OpenOpts {
   onFile: (file: File) => void
-  onSample: (sampleId: string) => void
+  onSamplePlay: (sampleId: string) => void
+  onSamplePractice: (sampleId: string) => void
   onCancel?: () => void
 }
 
@@ -20,7 +21,8 @@ interface ViewProps {
   container: HTMLElement
   isOpen: () => boolean
   onFile: (file: File) => void
-  onSample: (id: string) => void
+  onSamplePlay: (id: string) => void
+  onSamplePractice: (id: string) => void
   onClose: () => void
 }
 
@@ -40,7 +42,8 @@ function MidiPickerView(props: ViewProps) {
   let samples: SamplesGrid | null = null
   onMount(() => {
     samples = new SamplesGrid()
-    samples.onSelect = (id) => props.onSample(id)
+    samples.onSelect = (id) => props.onSamplePlay(id)
+    samples.onPractice = (id) => props.onSamplePractice(id)
     samplesHost.appendChild(samples.root)
   })
   onCleanup(() => {
@@ -169,7 +172,8 @@ export class MidiPickerModal {
           container={container}
           isOpen={isOpen}
           onFile={(f) => this.handleFile(f)}
-          onSample={(id) => this.handleSample(id)}
+          onSamplePlay={(id) => this.handleSamplePlay(id)}
+          onSamplePractice={(id) => this.handleSamplePractice(id)}
           onClose={() => this.cancel()}
         />
       ),
@@ -213,6 +217,17 @@ export class MidiPickerModal {
     const opts = this.currentOpts
     if (!opts) return
     this.close()
-    opts.onSample(id)
+    opts.onSamplePlay(id)
+  }
+
+  private handleSamplePlay(id: string): void {
+    this.handleSample(id)
+  }
+
+  private handleSamplePractice(id: string): void {
+    const opts = this.currentOpts
+    if (!opts) return
+    this.close()
+    opts.onSamplePractice(id)
   }
 }

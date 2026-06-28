@@ -30,6 +30,9 @@ interface DropZoneProps {
   onLiveMode?: (() => void) | undefined
   onLearnMode?: (() => void) | undefined
   onSample?: SampleHandler | undefined
+  onSamplePractice?: SampleHandler | undefined
+  skipIntro: () => boolean
+  onSkipIntroChange: (next: boolean) => void
   hidden: () => boolean
   midiStatus: () => { status: MidiDeviceStatus; deviceName: string }
   triggerFilePicker: (fn: () => void) => void
@@ -93,7 +96,12 @@ function DropZoneView(props: DropZoneProps) {
     // ports it to a Solid component.
     const samples = new SamplesGrid()
     samples.onSelect = (id) => props.onSample?.(id)
+    samples.onPractice = (id) => (props.onSamplePractice ?? props.onSample)?.(id)
     samplesHost.appendChild(samples.root)
+
+    onCleanup(() => {
+      samples.dispose()
+    })
 
     // Expose openFilePicker up to the imperative class shell.
     props.triggerFilePicker(() => inputEl.click())
@@ -179,6 +187,14 @@ function DropZoneView(props: DropZoneProps) {
           </div>
           <div class="home-drop-hint" innerHTML={t('home.dropHint.html')} />
         </div>
+        <label class="home-pref">
+          <input
+            type="checkbox"
+            checked={props.skipIntro()}
+            onChange={(event) => props.onSkipIntroChange(event.currentTarget.checked)}
+          />
+          <span>{t('home.skipIntro')}</span>
+        </label>
         <nav class="home-meta-links" aria-label={t('home.metaLinks.aria')}>
           <a
             href="/blog/"
@@ -235,13 +251,18 @@ export class DropZone {
     onDrop: DropHandler,
     onLiveMode?: () => void,
     onSample?: SampleHandler,
+    onSamplePractice?: SampleHandler,
     onLearnMode?: () => void,
+    skipIntro = false,
+    onSkipIntroChange: (next: boolean) => void = () => {},
+    initialHidden = false,
   ) {
-    const [hidden, setHidden] = createSignal(false)
+    const [hidden, setHidden] = createSignal(initialHidden)
     const [status, setStatus] = createSignal<{
       status: MidiDeviceStatus
       deviceName: string
     }>({ status: 'disconnected', deviceName: '' })
+    const [skipIntroSig, setSkipIntro] = createSignal(skipIntro)
     this.hiddenSetter = setHidden
     this.statusSetter = setStatus
 
@@ -255,6 +276,12 @@ export class DropZone {
           onLiveMode={onLiveMode}
           onLearnMode={onLearnMode}
           onSample={onSample}
+          onSamplePractice={onSamplePractice}
+          skipIntro={skipIntroSig}
+          onSkipIntroChange={(next) => {
+            setSkipIntro(next)
+            onSkipIntroChange(next)
+          }}
           hidden={hidden}
           midiStatus={status}
           triggerFilePicker={(fn) => {

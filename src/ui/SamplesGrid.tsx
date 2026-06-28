@@ -1,6 +1,8 @@
 import { createSignal, For, onMount } from 'solid-js'
 import { render } from 'solid-js/web'
 import { computeSparkline, fetchSampleMidi, SAMPLES, type Sample } from '../core/samples'
+import { t } from '../i18n'
+import { icons } from './icons'
 
 // Row of sample cards. Each card shows a pitch-density sparkline pulled from
 // the parsed MIDI — so the bars follow the actual shape of the piece rather
@@ -18,36 +20,55 @@ interface CardProps {
   sample: Sample
   state: () => SampleState
   onSelect: (id: string) => void
+  onPractice?: (id: string) => void
 }
 
 function SampleCardView(props: CardProps) {
   return (
-    <button
+    <article
       class="sample-card"
       data-sample-id={props.sample.id}
-      type="button"
       style={{ '--sample-accent': props.sample.accent }}
-      onClick={() => props.onSelect(props.sample.id)}
     >
-      <div class="sample-card-viz" aria-hidden="true">
-        <div class="sample-card-bars">
-          <For each={props.state().bars}>
-            {(h, i) => (
-              <span
-                style={{
-                  '--h': `${Math.max(14, Math.round(h * 100))}%`,
-                  '--d': `${i() * 18}ms`,
-                }}
-              />
-            )}
-          </For>
+      <button class="sample-card-main" type="button" onClick={() => props.onSelect(props.sample.id)}>
+        <div class="sample-card-viz" aria-hidden="true">
+          <div class="sample-card-bars">
+            <For each={props.state().bars}>
+              {(h, i) => (
+                <span
+                  style={{
+                    '--h': `${Math.max(14, Math.round(h * 100))}%`,
+                    '--d': `${i() * 18}ms`,
+                  }}
+                />
+              )}
+            </For>
+          </div>
         </div>
+        <div class="sample-card-meta">
+          <div class="sample-card-title">{props.sample.title}</div>
+          <div class="sample-card-sub">{props.state().sub}</div>
+        </div>
+      </button>
+      <div class="sample-card-actions">
+        <button
+          class="sample-card-action sample-card-action--play"
+          type="button"
+          onClick={() => props.onSelect(props.sample.id)}
+        >
+          <span innerHTML={icons.play(11)} />
+          <span>{t('midiLibrary.play')}</span>
+        </button>
+        <button
+          class="sample-card-action"
+          type="button"
+          onClick={() => (props.onPractice ?? props.onSelect)(props.sample.id)}
+        >
+          <span innerHTML={icons.practice(11)} />
+          <span>{t('midiLibrary.practice')}</span>
+        </button>
       </div>
-      <div class="sample-card-meta">
-        <div class="sample-card-title">{props.sample.title}</div>
-        <div class="sample-card-sub">{props.state().sub}</div>
-      </div>
-    </button>
+    </article>
   )
 }
 
@@ -57,6 +78,7 @@ function placeholderBars(): readonly number[] {
 
 interface GridProps {
   onSelect: (sampleId: string) => void
+  onPractice?: (sampleId: string) => void
 }
 
 function SamplesGridView(props: GridProps) {
@@ -77,9 +99,15 @@ function SamplesGridView(props: GridProps) {
   return (
     <div class="samples-grid">
       <For each={states}>
-        {(entry) => (
-          <SampleCardView sample={entry.sample} state={entry.state} onSelect={props.onSelect} />
-        )}
+        {(entry) => {
+          const cardProps: CardProps = {
+            sample: entry.sample,
+            state: entry.state,
+            onSelect: props.onSelect,
+            ...(props.onPractice ? { onPractice: props.onPractice } : {}),
+          }
+          return <SampleCardView {...cardProps} />
+        }}
       </For>
     </div>
   )
@@ -115,12 +143,18 @@ export class SamplesGrid {
   private el: HTMLElement
   private disposeRoot: (() => void) | null = null
   onSelect?: (sampleId: string) => void
+  onPractice?: (sampleId: string) => void
 
   constructor() {
     this.el = document.createElement('div')
     this.el.style.display = 'contents'
     this.disposeRoot = render(
-      () => <SamplesGridView onSelect={(id) => this.onSelect?.(id)} />,
+      () => (
+        <SamplesGridView
+          onSelect={(id) => this.onSelect?.(id)}
+          onPractice={(id) => this.onPractice?.(id)}
+        />
+      ),
       this.el,
     )
   }

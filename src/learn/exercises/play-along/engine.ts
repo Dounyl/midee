@@ -270,7 +270,13 @@ export class PlayAlongEngine {
   }
 
   setWaitEnabled(enabled: boolean): void {
+    const wasWaiting = this.practice.isWaiting
     this.practice.setEnabled(enabled)
+    if (!enabled && wasWaiting && this.state.userWantsToPlay) {
+      const { services, learnState } = this.opts
+      services.clock.play()
+      learnState.setState('status', 'playing')
+    }
   }
 
   setSpeedPreset(pct: number): void {

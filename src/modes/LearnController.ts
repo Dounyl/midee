@@ -1,3 +1,4 @@
+import { saveLocalMidi } from '../core/midiLibrary'
 import { parseMidiFile } from '../core/midi/parser'
 import type { MidiFile } from '../core/midi/types'
 import { fetchSampleMidi, getSample } from '../core/samples'
@@ -70,6 +71,7 @@ export class LearnController {
       learnState: this.learnState,
       launchExercise: (descriptor) => void this.launchExercise(descriptor),
       onOpenFilePicker: () => this.openLearnFilePicker(),
+      onOpenLocalMidi: (id) => this.ctx.openLocalMidi(id, 'learn'),
     }
   }
 
@@ -142,6 +144,11 @@ export class LearnController {
     this.pendingMidi = midi
   }
 
+  async loadPreparedMidi(midi: MidiFile): Promise<void> {
+    this.learnState.beginLoad()
+    await this.consumeMidi(midi)
+  }
+
   exit(): void {
     // Close any active exercise as abandoned — this is a mode-level swap,
     // not an explicit "I'm done" signal.
@@ -176,6 +183,9 @@ export class LearnController {
     this.learnState.beginLoad()
     try {
       const midi = await parseMidiFile(file)
+      await saveLocalMidi(file, midi).catch((err) => {
+        console.warn('[LearnController] saveLocalMidi failed', err)
+      })
       await this.consumeMidi(midi)
       trackMidiLoaded({
         source,
@@ -391,7 +401,7 @@ export class LearnController {
   // App opens the shared file picker, but the file's destination is
   // mode-aware: see the DropZone wiring in App.init.
   private openLearnFilePicker(): void {
-    this.ctx.openFilePicker()
+    this.ctx.openFilePicker('learn')
   }
 
   private showError(msg: string): void {

@@ -5,6 +5,8 @@ import type { MidiFile } from '../core/midi/types'
 export type AppMode = 'home' | 'play' | 'live' | 'learn'
 export type PlaybackStatus = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting'
 
+export const SKIP_HOME_INTRO_STORAGE_KEY = 'midee.skipHomeIntro'
+
 export interface AppStoreState {
   mode: AppMode
   status: PlaybackStatus
@@ -15,13 +17,26 @@ export interface AppStoreState {
   speed: number
 }
 
+interface CreateAppStoreOptions {
+  initialMode?: AppMode
+}
+
+export function resolveInitialAppMode(): AppMode {
+  try {
+    return localStorage.getItem(SKIP_HOME_INTRO_STORAGE_KEY) === 'true' ? 'play' : 'home'
+  } catch {
+    return 'home'
+  }
+}
+
 // The AppStore is the single source of truth for mode transitions, playback
 // status, and the loaded MIDI. Consumers read `store.state.foo` (reactive
 // inside a tracking scope, raw value outside) and write either through an
 // intent method (multi-field, batched) or directly via `store.setState`.
-export function createAppStore() {
+export function createAppStore(options: CreateAppStoreOptions = {}) {
+  const initialMode = options.initialMode ?? 'home'
   const [state, setState] = createStore<AppStoreState>({
-    mode: 'home',
+    mode: initialMode,
     status: 'idle',
     loadedMidi: null,
     currentTime: 0,
@@ -38,6 +53,17 @@ export function createAppStore() {
       batch(() => {
         setState({
           mode: 'home',
+          status: 'idle',
+          loadedMidi: null,
+          duration: 0,
+          currentTime: 0,
+        })
+      })
+    },
+    enterPlayLanding() {
+      batch(() => {
+        setState({
+          mode: 'play',
           status: 'idle',
           loadedMidi: null,
           duration: 0,

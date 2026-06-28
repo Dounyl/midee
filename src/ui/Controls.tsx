@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
 import { render } from 'solid-js/web'
+import { listLocalMidiEntries, MIDI_LIBRARY_CHANGED } from '../core/midiLibrary'
 import type { AppServices } from '../core/services'
 import { t } from '../i18n'
 import type { LiveLooperState } from '../midi/LiveLooper'
@@ -36,6 +37,10 @@ export { ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN } from './ControlsView'
 // depend on the changed field.
 interface UiStoreShape {
   context: { kicker: string; title: string }
+  midiLibrary: {
+    entries: Array<{ id: string; name: string; sub: string; active: boolean }>
+    open: boolean
+  }
   midi: { status: MidiDeviceStatus; deviceName: string }
   session: { recording: boolean; elapsed: number }
   loop: { state: LiveLooperState; layerCount: number; progressDeg: number }
@@ -50,8 +55,9 @@ export interface ControlsOptions {
   onThemeCycle?: () => void
   onMidiConnect?: () => void
   onOpenTracks?: () => void
-  onRecord?: () => void
-  onOpenFile?: () => void
+      onRecord?: () => void
+      onOpenFile?: () => void
+      onOpenLocalMidi?: (id: string, target: 'play' | 'learn') => void
   onLearnThis?: () => void
   onModeRequest?: (mode: Exclude<AppMode, 'home'>) => void
   onHome?: () => void
@@ -77,6 +83,7 @@ export class Controls {
   private tracksBtn!: HTMLButtonElement
 
   private disposeRoot: (() => void) | null = null
+  private midiListHideTimer: ReturnType<typeof setTimeout> | null = null
 
   // Content-driven label collapse (see evaluateCompact + the .ts-compact rules
   // in main.css). Observers re-run the measurement on strip resize and on
@@ -143,6 +150,7 @@ export class Controls {
         kicker: t('topStrip.context.ready.kicker'),
         title: t('topStrip.context.ready.title'),
       },
+      midiLibrary: { entries: [], open: false },
       midi: { status: 'disconnected', deviceName: '' },
       session: { recording: false, elapsed: 0 },
       loop: { state: 'idle', layerCount: 0, progressDeg: 0 },
@@ -520,6 +528,8 @@ export class Controls {
     this.compactMO = null
     if (this.compactRaf) cancelAnimationFrame(this.compactRaf)
     this.compactRaf = 0
+    if (this.midiListHideTimer) clearTimeout(this.midiListHideTimer)
+    this.midiListHideTimer = null
   }
 
   // ── Private helpers ─────────────────────────────────────────────────
@@ -679,6 +689,55 @@ export class Controls {
     const mode = store.state.mode
 
     this.renderContext(mode, store.state.loadedMidi?.name ?? null)
+  }
+
+  private async syncMidiLibraryEntries(): Promise<void> {
+    try {
+      const entries = await listLocalMidiEntries(6)
+      const activeName =
+        this.opts.services.store.state.mode === 'learn'
+          ? this.learnFileName
+          : this.opts.services.store.state.loadedMidi?.name ?? null
+      this.setUi('midiLibrary', 'entries', entries.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        sub: `${formatTime(entry.duration)} 路 ${t('midiLibrary.metaNotes', { count: entry.noteCount })}`,
+        active: activeName === entry.name,
+      })))
+      this.maybeFlashMidiList()
+    } catch (err) {
+      console.warn('[Controls] syncMidiLibraryEntries failed', err)
+      this.setUi('midiLibrary', 'entries', [])
+    }
+  }
+
+  private maybeFlashMidiList(): void {
+    const mode = this.opts.services.store.state.mode
+    if (mode !== 'play' && mode !== 'learn') {
+      this.setUi('midiLibrary', 'open', false)
+      return
+    }
+    if (this.uiStore.midiLibrary.entries.length === 0) return
+    this.setUi('midiLibrary', 'open', true)
+    this.armMidiListAutoHide()
+  }
+
+  private armMidiListAutoHide(): void {
+    if (this.midiListHideTimer) clearTimeout(this.midiListHideTimer)
+    this.midiListHideTimer = setTimeout(() => {
+      this.setUi('midiLibrary', 'open', false)
+      this.midiListHideTimer = null
+    }, 3000)
+  }
+
+  private openLocalMidiFromStrip(id: string): void {
+    const target = this.opts.services.store.state.mode === 'learn' ? 'learn' : 'play'
+    this.opts.onOpenLocalMidi?.(id, target)
+    this.setUi('midiLibrary', 'open', false)
+    if (this.midiListHideTimer) {
+      clearTimeout(this.midiListHideTimer)
+      this.midiListHideTimer = null
+    }
   }
 
   private renderContext(mode: AppMode, fileName: string | null): void {

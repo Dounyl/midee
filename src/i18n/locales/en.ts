@@ -35,6 +35,7 @@ export const en = {
   'home.midi.blocked': 'Enable MIDI from the top bar',
   'home.midi.unavailable': 'Web MIDI unavailable in this browser',
   'home.midi.disconnected': 'No MIDI device — keyboard & mouse work too',
+  'home.skipIntro': "Don't show this intro again; open Play by default.",
   'home.metaLink.blog': 'Read the blog',
   'home.metaLink.github': 'Source on GitHub',
   'home.metaLink.discord': 'Join the Discord community',
@@ -230,6 +231,7 @@ export const en = {
   // ── Learn hub ───────────────────────────────────────────────
   'learn.hub.recommended': 'Recommended',
   'learn.hub.uploadMidi': 'Upload a MIDI',
+  'learn.hub.library': 'Recent practice',
   'learn.hub.startWith': 'Start · {name}',
   'learn.hub.explore': 'Explore',
   'learn.hub.comingSoon': 'Coming soon',
@@ -413,6 +415,18 @@ export const en = {
   'midiPicker.dropTitle': 'Drop a MIDI file here',
   'midiPicker.dropSub': 'or click to choose from your computer',
   'midiPicker.samplesLabel': 'Or explore a sample',
+  'midiLibrary.homeLabel': 'Your MIDI library',
+  'midiLibrary.pickerLabel': 'Your MIDI library',
+  'midiLibrary.play': 'Play',
+  'midiLibrary.practice': 'Practice',
+  'midiLibrary.empty': 'Your uploaded MIDIs will show up here.',
+  'midiLibrary.emptyHome':
+    'Upload a MIDI once, then come back here to play or practice it anytime.',
+  'midiLibrary.emptyPicker':
+    'Upload a MIDI once and it will stay here for quick replay or practice.',
+  'midiLibrary.emptyLearn': 'Upload a MIDI to start building your practice library.',
+  'midiLibrary.metaTracks': '{count} tracks',
+  'midiLibrary.metaNotes': '{count} notes',
 
   // ── Instrument menu ─────────────────────────────────────────
   'instrument.title': 'Instrument',
