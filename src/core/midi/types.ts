@@ -23,7 +23,15 @@ export interface MidiFile {
   duration: number // seconds
   bpm: number
   timeSignature: [number, number]
+  keySignature?: MidiKeySignature | null
   tracks: MidiTrack[]
+}
+
+export interface MidiKeySignature {
+  tonic: string
+  mode: 'major' | 'minor'
+  source: 'midi' | 'inferred'
+  confidence: number
 }
 
 // Pitch constants

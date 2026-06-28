@@ -61,6 +61,14 @@ export function createAppStore() {
         })
       })
     },
+    replaceLoadedMidi(m: MidiFile) {
+      batch(() => {
+        setState({
+          loadedMidi: m,
+          duration: m.duration,
+        })
+      })
+    },
     // Re-entry into Play mode without reloading MIDI — e.g. switching back
     // from Live or recovering from a failed load. Returns false when no MIDI
     // is loaded so the caller can fall back to the file picker.
