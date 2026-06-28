@@ -1,5 +1,7 @@
-import { onCleanup, onMount } from 'solid-js'
+import { createSignal, onCleanup, onMount, Show } from 'solid-js'
+import { t } from '../i18n'
 import { useApp } from '../store/AppCtx'
+import { RecentMidiList } from '../ui/RecentMidiList'
 import type { LearnController } from './LearnController'
 
 // Learn mode shell. LearnController is dynamic-imported on first entry —
@@ -8,19 +10,35 @@ import type { LearnController } from './LearnController'
 // against a controller no one's watching, and onCleanup is a no-op since
 // `controller` is still null.
 export function LearnMode() {
-  const { ensureLearnController } = useApp()
-  let controller: LearnController | null = null
+  const { ensureLearnController, openLocalMidi, openSample } = useApp()
+  const [controller, setController] = createSignal<LearnController | null>(null)
   let cancelled = false
   onMount(() => {
     void ensureLearnController().then((c) => {
       if (cancelled) return
-      controller = c
-      controller.enter()
+      setController(c)
+      c.enter()
     })
   })
   onCleanup(() => {
     cancelled = true
-    controller?.exit()
+    controller()?.exit()
   })
-  return null
+  return (
+    <>
+      <Show when={controller()}>
+        {(c) => (
+          <RecentMidiList
+            class="recent-midi-card--learn-page"
+            title={t('learn.hub.library')}
+            target="learn"
+            currentName={c().learnState.state.loadedMidi?.name ?? null}
+            emptyLabel={t('midiLibrary.emptyLearn')}
+            onOpenMidi={(id, target) => openLocalMidi(id, target)}
+            onOpenSample={(id, target) => openSample(id, target)}
+          />
+        )}
+      </Show>
+    </>
+  )
 }

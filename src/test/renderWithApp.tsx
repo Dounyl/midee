@@ -80,6 +80,8 @@ function makeFakeCtx(): AppCtxValue {
     ) as unknown as AppCtxValue['ensureLearnController'],
     resetInteractionState: vi.fn(),
     openFilePicker: vi.fn(),
+    openLocalMidi: vi.fn(),
+    openSample: vi.fn(),
     primeInteractiveAudio: vi.fn(),
   }
 }

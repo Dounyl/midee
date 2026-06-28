@@ -26,7 +26,9 @@ export interface AppCtxValue {
   // calls.
   ensureLearnController: () => Promise<LearnController>
   resetInteractionState: () => void
-  openFilePicker: () => void
+  openFilePicker: (target?: 'play' | 'learn') => void
+  openLocalMidi: (id: string, target: 'play' | 'learn') => void
+  openSample: (id: string, target: 'play' | 'learn') => void
   primeInteractiveAudio: () => void
 }
 

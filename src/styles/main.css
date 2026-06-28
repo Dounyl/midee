@@ -259,6 +259,24 @@ body {
   margin-top: 6px;
 }
 
+.home-pref {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: -2px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.home-pref input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 /* Samples strip on the home card — sits between primary actions and the
    drop/MIDI footnote. Same cards used by the Open MIDI modal. */
 .home-samples {
@@ -309,6 +327,19 @@ body {
     border-color 0.18s,
     transform 0.16s var(--ease-spring),
     box-shadow 0.18s;
+}
+
+.sample-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
 }
 
 .sample-card::before {
@@ -453,6 +484,152 @@ body {
   font-size: 10.5px;
   color: var(--text-muted);
   letter-spacing: 0.01em;
+}
+
+.sample-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.sample-card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-muted);
+  font: 600 11px / 1 var(--font);
+  cursor: pointer;
+  transition:
+    color 0.16s,
+    background 0.16s,
+    border-color 0.16s,
+    transform 0.16s var(--ease-spring);
+}
+
+.sample-card-action:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.sample-card-action--play {
+  color: var(--sample-accent);
+  border-color: color-mix(in srgb, var(--sample-accent) 30%, transparent);
+  background: color-mix(in srgb, var(--sample-accent) 10%, transparent);
+}
+
+.local-midi-empty {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-dim);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+.local-midi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.local-midi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.local-midi-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.local-midi-card__title {
+  min-width: 0;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.local-midi-card__date,
+.local-midi-card__meta,
+.local-midi-card__file {
+  color: var(--text-dim);
+  font-size: 10.5px;
+}
+
+.local-midi-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.local-midi-card__file {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.local-midi-card__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.local-midi-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-muted);
+  font: 600 11.5px / 1 var(--font);
+  cursor: pointer;
+  transition:
+    color 0.16s,
+    background 0.16s,
+    border-color 0.16s,
+    transform 0.16s var(--ease-spring);
+}
+
+.local-midi-card__btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.local-midi-card__btn--play {
+  color: var(--accent);
+  border-color: var(--accent-glow);
+  background: var(--accent-soft);
 }
 
 .home-actions {
@@ -650,6 +827,10 @@ body {
     gap: 14px;
   }
 
+  .local-midi-grid {
+    grid-template-columns: 1fr;
+  }
+
   .ts-status-kicker {
     display: none;
   }
@@ -674,6 +855,10 @@ body {
    collided with the centered status. Drops the lowest-priority pill label
    first ("Open MIDI" — discoverable as an upload-icon button). */
 @media (max-width: 1023px) {
+  .samples-grid {
+    grid-template-columns: 1fr;
+  }
+
   #ts-open > span + span {
     display: none;
   }
@@ -1139,7 +1324,7 @@ body {
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   /* Push content below the floating #top-strip (14px offset + 54px height +
      12px breathing room = 80px, plus the iOS notch inset). Without this the
      streak row renders at ~18px from the top — directly behind the strip. */
@@ -1174,6 +1359,7 @@ body {
 .learn-hub__streak {
   display: flex;
   align-items: center;
+  margin-left: -18px;
 }
 .streak-row {
   display: inline-flex;
@@ -1298,6 +1484,316 @@ body {
   align-items: flex-end;
   gap: 8px;
 }
+
+.recent-midi-fab {
+  position: absolute;
+  top: calc(76px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
+  z-index: 18;
+  pointer-events: auto;
+}
+
+.recent-midi-fab--inline {
+  position: static;
+  inset: auto;
+  width: 100%;
+}
+
+.recent-midi-fab__toggle {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(10, 12, 22, 0.9);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition:
+    transform 0.16s var(--ease-spring),
+    background 0.16s,
+    border-color 0.16s;
+}
+
+.recent-midi-fab__toggle.launching {
+  animation: recent-midi-fab-pop 0.46s var(--ease-spring);
+}
+
+.recent-midi-fab__toggle:hover {
+  transform: translateY(-1px) scale(1.03);
+  background: rgba(14, 16, 28, 0.96);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.recent-midi-fab__emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.recent-midi-fab__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(320px, calc(100vw - 28px));
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s var(--ease-out);
+}
+
+.recent-midi-fab--inline .recent-midi-fab__panel {
+  position: static;
+  top: auto;
+  right: auto;
+  width: 100%;
+  opacity: 1;
+  transform: none;
+  transform-origin: center;
+  pointer-events: auto;
+}
+
+.recent-midi-fab__panel.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.recent-midi-fab__panel.launching.open {
+  animation: recent-midi-panel-drop 0.34s var(--ease-spring);
+}
+
+.recent-midi-fab__panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.recent-midi-fab__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recent-midi-fab__eyebrow {
+  font: 600 9.5px / 1 var(--font);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.recent-midi-fab__title {
+  font: 600 13px / 1.2 var(--font);
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.recent-midi-fab__chevron {
+  color: var(--text-dim);
+  transition: transform 0.18s var(--ease-spring);
+}
+
+.recent-midi-fab__chevron.open {
+  transform: rotate(180deg);
+}
+
+.recent-midi-fab__panel {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.recent-midi-fab__empty {
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.recent-midi-fab__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recent-midi-fab__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.16s,
+    border-color 0.16s,
+    transform 0.16s var(--ease-spring);
+}
+
+.recent-midi-fab__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.recent-midi-fab__item.is-active {
+  border-color: var(--accent-glow);
+  background: var(--accent-soft);
+}
+
+.recent-midi-fab__item-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.recent-midi-fab__item-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.recent-midi-fab__item-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-midi-fab__item-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.recent-midi-fab__item-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font: 600 10px / 1 var(--font);
+  cursor: pointer;
+  transition:
+    background 0.16s,
+    border-color 0.16s,
+    color 0.16s,
+    transform 0.16s var(--ease-spring);
+  flex-shrink: 0;
+}
+
+.recent-midi-fab__item:hover .recent-midi-fab__item-cta {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.recent-midi-fab__item-cta--play {
+  color: var(--accent);
+  border-color: var(--accent-glow);
+  background: var(--accent-soft);
+}
+
+.recent-midi-card--play {
+  top: calc(76px + env(safe-area-inset-top));
+}
+
+.play-empty-shell {
+  position: absolute;
+  top: calc(92px + env(safe-area-inset-top));
+  left: 50%;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(720px, calc(100vw - 28px));
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.play-empty-card {
+  grid-template-columns: 60px 1fr auto;
+}
+
+.play-empty-library .recent-midi-fab__title {
+  font-size: 15px;
+}
+
+.play-empty-library .recent-midi-fab__item-title {
+  font-size: 12.5px;
+}
+
+.recent-midi-card--learn-page {
+  top: calc(86px + env(safe-area-inset-top));
+  right: calc(18px + env(safe-area-inset-right));
+}
+
+@media (max-width: 720px) {
+  .play-empty-shell {
+    top: calc(82px + env(safe-area-inset-top));
+    width: calc(100vw - 20px);
+  }
+
+  .play-empty-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes recent-midi-fab-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes recent-midi-panel-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .hero-card__primary {
   display: inline-flex;
   align-items: center;
@@ -2542,6 +3038,7 @@ body {
   line-height: 1.1;
   min-width: 0;
 }
+
 
 .ts-status-kicker {
   font-size: 9.5px;

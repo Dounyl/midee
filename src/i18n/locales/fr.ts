@@ -21,6 +21,7 @@ const fr: Messages = {
   'home.midi.blocked': 'Activez MIDI depuis la barre du haut',
   'home.midi.unavailable': 'Web MIDI indisponible dans ce navigateur',
   'home.midi.disconnected': 'Aucun périphérique MIDI — clavier et souris fonctionnent aussi',
+  'home.skipIntro': "Ne plus afficher cet accueil ; ouvrir Lecture par défaut.",
   'home.metaLink.blog': 'Lire le blog',
   'home.metaLink.github': 'Code source sur GitHub',
   'home.metaLink.discord': 'Rejoindre la communauté Discord',
@@ -217,6 +218,7 @@ const fr: Messages = {
   // ── Learn hub ───────────────────────────────────────────────
   'learn.hub.recommended': 'Recommandé',
   'learn.hub.uploadMidi': 'Importer un MIDI',
+  'learn.hub.library': 'Pratique récente',
   'learn.hub.startWith': 'Démarrer · {name}',
   'learn.hub.explore': 'Explorer',
   'learn.hub.comingSoon': 'Bientôt',
@@ -392,6 +394,18 @@ const fr: Messages = {
   'midiPicker.dropTitle': 'Déposez un fichier MIDI ici',
   'midiPicker.dropSub': 'ou cliquez pour choisir depuis votre ordinateur',
   'midiPicker.samplesLabel': 'Ou explorez un exemple',
+  'midiLibrary.homeLabel': 'Votre bibliothèque MIDI',
+  'midiLibrary.pickerLabel': 'Votre bibliothèque MIDI',
+  'midiLibrary.play': 'Lire',
+  'midiLibrary.practice': 'Pratiquer',
+  'midiLibrary.empty': 'Vos MIDI importés apparaîtront ici.',
+  'midiLibrary.emptyHome':
+    'Importez un MIDI une fois, puis revenez ici pour le lire ou le pratiquer à tout moment.',
+  'midiLibrary.emptyPicker':
+    'Importez un MIDI une fois et il restera ici pour une lecture ou une pratique rapide.',
+  'midiLibrary.emptyLearn': 'Importez un MIDI pour commencer votre bibliothèque de pratique.',
+  'midiLibrary.metaTracks': '{count} pistes',
+  'midiLibrary.metaNotes': '{count} notes',
 
   // ── Instrument menu ─────────────────────────────────────────
   'instrument.title': 'Instrument',

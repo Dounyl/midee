@@ -1,6 +1,6 @@
 import { App } from './app'
 import { AppCtx as _AppCtx, type AppCtxValue } from './store/AppCtx'
-import { createAppStore } from './store/state'
+import { createAppStore, resolveInitialAppMode } from './store/state'
 
 // Boots the app. Constructs the single `AppStore`, hands it to the `App`
 // orchestrator (which owns the long-lived subsystems — renderer, synth, MIDI,
@@ -18,7 +18,7 @@ import { createAppStore } from './store/state'
 // the cheapest container. The module-scope `appState` singleton that motivated
 // T2b has been removed; the store is now constructed here and threaded in.
 export async function createApp(): Promise<{ ctx: AppCtxValue; app: App }> {
-  const store = createAppStore()
+  const store = createAppStore({ initialMode: resolveInitialAppMode() })
   const app = new App(store)
   await app.init()
   return {
@@ -31,7 +31,9 @@ export async function createApp(): Promise<{ ctx: AppCtxValue; app: App }> {
       midiInput: app.midiInput,
       ensureLearnController: () => app.ensureLearnController(),
       resetInteractionState: () => app.resetInteractionState(),
-      openFilePicker: () => app.openFilePicker(),
+      openFilePicker: (target) => app.openFilePicker(target),
+      openLocalMidi: (id, target) => void app.openLocalMidi(id, target),
+      openSample: (id, target) => void app.openSample(id, target),
       primeInteractiveAudio: () => app.primeInteractiveAudio(),
     },
     app,
