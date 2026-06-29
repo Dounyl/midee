@@ -33,9 +33,9 @@ function walkMd(dir, acc = []) {
 // (content pages typically have no `date` and that's fine).
 function readMeta(mdFile) {
   const raw = readFileSync(mdFile, 'utf8')
-  const fm = raw.match(/^---\n([\s\S]+?)\n---/)?.[1] ?? ''
+  const fm = raw.match(/^---\r?\n([\s\S]+?)\r?\n---/)?.[1] ?? ''
   const field = (name) => {
-    const line = fm.split('\n').find(l => new RegExp(`^${name}:`).test(l))
+    const line = fm.split(/\r?\n/).find(l => new RegExp(`^${name}:`).test(l))
     return line ? line.replace(new RegExp(`^${name}:\\s*`), '').replace(/^["']|["']$/g, '').trim() : null
   }
   return {

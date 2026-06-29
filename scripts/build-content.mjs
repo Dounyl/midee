@@ -26,10 +26,10 @@ const SITE = 'https://midee.app'
 marked.setOptions({ gfm: true, breaks: false })
 
 function parseFrontmatter(raw) {
-  const match = raw.match(/^---\n([\s\S]+?)\n---\n([\s\S]*)$/)
+  const match = raw.match(/^---\r?\n([\s\S]+?)\r?\n---\r?\n([\s\S]*)$/)
   if (!match) return { data: {}, content: raw }
   const data = {}
-  for (const line of match[1].split('\n')) {
+  for (const line of match[1].split(/\r?\n/)) {
     const m = line.match(/^([\w-]+):\s*(.*)$/)
     if (!m) continue
     let value = m[2].trim()
