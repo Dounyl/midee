@@ -1,4 +1,4 @@
-import './styles/main.css'
+import './styles/index.css'
 // Self-hosted fonts via @fontsource. Each CSS import emits a `@font-face`
 // rule into the main stylesheet bundle and ships its woff2 file to
 // `dist/assets/` as a long-cacheable hashed asset. Compared to

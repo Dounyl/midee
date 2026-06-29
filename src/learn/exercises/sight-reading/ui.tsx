@@ -12,6 +12,7 @@ import type { SightReadingEngine } from './engine'
 import { gradeFromAccuracy, KNOCKOUT_THRESHOLD } from './engine'
 import { noteNameInKey } from './music'
 import type { ClefMode, TierConfig } from './types'
+import './ui.css'
 
 export interface SightReadHudOptions {
   engine: SightReadingEngine

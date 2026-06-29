@@ -1,0 +1,11 @@
+@layer tokens {
+  :root {
+    /* Pre-JS defaults for runtime-updated UI vars. App/applyTheme() and the
+       renderer overwrite these on boot and during interaction. */
+    --accent: #f97316;
+    --accent-soft: rgba(249, 115, 22, 0.16);
+    --accent-glow: rgba(249, 115, 22, 0.3);
+    --keyboard-h: 120px;
+    --hud-gap: 28px;
+  }
+}

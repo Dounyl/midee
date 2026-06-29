@@ -4,6 +4,7 @@ import { useApp } from '../store/AppCtx'
 import { track, trackEvent } from '../telemetry'
 import { icons } from '../ui/icons'
 import { RecentMidiList } from '../ui/RecentMidiList'
+import './PlayMode.css'
 
 // Playback surface for a loaded MIDI file. Mount happens when the store's
 // mode transitions to 'play', which only occurs in `completePlayLoad`, so

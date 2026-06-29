@@ -3,6 +3,8 @@ import { Portal, render } from 'solid-js/web'
 import type { ExportStage } from '../export/VideoExporter'
 import { t } from '../i18n'
 import { icons } from './icons'
+import './ModalShared.css'
+import './ExportModal.css'
 
 // Supported export resolution presets. `match` keeps the current canvas size
 // (whatever the user's window is) — useful for already-well-sized displays or

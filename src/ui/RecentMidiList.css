@@ -1,0 +1,67 @@
+@layer components {
+
+.recent-midi-fab {
+  position: absolute;
+  top: calc(76px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
+  z-index: 18;
+  pointer-events: auto;
+}
+
+.recent-midi-fab--inline {
+  position: static;
+  inset: auto;
+  width: 100%;
+}
+
+.recent-midi-fab--inline .recent-midi-fab__panel {
+  position: static;
+  top: auto;
+  right: auto;
+  width: 100%;
+  opacity: 1;
+  transform: none;
+  transform-origin: center;
+  pointer-events: auto;
+}
+
+.recent-midi-card--play {
+  top: calc(76px + env(safe-area-inset-top));
+}
+
+.play-empty-library .recent-midi-fab__title {
+  font-size: 15px;
+}
+
+.play-empty-library .recent-midi-fab__item-title {
+  font-size: 12.5px;
+}
+
+.recent-midi-card--learn-page {
+  top: calc(86px + env(safe-area-inset-top));
+  right: calc(18px + env(safe-area-inset-right));
+}
+
+@keyframes recent-midi-fab-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes recent-midi-panel-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+}

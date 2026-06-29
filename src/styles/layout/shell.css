@@ -1,0 +1,21 @@
+@layer layout {
+  #app {
+    position: relative;
+    width: 100vw;
+    height: 100svh;
+    min-height: 100vh;
+  }
+
+  #pianoroll {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  #ui-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+}

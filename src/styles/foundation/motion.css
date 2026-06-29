@@ -1,0 +1,42 @@
+@layer base {
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #dropzone,
+    #top-strip,
+    #hud,
+    #track-panel,
+    .panel-backdrop,
+    #export-modal,
+    #post-session-modal,
+    .export-card,
+    .post-session-card,
+    .export-progress-bar,
+    .scrubber,
+    .mini-slider,
+    .toggle-track,
+    .toggle-track::after,
+    .theme-dot,
+    .ts-record-btn,
+    .ts-context,
+    .ts-menu,
+    .ts-menu-item,
+    .modal-btn,
+    .fps-btn {
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

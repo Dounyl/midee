@@ -1,0 +1,26 @@
+@layer components {
+.float-hud.pa-hud {
+  width: min(720px, calc(100vw - 24px));
+  height: auto;
+  padding: 10px 14px 12px 0;
+  align-items: flex-start;
+}
+.float-hud.pa-hud > .float-hud__sep {
+  display: none;
+}
+@keyframes pa-hud-loop-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, #f3c36c 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, #f3c36c 18%, transparent);
+  }
+}
+@media (max-width: 720px) {
+  .float-hud.pa-hud {
+    width: min(calc(100vw - 16px), 720px);
+    padding: 8px 12px 10px 0;
+  }
+}
+}

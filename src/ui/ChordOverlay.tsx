@@ -2,6 +2,7 @@ import { createSignal, Show } from 'solid-js'
 import { render } from 'solid-js/web'
 import type { ChordReading } from '../core/music/ChordDetector'
 import { t } from '../i18n'
+import './ChordOverlay.css'
 
 // Inline chord readout — lives in the top strip rather than as a floating
 // card, so it sits as a quiet supplementary cue beside the now-playing

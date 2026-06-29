@@ -1,0 +1,326 @@
+@layer components {
+
+@media (max-width: 899px) {
+  #top-strip {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 0 6px 0 10px;
+  }
+}
+
+@media (max-width: 679px) {
+  #top-strip {
+    padding: 0 6px 0 8px;
+  }
+}
+@media (max-width: 519px) {
+  #top-strip {
+    gap: 4px;
+    padding: 0 4px 0 6px;
+  }
+}
+
+@media (max-width: 640px) {
+
+  #hud {
+    width: min(100vw - 20px, 760px);
+  }
+}
+
+#top-strip {
+  position: absolute;
+  /* Push the strip below the iOS notch / Dynamic Island and clear any
+     landscape-notch cutouts on the sides. */
+  top: calc(14px + env(safe-area-inset-top));
+  left: calc(14px + env(safe-area-inset-left));
+  right: calc(14px + env(safe-area-inset-right));
+  height: 54px;
+  display: grid;
+  /* minmax(0, 1fr) — not plain 1fr — on the status track. A 1fr track's
+     implicit min is min-content, and the nowrap filename's min-content is the
+     whole string, so the track refused to shrink and the centered status
+     spilled over both neighbours. minmax(0, …) lets it shrink so the title's
+     text-overflow: ellipsis engages instead of overlapping. */
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  /* Continuous gap — avoids stepped jumps at the responsive tier
+     breakpoints. Floor of 6px keeps things from cramping on phones. */
+  gap: clamp(6px, 1vw, 12px);
+  padding: 0 8px 0 14px;
+  background: rgba(7, 9, 18, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  backdrop-filter: blur(30px) saturate(145%);
+  -webkit-backdrop-filter: blur(30px) saturate(145%);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.4s var(--ease-out),
+    transform 0.4s var(--ease-out);
+}
+
+#top-strip.strip--active {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+#top-strip.strip--dim {
+  opacity: 0.16;
+  pointer-events: none;
+}
+#top-strip.ts-compact #ts-open > span + span,
+#top-strip.ts-compact #ts-tracks > span + span,
+#top-strip.ts-compact #ts-learn-this > span + span,
+#top-strip.ts-compact .ts-customize-label {
+  display: none;
+}
+#top-strip.ts-compact #ts-open,
+#top-strip.ts-compact #ts-tracks,
+#top-strip.ts-compact #ts-learn-this {
+  padding: 0 10px;
+  gap: 0;
+}
+
+#top-strip[data-mode="live"] .ts-status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+#top-strip[data-mode="play"] .ts-status-dot {
+  background: var(--accent);
+}
+#top-strip.strip--playing .ts-status-dot {
+  animation: dot-pulse 1.8s ease-in-out infinite;
+}
+
+#top-strip.strip--playing:not(.strip--dim) .ts-bars {
+  opacity: 0.75;
+}
+#top-strip[data-has-file="false"] .ts-pill--file {
+  display: none;
+}
+#top-strip[data-midi-status="connected"] .ts-pill--midi {
+  display: none;
+}
+#top-strip[data-midi-status="connected"] .ts-sep {
+  display: none;
+}
+#top-strip[data-midi-status="unavailable"] .ts-pill--midi {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+#top-strip[data-midi-status="blocked"] .ts-pill--midi {
+  color: #ffc67a;
+  border-color: rgba(255, 198, 122, 0.25);
+  background: rgba(255, 198, 122, 0.07);
+}
+#top-strip.strip--exporting .ts-record-btn {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+  pointer-events: none;
+}
+
+#top-strip.strip--exporting .ts-record-btn svg {
+  animation: record-blink 1.4s ease-in-out infinite;
+}
+#hud {
+  opacity: 0;
+  pointer-events: none;
+  max-width: min(760px, calc(100vw - 32px));
+  height: 56px; /* fixed so bar doesn't resize between play↔live mode */
+  padding-right: 14px;
+  transition: opacity 0.4s var(--ease-out);
+}
+
+#hud.hud--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+#hud.hud--active.float-hud--idle:not(.float-hud--pinned):not(.float-hud--dragging):not(:hover) {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(calc(-50% + var(--hud-dx, 0px))) translateY(calc(var(--hud-dy, 0px) + 14px));
+  transition:
+    opacity 0.4s var(--ease-out),
+    transform 0.4s var(--ease-out);
+}
+#hud.hud--live .hud-group--transport {
+  display: none;
+}
+#hud:not(.hud--live) .hud-group--instrument {
+  display: none;
+}
+
+#hud.hud--playing .btn-play {
+  animation: playing-pulse 2.8s ease-in-out infinite;
+}
+#hud:not(.hud--live) .hud-group--live {
+  display: none;
+}
+#hud.hud--exporting .btn-play,
+#hud.hud--exporting .btn-skip,
+#hud.hud--exporting .scrubber,
+#hud.hud--exporting .mini-slider {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+#key-hint {
+  position: absolute;
+  bottom: calc(var(--keyboard-h) + var(--hud-gap) + env(safe-area-inset-bottom));
+  left: calc(20px + env(safe-area-inset-left));
+  z-index: 14;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.35s var(--ease-out),
+    transform 0.35s var(--ease-out);
+}
+
+#key-hint.kh--visible {
+  opacity: 1;
+  transform: none;
+}
+
+#key-hint.kh--visible.kh--idle {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+#key-hint:hover .kh-keys kbd,
+#key-hint:hover .kh-combo kbd {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+#key-hint:hover .kh-close {
+  opacity: 1;
+}
+
+#key-hint.kh--collapsed .kh-body {
+  display: none;
+}
+#key-hint.kh--collapsed .kh-reopen {
+  display: inline-flex;
+}
+#key-hint.kh--collapsed {
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  #key-hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dropzone::before,
+  .home-card,
+  .ts-bars span,
+  #top-strip.strip--exporting .ts-record-btn svg,
+  #hud.hud--playing .btn-play {
+    animation: none !important;
+  }
+  #dropzone,
+  #top-strip,
+  #hud,
+  #track-panel,
+  .panel-backdrop,
+  #export-modal,
+  #post-session-modal,
+  .export-card,
+  .post-session-card,
+  .export-progress-bar,
+  .scrubber,
+  .mini-slider,
+  .toggle-track,
+  .toggle-track::after,
+  .theme-dot,
+  .ts-record-btn,
+  .ts-context,
+  .ts-menu,
+  .ts-menu-item,
+  .modal-btn,
+  .fps-btn {
+    transition-duration: 0.01ms !important;
+  }
+}
+@media (max-width: 640px) {
+  #top-strip {
+    top: calc(8px + env(safe-area-inset-top));
+    left: calc(8px + env(safe-area-inset-left));
+    right: calc(8px + env(safe-area-inset-right));
+    height: 48px;
+    gap: 6px;
+    padding: 0 4px 0 6px;
+  }
+  #top-strip .ts-pill--midi,
+  #top-strip .ts-theme-btn,
+  #top-strip .ts-particle-btn,
+  #top-strip .ts-sep {
+    display: none;
+  }
+  #hud {
+    max-width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  }
+}
+@media (max-width: 640px) and (orientation: portrait) {
+  #hud {
+    top: calc(48px + 8px + env(safe-area-inset-top));
+    bottom: auto;
+    left: calc(8px + env(safe-area-inset-left));
+    right: calc(8px + env(safe-area-inset-right));
+    transform: none;
+    max-width: none;
+    width: auto;
+  }
+  #hud .float-hud__handle {
+    display: none;
+  }
+  #hud.hud--active.float-hud--idle {
+    transform: none;
+  }
+  #hud {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  }
+  #top-strip .ts-record-btn {
+    padding: 0;
+    justify-content: center;
+  }
+}
+#key-hint [data-tip]::after {
+  top: auto;
+  bottom: calc(100% + 8px);
+  left: 0;
+  transform: translateX(0) translateY(4px);
+}
+#key-hint [data-tip]:hover::after,
+#key-hint [data-tip]:focus-visible::after,
+#key-hint [data-tip]:active::after {
+  transform: translateX(0) translateY(0);
+}
+@media (max-width: 380px) {
+  #top-strip .ts-pill--file {
+    display: none;
+  }
+  #top-strip {
+    gap: 4px;
+  }
+}
+#top-strip[data-mode="play"] .ts-chord-btn,
+#top-strip[data-mode="play"] .ts-chord-slot {
+  display: none;
+}
+}

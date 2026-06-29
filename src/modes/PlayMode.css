@@ -1,0 +1,30 @@
+@layer components {
+
+.play-empty-shell {
+  position: absolute;
+  top: calc(92px + env(safe-area-inset-top));
+  left: 50%;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(720px, calc(100vw - 28px));
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.play-empty-card {
+  grid-template-columns: 60px 1fr auto;
+}
+
+@media (max-width: 720px) {
+  .play-empty-shell {
+    top: calc(82px + env(safe-area-inset-top));
+    width: calc(100vw - 20px);
+  }
+
+  .play-empty-card {
+    grid-template-columns: 1fr;
+  }
+}
+}

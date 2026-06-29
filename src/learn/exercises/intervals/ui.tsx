@@ -4,6 +4,7 @@ import { icons } from '../../../ui/icons'
 import { createMountHandle } from '../../ui/mountComponent'
 import type { IntervalsEngine } from './engine'
 import { getInterval, getIntervalsByIds } from './theory'
+import './ui.css'
 
 const PLAY_GLYPH = icons.play(20)
 const REPLAY_GLYPH = icons.replay(12)

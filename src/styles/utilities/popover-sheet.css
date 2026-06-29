@@ -1,0 +1,111 @@
+@layer utilities {
+
+:root {
+  --bg: #06060e;
+  --surface: rgba(11, 13, 24, 0.84);
+  --surface-hi: rgba(10, 12, 22, 0.96);
+
+  --border: rgba(255, 255, 255, 0.07);
+  --border-hi: rgba(255, 255, 255, 0.12);
+
+  --text: #f4f4fb;
+  --text-muted: #b0b4d4;
+  --text-dim: #6c7298;
+
+  /* Pre-JS defaults for the accent triplet — match the Sunset theme, which
+     is the current app default. Overwritten by applyTheme() on load; these
+     values only matter for the first paint frame and the favicon. */
+  --accent: #f97316;
+  --accent-soft: rgba(249, 115, 22, 0.16);
+  --accent-glow: rgba(249, 115, 22, 0.3);
+
+  --red: rgba(239, 68, 68, 0.1);
+  --red-border: rgba(239, 68, 68, 0.22);
+  --red-text: #fca5a5;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  --keyboard-h: 120px;
+  --hud-gap: 28px; /* gap between keyboard top and hud bottom */
+
+  --font: "Inter", system-ui, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.console-panel.popover--sheet {
+  bottom: 0 !important;
+  right: 0 !important;
+}
+@media (max-width: 900px) and (orientation: landscape), (max-height: 500px) {
+  :root {
+    /* Generous gap so the HUD has real daylight above the keys — the
+       short landscape viewport makes even a small overlap read as
+       the-HUD-is-on-the-piano. */
+    --hud-gap: 20px;
+  }
+}
+.popover--sheet {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  /* Small-viewport height: respects iOS URL bar so the sheet doesn't
+     get clipped at rest. */
+  max-height: 75svh !important;
+  /* Rounded top corners only — the bottom hugs the device edge. */
+  border-radius: 16px 16px 0 0 !important;
+  /* Respect the home-indicator. */
+  padding-bottom: calc(env(safe-area-inset-bottom) + 8px) !important;
+  /* Backdrop dimmer without needing an extra element. */
+  box-shadow:
+    0 -18px 40px rgba(0, 0, 0, 0.55),
+    0 0 0 100vmax rgba(0, 0, 0, 0.5);
+  /* Slide-in animation: starts off-screen, settles at translateY(0). */
+  transform: translateY(100%) !important;
+  transition:
+    transform 0.28s var(--ease-out),
+    opacity 0.2s var(--ease-out) !important;
+  opacity: 1 !important;
+}
+.popover--sheet.ts-popover--open,
+.popover--sheet.is-open {
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+}
+.popover--sheet::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+  z-index: 1;
+}
+.popover--sheet > :first-child {
+  margin-top: 8px;
+}
+@media (max-height: 640px) {
+  :root {
+    /* When vertical space is tight (landscape phones, short laptops),
+       give the HUD less vertical gap from the keyboard so it stays on
+       screen. */
+    --hud-gap: 14px;
+  }
+}
+}

@@ -7,6 +7,7 @@ import {
 import { SAMPLES } from '../core/samples'
 import { t } from '../i18n'
 import { icons } from './icons'
+import './RecentMidiList.css'
 
 interface RecentMidiEntry {
   kind: 'local' | 'sample'

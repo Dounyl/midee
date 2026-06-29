@@ -5,6 +5,7 @@ import { FloatingHud } from '../../../ui/FloatingHud'
 import { icons } from '../../../ui/icons'
 import { createMountHandle } from '../../ui/mountComponent'
 import { DEFAULT_SPEED_PRESETS, type PlayAlongEngine } from './engine'
+import './hud.css'
 
 // Streak ≥ this is "hot" — saturated chip background. Below is "warm"
 // (visible but quieter). Below 1 the chip is hidden entirely.

@@ -3,6 +3,7 @@ import { t } from '../../i18n'
 import { trackEvent } from '../../telemetry'
 import type { ExerciseResult } from '../core/Result'
 import { createMountHandle } from './mountComponent'
+import './SessionSummary.css'
 
 export interface SessionSummaryOptions {
   onAgain: () => void

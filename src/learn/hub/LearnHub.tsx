@@ -7,6 +7,7 @@ import { ComingSoonCardView, ExerciseCardView } from '../ui/ExerciseCard'
 import { createMountHandle } from '../ui/mountComponent'
 import { StreakRowView } from '../ui/StreakRow'
 import { CATALOG } from './catalog'
+import './LearnHub.css'
 
 export function categoryLabel(cat: ExerciseCategory): string {
   switch (cat) {

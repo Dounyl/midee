@@ -1,0 +1,19 @@
+@layer components {
+
+.session-summary {
+  pointer-events: auto;
+  position: fixed;
+  bottom: calc(var(--keyboard-h, 120px) + 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 380px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  background: rgba(10, 10, 15, 0.7);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  animation: summary-in 0.26s var(--ease-out) both;
+}
+}

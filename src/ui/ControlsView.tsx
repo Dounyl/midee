@@ -5,6 +5,7 @@ import type { MidiDeviceStatus } from '../midi/MidiInputManager'
 import type { AppMode } from '../store/state'
 import { FloatingHud } from './FloatingHud'
 import { icons } from './icons'
+import './ControlsView.css'
 
 export const ZOOM_MIN = 80
 export const ZOOM_MAX = 600

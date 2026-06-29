@@ -1,0 +1,69 @@
+@layer utilities {
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  padding: 5px 9px;
+  background: rgba(12, 12, 20, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  max-width: 80vw;
+  border-radius: 6px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+  z-index: 60;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after,
+[data-tip]:active::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.float-hud [data-tip]::after {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+}
+.float-hud [data-tip]:hover::after,
+.float-hud [data-tip]:focus-visible::after,
+.float-hud [data-tip]:active::after {
+  transform: translateX(-50%) translateY(0);
+}
+@media (max-width: 640px) and (orientation: portrait) {
+  .float-hud [data-tip]::after {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  .float-hud [data-tip]:hover::after,
+  .float-hud [data-tip]:focus-visible::after,
+  .float-hud [data-tip]:active::after {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+#key-hint [data-tip]::after {
+  top: auto;
+  bottom: calc(100% + 8px);
+  left: 0;
+  transform: translateX(0) translateY(4px);
+}
+#key-hint [data-tip]:hover::after,
+#key-hint [data-tip]:focus-visible::after,
+#key-hint [data-tip]:active::after {
+  transform: translateX(0) translateY(0);
+}
+}

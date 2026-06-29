@@ -1,0 +1,82 @@
+@layer components {
+.learn-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.learn-host--hub {
+  pointer-events: auto;
+  /* Contain scroll — the page itself must not scroll. The hub owns its own
+     internal scroll region below the sticky topbar. */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.learn-host--exercise {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.learn-host--hidden {
+  display: none;
+}
+.learn-hub {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+  overflow: hidden;
+}
+.streak-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: default;
+}
+.streak-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+.streak-dot--filled {
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.streak-dot--today {
+  outline: 1px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 1px;
+}
+
+.hero-card {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 55%),
+    rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 10px 30px rgba(0, 0, 0, 0.2);
+}
+@media (max-width: 720px) {
+  .hero-card {
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto auto;
+  }
+}
+}

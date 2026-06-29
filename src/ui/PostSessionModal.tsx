@@ -8,6 +8,8 @@ import { t, tn } from '../i18n'
 import { trackEvent } from '../telemetry'
 import { icons } from './icons'
 import { FEEDBACK_URL } from './utils'
+import './ModalShared.css'
+import './PostSessionModal.css'
 
 export type SessionAction = 'open-in-file' | 'download' | 'discard'
 

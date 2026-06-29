@@ -1,6 +1,7 @@
 import { Show } from 'solid-js'
 import { t } from '../../i18n'
 import type { ExerciseDescriptor } from '../core/Exercise'
+import './ExerciseCard.css'
 
 export interface CardOptions {
   descriptor: ExerciseDescriptor

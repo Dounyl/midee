@@ -1,0 +1,40 @@
+@layer components {
+
+.ex-card {
+  text-align: left;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease-spring),
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 128px;
+  position: relative;
+}
+.ex-card:hover:not(.ex-card--coming) {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.35);
+}
+.ex-card:active:not(.ex-card--coming) {
+  transform: translateY(0);
+}
+.ex-card:hover:not(.ex-card--coming) .ex-card__icon {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.ex-card--coming {
+  opacity: 0.55;
+  cursor: default;
+}
+}

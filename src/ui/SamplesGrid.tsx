@@ -3,6 +3,7 @@ import { render } from 'solid-js/web'
 import { computeSparkline, fetchSampleMidi, SAMPLES, type Sample } from '../core/samples'
 import { t } from '../i18n'
 import { icons } from './icons'
+import './SamplesGrid.css'
 
 // Row of sample cards. Each card shows a pitch-density sparkline pulled from
 // the parsed MIDI — so the bars follow the actual shape of the piece rather

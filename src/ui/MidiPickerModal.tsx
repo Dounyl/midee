@@ -9,6 +9,7 @@ import { Portal, render } from 'solid-js/web'
 import { t } from '../i18n'
 import { icons } from './icons'
 import { SamplesGrid } from './SamplesGrid'
+import './MidiPickerModal.css'
 
 interface OpenOpts {
   onFile: (file: File) => void

@@ -17,6 +17,7 @@
 import { createEffect, createSignal, type JSX, onCleanup, onMount } from 'solid-js'
 import { t } from '../i18n'
 import { icons } from './icons'
+import './FloatingHud.css'
 
 export interface FloatingHudProps {
   storageKey: string
