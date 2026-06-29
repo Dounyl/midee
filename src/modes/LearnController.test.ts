@@ -131,8 +131,10 @@ function makeFakeCtx() {
     midiInput: null as never,
     resetInteractionState: vi.fn(),
     openFilePicker: vi.fn(),
+    openLocalMidi: vi.fn(),
     primeInteractiveAudio: vi.fn(),
     setLearnFileName: vi.fn(),
+    updateConsolePanel: vi.fn(),
   }
 }
 
