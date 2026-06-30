@@ -174,6 +174,12 @@ export class ConsolePanel {
   private readonly setKeyboardMode: (v: KeyboardMode) => void
   private readonly setLabelsVisible: (v: boolean) => void
 
+  private onDocPointer = (e: PointerEvent): void => {
+    const target = e.target as Node
+    if (this.panelEl?.contains(target)) return
+    if (this.trigger?.contains(target)) return
+    this.close()
+  }
   private onKey = (e: KeyboardEvent): void => {
     if (e.key === 'Escape' && this.isOpenFn()) this.close()
   }
@@ -260,6 +266,7 @@ export class ConsolePanel {
     if (!this.isOpenFn()) return
     this.setIsOpen(false)
     this.setIsSheet(false)
+    document.removeEventListener('pointerdown', this.onDocPointer)
     document.removeEventListener('keydown', this.onKey)
     window.removeEventListener('resize', this.onResize)
   }
@@ -277,6 +284,7 @@ export class ConsolePanel {
     this.setIsOpen(true)
     this.setIsSheet(isNarrowViewport())
     setTimeout(() => {
+      document.addEventListener('pointerdown', this.onDocPointer)
       document.addEventListener('keydown', this.onKey)
       window.addEventListener('resize', this.onResize)
     }, 0)
