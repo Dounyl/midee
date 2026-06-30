@@ -1,15 +1,23 @@
+import { applyModeRequest } from './app/applyModeRequest'
+import { ExportAndOverlayCoordinator } from './app/ExportAndOverlayCoordinator'
+import { KeyboardModeCoordinator } from './app/KeyboardModeCoordinator'
+import { MidiFlowCoordinator } from './app/MidiFlowCoordinator'
+import { PlaybackCoordinator } from './app/PlaybackCoordinator'
+import { RuntimeUiBridge } from './app/RuntimeUiBridge'
+import type { ExportOverlayState } from './app/types'
 import { Metronome } from './audio/Metronome'
 import { INSTRUMENTS, SynthEngine } from './audio/SynthEngine'
 import { MasterClock } from './core/clock/MasterClock'
 import { type BusNoteEvent, InputBus } from './core/input/InputBus'
+import { getKeyboardHeightProfile, type KeyboardMode } from './core/keyboardLayout'
 import { lazyHandle } from './core/lazyHandle'
+import { transposeDeltaToTonic, transposeMidiFile } from './core/music/KeySignature'
 import {
   createLivePerformanceBus,
   type LivePerformanceBus,
 } from './core/performance/LivePerformanceBus'
 import { booleanPersisted, indexPersisted, numberPersisted } from './core/persistence'
 import type { AppServices } from './core/services'
-import { transposeDeltaToTonic } from './core/music/KeySignature'
 // VideoExporter pulls Mediabunny; OfflineAudioRenderer pulls Tone + instruments.
 // Both are dynamic-imported from startExport(). Import order matters: load the
 // offline-audio module first when audio is needed 鈥?do not block Tone on the
@@ -29,10 +37,17 @@ import { MODE_CAPTURES_LIVE, type ModeContext } from './modes/ModeController'
 import { PARTICLE_STYLES } from './renderer/ParticleSystem'
 import { PianoRollRenderer } from './renderer/PianoRollRenderer'
 import { THEMES, type Theme } from './renderer/theme'
-import { SKIP_HOME_INTRO_STORAGE_KEY, type AppMode, type AppStore } from './store/state'
+import { type AppMode, type AppStore, SKIP_HOME_INTRO_STORAGE_KEY } from './store/state'
 import { watch } from './store/watch'
-import { categorizeMidiDevice, track, trackActivation, trackEvent, trackEventSettled } from './telemetry'
+import {
+  categorizeMidiDevice,
+  track,
+  trackActivation,
+  trackEvent,
+  trackEventSettled,
+} from './telemetry'
 import { ChordOverlay } from './ui/ChordOverlay'
+import { ConsolePanel } from './ui/ConsolePanel'
 import { Controls } from './ui/Controls'
 import { CustomizeMenu } from './ui/CustomizeMenu'
 import { DropZone } from './ui/DropZone'
@@ -42,19 +57,13 @@ import { DropZone } from './ui/DropZone'
 // the type imports for signatures.
 import type { ExportSettings } from './ui/ExportModal'
 import { InstrumentMenu } from './ui/InstrumentMenu'
+import { KeyboardModeSuggestionModal } from './ui/KeyboardModeSuggestionModal'
 import { KeyboardResizer } from './ui/KeyboardResizer'
 import type { SessionAction } from './ui/PostSessionModal'
 import { showError, showSuccess } from './ui/Toast'
-import { ConsolePanel } from './ui/ConsolePanel'
 import { TrackPanel } from './ui/TrackPanel'
 import { installViewportClassSync } from './ui/utils'
 import { whenIdle } from './whenIdle'
-import { ExportAndOverlayCoordinator } from './app/ExportAndOverlayCoordinator'
-import { MidiFlowCoordinator } from './app/MidiFlowCoordinator'
-import { applyModeRequest } from './app/applyModeRequest'
-import { PlaybackCoordinator } from './app/PlaybackCoordinator'
-import { RuntimeUiBridge } from './app/RuntimeUiBridge'
-import type { ExportOverlayState } from './app/types'
 
 // Total note count across all tracks 鈥?the content-size signal attached to
 // midi_loaded so we can tie which pieces drive retention. Structurally typed
@@ -79,6 +88,7 @@ export class App {
   private runtimeState!: ExportOverlayState
   private exporterRef!: { current: VideoExporter | null }
   private pendingSessionRef!: { current: { events: CapturedEvent[]; duration: number } | null }
+  private keyboardModeCoordinator!: KeyboardModeCoordinator
   // Lazy modals: race-safe lazy initialisation via lazyHandle 鈥?each is
   // constructed at most once, even under concurrent get() calls.
   private postSessionHandle = lazyHandle(() =>
@@ -100,6 +110,7 @@ export class App {
   )
   private controls!: Controls
   private consolePanel!: ConsolePanel
+  private keyboardModeModal!: KeyboardModeSuggestionModal
   trackPanel!: TrackPanel
   private exportHandle = lazyHandle(() =>
     import('./ui/ExportModal').then(({ ExportModal }) => {
@@ -231,6 +242,10 @@ export class App {
   // dispose() so each Signal's listener set is cleared 鈥?otherwise the
   // captured `this` leaks for the lifetime of the surrounding signals.
   private unsubs: Array<() => void> = []
+
+  private get keyboardMode(): KeyboardMode {
+    return this.keyboardModeCoordinator?.getMode() ?? (keyboardModeStore.load() ? '61' : '88')
+  }
 
   async init(): Promise<void> {
     const canvas = document.querySelector<HTMLCanvasElement>('#pianoroll')!
@@ -418,8 +433,19 @@ export class App {
       overlay,
       (value) => this.handleTransposeChange(value),
       () => this.handleTransposeChange(this.resolveResetToC()),
+      (mode) => this.handleKeyboardModeChange(mode),
       (visible) => this.setPitchLabelsVisible(visible),
     )
+    this.keyboardModeModal = new KeyboardModeSuggestionModal(overlay)
+    this.keyboardModeCoordinator = new KeyboardModeCoordinator({
+      initialMode: keyboardModeStore.load() ? '61' : '88',
+      modal: this.keyboardModeModal,
+      persistMode: (mode) => keyboardModeStore.save(mode === '61'),
+      applyMode: (mode) => this.renderer.setKeyboardMode(mode),
+      syncConsolePanel: () => this.syncConsolePanel(),
+    })
+    this.renderer.setKeyboardMode(this.keyboardMode)
+    this.syncConsolePanel()
 
     this.instrumentMenu = new InstrumentMenu(this.controls.instrumentSlot, overlay)
     this.instrumentMenu.onSelect = (id) => this.setInstrumentById(id)
@@ -440,7 +466,9 @@ export class App {
     this.kbdResizer = new KeyboardResizer(
       overlay,
       () => this.renderer.currentKeyboardHeight,
+      () => this.renderer.currentKeyboardMode,
       (px) => this.renderer.setKeyboardHeight(px),
+      (mode) => getKeyboardHeightProfile(mode).desktop,
     )
     this.kbdResizer.restoreSaved()
 
@@ -554,7 +582,7 @@ export class App {
         skipHomeIntro: skipHomeIntroStore,
       },
       ensureLearnController: () => this.ensureLearnController(),
-      getModeContext: () => this.modeContext,
+      keyboardMode: this.keyboardModeCoordinator,
       primeInteractiveAudio: () => this.primeInteractiveAudio(),
       showLoading: () => this.showLoading(),
       hideLoading: () => this.hideLoading(),
@@ -595,6 +623,7 @@ export class App {
       metronomeBpm: () => this.metronomeBpm(),
       isTransposeEnabled: () => this.isTransposeEnabled(),
       getLearnConsoleState: () => this.learnControllerHandle.peek()?.getConsoleState() ?? null,
+      keyboardMode: this.keyboardModeCoordinator,
     })
     this.syncConsolePanel()
     this.applyChordOverlayVisibility()
@@ -786,6 +815,7 @@ export class App {
       primeInteractiveAudio: () => this.primeInteractiveAudio(),
       setLearnFileName: (name) => this.controls.updateLearnFileName(name),
       updateConsolePanel: () => this.syncConsolePanel(),
+      keyboardMode: this.keyboardModeCoordinator,
     }
 
     if (skipHomeIntroStore.load()) this.services.store.enterPlayLanding()
@@ -1011,10 +1041,6 @@ export class App {
     await this.exportOverlay.handleSessionAction(action)
   }
 
-  private loadSessionAsFile(midi: import('./core/midi/types').MidiFile): void {
-    this.midiFlow.loadSessionMidi(midi)
-  }
-
   private async saveLoopAsMidi(): Promise<void> {
     await this.exportOverlay.saveLoopAsMidi()
   }
@@ -1024,12 +1050,54 @@ export class App {
   }
 
   private handleTransposeChange(semitones: number): void {
-    this.exportOverlay.handleTransposeChange(semitones)
+    if (this.store.state.mode === 'learn') {
+      this.learnControllerHandle.peek()?.setTranspose(semitones)
+      return
+    }
+    if (!this.isTransposeEnabled()) return
+    const base = this.baseMidi ?? this.store.state.loadedMidi
+    if (!base) return
+    const next = Math.trunc(semitones)
+    if (next === this.transposeSemitones) return
+    this.transposeSemitones = next
+    const midi = transposeMidiFile(base, next)
+    if (
+      !this.keyboardModeCoordinator.ensureMidiFitsCurrentMode(midi, base, {
+        onTranspose: (semitones) => this.handleTransposeChange(semitones),
+      })
+    )
+      return
+    this.store.replaceLoadedMidi(midi)
+    this.renderer.loadMidi(midi)
+    this.trackPanel.render(midi)
+    this.syncConsolePanel()
   }
 
   private syncConsolePanel(): void {
-    if (!this.exportOverlay) return
-    this.exportOverlay.syncConsolePanel()
+    if (this.store.state.mode === 'learn') {
+      const state = this.learnControllerHandle.peek()?.getConsoleState() ?? {
+        enabled: false,
+        baseKey: null,
+        current: 0,
+      }
+      this.consolePanel?.updateState(
+        state.enabled,
+        state.baseKey,
+        state.current,
+        this.keyboardMode,
+        this.pitchLabelsVisible,
+      )
+      return
+    }
+
+    const baseKey = this.store.state.mode === 'play' ? (this.baseMidi?.keySignature ?? null) : null
+    this.consolePanel?.updateState(
+      this.isTransposeEnabled(),
+      baseKey,
+      this.transposeSemitones,
+      this.keyboardMode,
+      this.pitchLabelsVisible,
+    )
   }
 
   private isTransposeEnabled(): boolean {
@@ -1043,7 +1111,25 @@ export class App {
   }
 
   private setPitchLabelsVisible(visible: boolean): void {
-    this.exportOverlay.setPitchLabelsVisible(visible)
+    if (this.pitchLabelsVisible === visible) return
+    this.pitchLabelsVisible = visible
+    pitchLabelsStore.save(visible)
+    this.renderer.setPitchLabelsVisible(visible)
+    this.syncConsolePanel()
+  }
+
+  private handleKeyboardModeChange(mode: KeyboardMode): void {
+    const activeMidi =
+      this.store.state.mode === 'learn'
+        ? (this.learnControllerHandle.peek()?.learnState.state.loadedMidi ?? null)
+        : this.store.state.loadedMidi
+    this.keyboardModeCoordinator.requestModeChange(mode, activeMidi, {
+      onTranspose: (semitones) => this.handleTransposeChange(semitones),
+    })
+  }
+
+  private setKeyboardMode(mode: KeyboardMode): void {
+    this.keyboardModeCoordinator.setMode(mode)
   }
 
   private resolveResetToC(): number {
@@ -1147,6 +1233,7 @@ export class App {
     this.liveLooper.dispose()
     this.sessionRec.dispose()
     this.metronome.dispose()
+    this.keyboardModeModal.dispose()
     this.ui.dispose()
     this.clock.dispose()
     this.renderer.destroy()
@@ -1189,13 +1276,5 @@ const metronomeBpmStore = numberPersisted('midee.metronomeBpm', 120, 40, 240)
 // an explicit "false" turns it off.
 const chordOverlayStore = booleanPersisted('midee.chordOverlay', true)
 const pitchLabelsStore = booleanPersisted('midee.pitchLabels', false)
+const keyboardModeStore = booleanPersisted('midee.keyboardMode61', false)
 const skipHomeIntroStore = booleanPersisted(SKIP_HOME_INTRO_STORAGE_KEY, false)
-
-// Strips characters that misbehave in filenames across Windows/macOS/Linux.
-// Falls back to a constant if the result is empty.
-function sanitiseFilename(name: string): string {
-  const cleaned = name.replace(/[\\/:*?"<>|]+/g, ' ').trim()
-  return cleaned.length > 0 ? cleaned : 'midee'
-}
-
-

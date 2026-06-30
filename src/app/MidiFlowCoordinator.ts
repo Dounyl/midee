@@ -1,6 +1,7 @@
 import { parseMidiFile } from '../core/midi/parser'
 import type { MidiFile } from '../core/midi/types'
 import { loadLocalMidi, recordSamplePlayback, saveLocalMidi } from '../core/midiLibrary'
+import { transposeMidiFile } from '../core/music/KeySignature'
 import { fetchSampleMidi, getSample } from '../core/samples'
 import { t } from '../i18n'
 import { setNextLiveOpts } from '../modes/LiveMode'
@@ -89,6 +90,8 @@ export class MidiFlowCoordinator {
       return
     }
     recordSamplePlayback(sampleId)
+    if (!this.resolveKeyboardModeForPlayLoad(midi, midi, { source: 'sample', sampleId }, 250))
+      return
     this.loadSessionMidi(midi)
     this.opts.resetPlaybackTelemetry()
     trackMidiLoaded({
@@ -98,12 +101,7 @@ export class MidiFlowCoordinator {
       noteCount: countNotes(midi),
       durationS: Math.round(midi.duration),
     })
-    setTimeout(() => {
-      if (this.opts.store.state.mode === 'play' && this.opts.store.state.status !== 'playing') {
-        this.opts.services.clock.play()
-        this.opts.store.setState('status', 'playing')
-      }
-    }, 250)
+    this.resumePlaybackSoon(250)
   }
 
   async openLocal(id: string, target: MidiOpenTarget): Promise<void> {
@@ -127,6 +125,10 @@ export class MidiFlowCoordinator {
         return
       }
 
+      if (
+        !this.resolveKeyboardModeForPlayLoad(midi, midi, { source: 'picker', target: 'play' }, 120)
+      )
+        return
       this.loadSessionMidi(midi)
       this.opts.resetPlaybackTelemetry()
       trackMidiLoaded({
@@ -136,12 +138,7 @@ export class MidiFlowCoordinator {
         noteCount: countNotes(midi),
         durationS: Math.round(midi.duration),
       })
-      setTimeout(() => {
-        if (this.opts.store.state.mode === 'play' && this.opts.store.state.status !== 'playing') {
-          this.opts.services.clock.play()
-          this.opts.store.setState('status', 'playing')
-        }
-      }, 120)
+      this.resumePlaybackSoon(120)
     } catch (err) {
       console.error('[openLocalMidi] failed', err)
       this.opts.showError(t('error.midi.parseFailed'))
@@ -193,7 +190,7 @@ export class MidiFlowCoordinator {
     this.opts.keyboardInput.enable()
     this.opts.ui.renderTrackPanel(midi)
     this.opts.ui.hideDropzone()
-    document.title = `${midi.name} · midee`
+    document.title = `${midi.name} - midee`
   }
 
   private async loadMidi(file: File, source: 'drag' | 'picker'): Promise<void> {
@@ -213,6 +210,42 @@ export class MidiFlowCoordinator {
         console.error('SynthEngine.load failed:', err)
         trackEvent('synth_load_failed', { source })
       })
+      if (
+        !this.opts.keyboardMode.ensureMidiFitsCurrentMode(midi, midi, {
+          onTranspose: (semitones) => {
+            const resolvedMidi = transposeMidiFile(midi, semitones)
+            this.opts.store.completePlayLoad(resolvedMidi)
+            this.opts.state.baseMidi = resolvedMidi
+            this.opts.state.transposeSemitones = 0
+            this.opts.onSyncConsolePanel()
+            this.opts.resetPlaybackTelemetry()
+            trackMidiLoaded({
+              source,
+              trackCount: resolvedMidi.tracks.length,
+              noteCount: countNotes(resolvedMidi),
+              durationS: Math.round(resolvedMidi.duration),
+              fileSizeKb: Math.round(file.size / 1024),
+            })
+          },
+          onSwitchTo88: () => {
+            this.opts.store.completePlayLoad(midi)
+            this.opts.state.baseMidi = midi
+            this.opts.state.transposeSemitones = 0
+            this.opts.onSyncConsolePanel()
+            this.opts.resetPlaybackTelemetry()
+            trackMidiLoaded({
+              source,
+              trackCount: midi.tracks.length,
+              noteCount: countNotes(midi),
+              durationS: Math.round(midi.duration),
+              fileSizeKb: Math.round(file.size / 1024),
+            })
+          },
+        })
+      ) {
+        this.opts.store.setState('status', 'ready')
+        return
+      }
       this.opts.store.completePlayLoad(midi)
       this.opts.state.baseMidi = midi
       this.opts.state.transposeSemitones = 0
@@ -255,5 +288,47 @@ export class MidiFlowCoordinator {
     } finally {
       this.opts.hideLoading()
     }
+  }
+
+  private resolveKeyboardModeForPlayLoad(
+    midi: MidiFile,
+    sourceMidi: MidiFile,
+    telemetry: { source: 'sample'; sampleId: string } | { source: 'picker'; target: 'play' },
+    resumeDelayMs: number,
+  ): boolean {
+    return this.opts.keyboardMode.ensureMidiFitsCurrentMode(midi, sourceMidi, {
+      onTranspose: (semitones) => {
+        const resolvedMidi = transposeMidiFile(sourceMidi, semitones)
+        this.loadSessionMidi(resolvedMidi)
+        this.opts.resetPlaybackTelemetry()
+        trackMidiLoaded({
+          ...telemetry,
+          trackCount: resolvedMidi.tracks.length,
+          noteCount: countNotes(resolvedMidi),
+          durationS: Math.round(resolvedMidi.duration),
+        })
+        this.resumePlaybackSoon(resumeDelayMs)
+      },
+      onSwitchTo88: () => {
+        this.loadSessionMidi(sourceMidi)
+        this.opts.resetPlaybackTelemetry()
+        trackMidiLoaded({
+          ...telemetry,
+          trackCount: sourceMidi.tracks.length,
+          noteCount: countNotes(sourceMidi),
+          durationS: Math.round(sourceMidi.duration),
+        })
+        this.resumePlaybackSoon(resumeDelayMs)
+      },
+    })
+  }
+
+  private resumePlaybackSoon(delayMs: number): void {
+    setTimeout(() => {
+      if (this.opts.store.state.mode === 'play' && this.opts.store.state.status !== 'playing') {
+        this.opts.services.clock.play()
+        this.opts.store.setState('status', 'playing')
+      }
+    }, delayMs)
   }
 }

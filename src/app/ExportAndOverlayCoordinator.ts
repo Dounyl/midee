@@ -2,12 +2,19 @@ import { INSTRUMENTS, type SynthEngine } from '../audio/SynthEngine'
 import type { MidiKeySignature } from '../core/midi/types'
 import { detectChord } from '../core/music/ChordDetector'
 import { transposeMidiFile } from '../core/music/KeySignature'
-import { fitPitchRange, pitchSignature, resolveExportBitrate, resolveExportDims, speedToPps, trimAudioBuffer } from '../export/exportMath'
+import {
+  fitPitchRange,
+  pitchSignature,
+  resolveExportBitrate,
+  resolveExportDims,
+  speedToPps,
+  trimAudioBuffer,
+} from '../export/exportMath'
 import { t } from '../i18n'
-import type { CapturedEvent } from '../midi/MidiEncoding'
-import { encodeCapturedEvents, midiFileToBytes, triggerMidiDownload } from '../midi/MidiEncoding'
 import type { LiveLooper } from '../midi/LiveLooper'
 import type { LiveNoteStore } from '../midi/LiveNoteStore'
+import type { CapturedEvent } from '../midi/MidiEncoding'
+import { encodeCapturedEvents, midiFileToBytes, triggerMidiDownload } from '../midi/MidiEncoding'
 import type { SessionRecorder } from '../midi/SessionRecorder'
 import { sessionToMidiFile } from '../midi/SessionToMidi'
 import { PARTICLE_STYLES } from '../renderer/ParticleSystem'
@@ -17,8 +24,9 @@ import type { AppStore } from '../store/state'
 import { track, trackActivation, trackEvent } from '../telemetry'
 import type { ExportSettings } from '../ui/ExportModal'
 import type { SessionAction } from '../ui/PostSessionModal'
-import type { AppRuntimeDeps, ExportOverlayState } from './types'
+import type { KeyboardModeCoordinator } from './KeyboardModeCoordinator'
 import type { RuntimeUiBridge } from './RuntimeUiBridge'
+import type { AppRuntimeDeps, ExportOverlayState } from './types'
 import { sanitiseFilename } from './utils'
 
 interface ExportAndOverlayCoordinatorOptions extends AppRuntimeDeps {
@@ -41,6 +49,7 @@ interface ExportAndOverlayCoordinatorOptions extends AppRuntimeDeps {
     baseKey: MidiKeySignature | null
     current: number
   } | null
+  keyboardMode: KeyboardModeCoordinator
 }
 
 export class ExportAndOverlayCoordinator {
@@ -242,7 +251,9 @@ export class ExportAndOverlayCoordinator {
         trackName: 'Live performance',
       })
       triggerMidiDownload(bytes, 'midee-session.mid')
-      this.opts.showSuccess(`-> ${t('toast.session.saved', { seconds: Math.round(pending.duration) })}`)
+      this.opts.showSuccess(
+        `-> ${t('toast.session.saved', { seconds: Math.round(pending.duration) })}`,
+      )
       this.opts.pendingSessionRef.current = null
       return
     }
@@ -305,17 +316,21 @@ export class ExportAndOverlayCoordinator {
         state.enabled,
         state.baseKey,
         state.current,
+        this.opts.keyboardMode.getMode(),
         this.opts.state.pitchLabelsVisible,
       )
       return
     }
 
     const baseKey =
-      this.opts.store.state.mode === 'play' ? (this.opts.state.baseMidi?.keySignature ?? null) : null
+      this.opts.store.state.mode === 'play'
+        ? (this.opts.state.baseMidi?.keySignature ?? null)
+        : null
     this.opts.ui.updateConsoleState(
       this.opts.isTransposeEnabled(),
       baseKey,
       this.opts.state.transposeSemitones,
+      this.opts.keyboardMode.getMode(),
       this.opts.state.pitchLabelsVisible,
     )
   }

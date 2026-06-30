@@ -115,6 +115,11 @@ export const en = {
   'console.transpose': 'Key',
   'console.transpose.enabled': 'Available while stopped',
   'console.transpose.disabled': 'Stop playback to change key',
+  'console.keyboard': 'Keyboard',
+  'console.keyboard.61': '61 keys',
+  'console.keyboard.88': '88 keys',
+  'console.keyboard.tip.61': 'Centered 61-key range for compact keyboards, with a taller keybed',
+  'console.keyboard.tip.88': 'Full piano range',
   'console.labels': 'Labels',
   'console.labels.on': 'Shown',
   'console.labels.off': 'Hidden',
@@ -231,6 +236,12 @@ export const en = {
   'error.sample.fetchFailed': 'Could not load that sample — check your network and try again.',
   'error.audio.renderFailed': 'Audio render failed — MP4 will be silent.',
   'error.export.generic': 'Export failed — check console for details.',
+  'keyboardModeSuggestion.title': 'This MIDI needs a wider keyboard',
+  'keyboardModeSuggestion.body':
+    'The current piece extends beyond the 61-key range. Pick a compatible key below, or switch back to the full 88-key keyboard.',
+  'keyboardModeSuggestion.bodyNoOptions':
+    'The current piece extends beyond the 61-key range.',
+  'keyboardModeSuggestion.switch88': 'Use 88 keys',
 
   // ── Mode error boundary ────────────────────────────────────
   'modeError.title': 'Something went wrong',

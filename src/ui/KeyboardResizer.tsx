@@ -1,5 +1,6 @@
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
+import type { KeyboardMode } from '../core/keyboardLayout'
 import { KEYBOARD_HEIGHT_MAX, KEYBOARD_HEIGHT_MIN } from '../renderer/PianoRollRenderer'
 
 const STORAGE_KEY = 'midee.keyboardHeight'
@@ -19,7 +20,9 @@ function isCoarsePointer(): boolean {
 
 interface ResizerProps {
   getHeight: () => number
+  getMode: () => KeyboardMode
   setHeight: (px: number) => void
+  getRecommendedHeight: (mode: KeyboardMode) => number
 }
 
 function KeyboardResizerView(props: ResizerProps) {
@@ -58,7 +61,7 @@ function KeyboardResizerView(props: ResizerProps) {
   function onDoubleClick(): void {
     if (coarse) return
     const { min, max } = viewportBounds()
-    props.setHeight(Math.min(max, Math.max(min, 120)))
+    props.setHeight(Math.min(max, Math.max(min, props.getRecommendedHeight(props.getMode()))))
     localStorage.removeItem(STORAGE_KEY)
   }
 
@@ -86,12 +89,21 @@ export class KeyboardResizer {
   constructor(
     container: HTMLElement,
     private getHeight: () => number,
+    private getMode: () => KeyboardMode,
     private setHeight: (px: number) => void,
+    private getRecommendedHeight: (mode: KeyboardMode) => number,
   ) {
     this.wrapper = document.createElement('div')
     container.appendChild(this.wrapper)
     this.disposeRoot = render(
-      () => <KeyboardResizerView getHeight={this.getHeight} setHeight={this.setHeight} />,
+      () => (
+        <KeyboardResizerView
+          getHeight={this.getHeight}
+          getMode={this.getMode}
+          setHeight={this.setHeight}
+          getRecommendedHeight={this.getRecommendedHeight}
+        />
+      ),
       this.wrapper,
     )
   }

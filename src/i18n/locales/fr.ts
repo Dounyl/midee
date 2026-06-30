@@ -97,6 +97,11 @@ const fr: Messages = {
   'console.transpose': 'Tonalité',
   'console.transpose.enabled': 'Disponible à l’arrêt',
   'console.transpose.disabled': 'Arrêtez la lecture pour changer de tonalité',
+  'console.keyboard': 'Clavier',
+  'console.keyboard.61': '61 touches',
+  'console.keyboard.88': '88 touches',
+  'console.keyboard.tip.61': 'Plage centrée sur 61 touches pour claviers compacts, avec un clavier plus haut',
+  'console.keyboard.tip.88': 'Étendue complète du piano',
   'console.labels': 'Repères',
   'console.labels.on': 'Affichés',
   'console.labels.off': 'Masqués',
@@ -210,6 +215,12 @@ const fr: Messages = {
     'Impossible de charger cet exemple — vérifiez votre connexion et réessayez.',
   'error.audio.renderFailed': 'Échec du rendu audio — le MP4 sera silencieux.',
   'error.export.generic': "Échec de l'export — consultez la console pour plus de détails.",
+  'keyboardModeSuggestion.title': 'Ce MIDI a besoin d’un clavier plus large',
+  'keyboardModeSuggestion.body':
+    'Le morceau actuel dépasse la plage de 61 touches. Choisissez ci-dessous une tonalité compatible ou revenez au clavier complet de 88 touches.',
+  'keyboardModeSuggestion.bodyNoOptions':
+    'Le morceau actuel dépasse la plage de 61 touches.',
+  'keyboardModeSuggestion.switch88': 'Utiliser 88 touches',
 
   // ── Mode error boundary ────────────────────────────────────
   'modeError.title': "Quelque chose n'a pas fonctionné",

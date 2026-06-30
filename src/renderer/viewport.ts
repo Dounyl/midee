@@ -9,6 +9,7 @@ export interface ViewportConfig {
   canvasHeight: number
   keyboardHeight: number
   pixelsPerSecond: number
+  blackKeyHeightRatio?: number
   // Visible pitch range — defaults to the full piano (21..108). Narrowing
   // these bounds makes each key wider and focuses the roll on a piece's
   // actual range (used by the "Fit to piece" export option).
@@ -94,7 +95,7 @@ export class Viewport {
     const keyboardTop = canvasHeight - keyboardHeight
     if (y < keyboardTop || y > canvasHeight) return null
 
-    const blackZoneBottom = keyboardTop + keyboardHeight * 0.62
+    const blackZoneBottom = keyboardTop + keyboardHeight * (this.cfg.blackKeyHeightRatio ?? 0.62)
     if (y <= blackZoneBottom) {
       for (const [pitch, pos] of this.keyPositions) {
         if (!isBlackKey(pitch)) continue

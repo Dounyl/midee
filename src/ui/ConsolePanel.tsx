@@ -1,5 +1,6 @@
 import { createEffect, createMemo, createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
+import type { KeyboardMode } from '../core/keyboardLayout'
 import { t } from '../i18n'
 import type { MidiKeySignature } from '../core/midi/types'
 import {
@@ -16,11 +17,13 @@ interface PanelProps {
   enabled: () => boolean
   baseKey: () => MidiKeySignature | null
   current: () => number
+  keyboardMode: () => KeyboardMode
   labelsVisible: () => boolean
   registerTriggerEl: (el: HTMLButtonElement) => void
   onToggle: () => void
   onChange: (value: number) => void
   onResetToC: () => void
+  onKeyboardModeChange: (mode: KeyboardMode) => void
   onToggleLabels: (visible: boolean) => void
   registerPanelEl: (el: HTMLElement) => void
 }
@@ -28,7 +31,8 @@ interface PanelProps {
 function ConsolePanelView(props: PanelProps) {
   let selectEl: HTMLSelectElement | undefined
   const options = createMemo(() => buildTransposeOptions(props.baseKey(), props.current()))
-  const currentKeyLabel = () => keySignatureLabel(transposeKeySignature(props.baseKey(), props.current()))
+  const currentKeyLabel = () =>
+    keySignatureLabel(transposeKeySignature(props.baseKey(), props.current()))
 
   createEffect(() => {
     const value = String(props.current())
@@ -108,6 +112,29 @@ function ConsolePanelView(props: PanelProps) {
             {props.enabled() ? t('console.transpose.enabled') : t('console.transpose.disabled')}
           </div>
           <div class="console-row">
+            <span class="console-label">{t('console.keyboard')}</span>
+            <div class="console-segmented" role="group" aria-label={t('console.keyboard')}>
+              <For each={(['61', '88'] as const)}>
+                {(mode) => (
+                  <button
+                    class="console-segment"
+                    classList={{ 'console-segment--active': props.keyboardMode() === mode }}
+                    type="button"
+                    aria-pressed={props.keyboardMode() === mode}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      props.onKeyboardModeChange(mode)
+                    }}
+                  >
+                    {t(`console.keyboard.${mode}`)}
+                  </button>
+                )}
+              </For>
+            </div>
+          </div>
+          <div class="console-sub">{t(`console.keyboard.tip.${props.keyboardMode()}`)}</div>
+          <div class="console-row">
             <span class="console-label">{t('console.labels')}</span>
             <button
               class="console-toggle"
@@ -144,6 +171,7 @@ export class ConsolePanel {
   private readonly setEnabled: (v: boolean) => void
   private readonly setBaseKey: (v: MidiKeySignature | null) => void
   private readonly setCurrent: (v: number) => void
+  private readonly setKeyboardMode: (v: KeyboardMode) => void
   private readonly setLabelsVisible: (v: boolean) => void
 
   private onKey = (e: KeyboardEvent): void => {
@@ -159,6 +187,7 @@ export class ConsolePanel {
     container: HTMLElement,
     onChange: (value: number) => void,
     onResetToC: () => void,
+    onKeyboardModeChange: (mode: KeyboardMode) => void,
     onToggleLabels: (visible: boolean) => void,
   ) {
     const [isOpen, setIsOpen] = createSignal(false)
@@ -166,6 +195,7 @@ export class ConsolePanel {
     const [enabled, setEnabled] = createSignal(false)
     const [baseKey, setBaseKey] = createSignal<MidiKeySignature | null>(null)
     const [current, setCurrent] = createSignal(0)
+    const [keyboardMode, setKeyboardMode] = createSignal<KeyboardMode>('88')
     const [labelsVisible, setLabelsVisible] = createSignal(false)
 
     this.isOpenFn = isOpen
@@ -174,6 +204,7 @@ export class ConsolePanel {
     this.setEnabled = setEnabled
     this.setBaseKey = setBaseKey
     this.setCurrent = setCurrent
+    this.setKeyboardMode = setKeyboardMode
     this.setLabelsVisible = setLabelsVisible
 
     const wrapper = document.createElement('div')
@@ -187,6 +218,7 @@ export class ConsolePanel {
           enabled={enabled}
           baseKey={baseKey}
           current={current}
+          keyboardMode={keyboardMode}
           labelsVisible={labelsVisible}
           registerTriggerEl={(el) => {
             this.trigger = el
@@ -194,6 +226,7 @@ export class ConsolePanel {
           onToggle={() => this.toggle()}
           onChange={onChange}
           onResetToC={onResetToC}
+          onKeyboardModeChange={onKeyboardModeChange}
           onToggleLabels={onToggleLabels}
           registerPanelEl={(el) => {
             this.panelEl = el
@@ -208,11 +241,13 @@ export class ConsolePanel {
     enabled: boolean,
     baseKey: MidiKeySignature | null,
     current: number,
+    keyboardMode: KeyboardMode,
     labelsVisible: boolean,
   ): void {
     this.setEnabled(enabled)
     this.setBaseKey(baseKey)
     this.setCurrent(current)
+    this.setKeyboardMode(keyboardMode)
     this.setLabelsVisible(labelsVisible)
   }
 

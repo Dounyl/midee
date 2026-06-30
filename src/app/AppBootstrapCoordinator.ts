@@ -1,4 +1,5 @@
 import type { AppServices } from '../core/services'
+import { getKeyboardHeightProfile } from '../core/keyboardLayout'
 import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
 import { PARTICLE_STYLES, type ParticleStyleInfo } from '../renderer/ParticleSystem'
 import { THEMES, type Theme } from '../renderer/theme'
@@ -89,6 +90,7 @@ export class AppBootstrapCoordinator {
       overlay,
       this.opts.callbacks.onTransposeChange,
       this.opts.callbacks.onResetToTonic,
+      () => {},
       this.opts.callbacks.onPitchLabelsVisibleChange,
     )
 
@@ -98,7 +100,9 @@ export class AppBootstrapCoordinator {
     const keyboardResizer = new KeyboardResizer(
       overlay,
       () => this.opts.renderer.currentKeyboardHeight,
-      (px) => this.opts.renderer.setKeyboardHeight(px),
+      () => this.opts.renderer.currentKeyboardMode,
+      (px: number) => this.opts.renderer.setKeyboardHeight(px),
+      (mode) => getKeyboardHeightProfile(mode).desktop,
     )
 
     const chordOverlay = new ChordOverlay(controls.chordSlot)

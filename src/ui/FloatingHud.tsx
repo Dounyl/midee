@@ -90,6 +90,8 @@ function saveOffset(key: string, v: { x: number; y: number }): void {
 // ── Component ────────────────────────────────────────────────────────────────
 
 const DEFAULT_IDLE_MS = 2600
+const HUD_EDGE_MARGIN = 16
+const HUD_TOP_GAP = 12
 
 export function FloatingHud(props: FloatingHudProps) {
   const init = loadOffset(props.storageKey)
@@ -105,6 +107,8 @@ export function FloatingHud(props: FloatingHudProps) {
   let dragStartY = 0
   let dragOriginX = 0
   let dragOriginY = 0
+  let topStripObserver: ResizeObserver | null = null
+  let rootStyleObserver: MutationObserver | null = null
 
   // ── Idle-fade ───────────────────────────────────────────────────────────
 
@@ -141,11 +145,16 @@ export function FloatingHud(props: FloatingHudProps) {
   // Cached CSS layout vars — updated once on mount and on resize.
   let cachedKbdH = 120
   let cachedHudGap = 14
+  let cachedTopLimit = 80
 
   function readLayoutVars(): void {
     const rs = getComputedStyle(document.documentElement)
     cachedKbdH = parseFloat(rs.getPropertyValue('--keyboard-h')) || 120
     cachedHudGap = parseFloat(rs.getPropertyValue('--hud-gap')) || 14
+    const topStrip = document.getElementById('top-strip')
+    cachedTopLimit = topStrip
+      ? Math.ceil(topStrip.getBoundingClientRect().bottom + HUD_TOP_GAP)
+      : 80
   }
 
   function clampOffset(): void {
@@ -158,17 +167,18 @@ export function FloatingHud(props: FloatingHudProps) {
     const kh = cachedKbdH
     const gap = cachedHudGap
     const defaultLeft = (window.innerWidth - rect.width) / 2
-    const defaultTop = window.innerHeight - kh - gap - rect.height
+    const bottomLimit = window.innerHeight - kh - rect.height - HUD_EDGE_MARGIN
+    const defaultTop = bottomLimit - gap
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
     const nextLeft = clamp(
       defaultLeft + offsetX(),
-      12,
-      Math.max(12, window.innerWidth - rect.width - 12),
+      HUD_EDGE_MARGIN,
+      Math.max(HUD_EDGE_MARGIN, window.innerWidth - rect.width - HUD_EDGE_MARGIN),
     )
     const nextTop = clamp(
       defaultTop + offsetY(),
-      80,
-      Math.max(80, window.innerHeight - kh - rect.height - 12),
+      cachedTopLimit,
+      Math.max(cachedTopLimit, bottomLimit),
     )
     setOffsetX(nextLeft - defaultLeft)
     setOffsetY(nextTop - defaultTop)
@@ -219,10 +229,26 @@ export function FloatingHud(props: FloatingHudProps) {
   onMount(() => {
     readLayoutVars()
     applyOffset()
+    clampOffset()
     wake()
     window.addEventListener('resize', onResize)
     props.wakeRef?.(wake)
     props.togglePinRef?.(togglePin)
+
+    const topStrip = document.getElementById('top-strip')
+    if (topStrip && 'ResizeObserver' in window) {
+      topStripObserver = new ResizeObserver(onResize)
+      topStripObserver.observe(topStrip)
+    }
+
+    rootStyleObserver = new MutationObserver(() => {
+      readLayoutVars()
+      clampOffset()
+    })
+    rootStyleObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    })
   })
 
   onCleanup(() => {
@@ -230,6 +256,8 @@ export function FloatingHud(props: FloatingHudProps) {
     window.removeEventListener('resize', onResize)
     document.removeEventListener('pointermove', onPointerMove)
     document.removeEventListener('pointerup', onPointerUp)
+    topStripObserver?.disconnect()
+    rootStyleObserver?.disconnect()
   })
 
   createEffect(() => {

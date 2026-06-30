@@ -1,6 +1,6 @@
-import { saveLocalMidi } from '../core/midiLibrary'
 import { parseMidiFile } from '../core/midi/parser'
 import type { MidiFile, MidiKeySignature } from '../core/midi/types'
+import { saveLocalMidi } from '../core/midiLibrary'
 import { transposeMidiFile } from '../core/music/KeySignature'
 import { fetchSampleMidi, getSample } from '../core/samples'
 import { t } from '../i18n'
@@ -197,8 +197,14 @@ export class LearnController {
     if (!this.baseMidi) return
     const next = Math.trunc(semitones)
     if (next === this.transposeSemitones) return
-    this.transposeSemitones = next
     const midi = transposeMidiFile(this.baseMidi, next)
+    if (
+      !this.ctx.keyboardMode.ensureMidiFitsCurrentMode(midi, this.baseMidi, {
+        onTranspose: (target) => this.setTranspose(target),
+      })
+    )
+      return
+    this.transposeSemitones = next
     const currentTime = this.ctx.services.clock.currentTime
     const status = this.learnState.state.status
     this.ctx.services.clock.pause()
@@ -293,6 +299,17 @@ export class LearnController {
     this.ctx.services.synth.pause()
     this.ctx.services.renderer.clearMidi()
     this.learnState.clearMidi()
+    if (
+      !this.ctx.keyboardMode.ensureMidiFitsCurrentMode(midi, midi, {
+        onTranspose: async (target) => {
+          await this.consumeMidi(transposeMidiFile(midi, target))
+        },
+        onSwitchTo88: async () => {
+          await this.consumeMidi(midi)
+        },
+      })
+    )
+      return
     this.baseMidi = midi
     this.transposeSemitones = 0
     // Load the synth asynchronously — we don't await so the hub reflects the
@@ -301,6 +318,7 @@ export class LearnController {
       console.error('[LearnController] SynthEngine.load failed:', err)
     })
     this.learnState.completeLoad(midi)
+    this.ctx.services.renderer.setKeyboardMode(this.ctx.keyboardMode.getMode())
     // Update the topbar so the user sees what they're learning.
     this.ctx.setLearnFileName(midi.name)
     this.ctx.updateConsolePanel()

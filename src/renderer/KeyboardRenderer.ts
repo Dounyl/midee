@@ -1,5 +1,6 @@
 import type { Application } from 'pixi.js'
 import { Container, Graphics, RenderTexture, Sprite, Text, Texture, TilingSprite } from 'pixi.js'
+import { getKeyboardHeightProfile, type KeyboardMode } from '../core/keyboardLayout'
 import { isBlackKey, MIDI_MAX, MIDI_MIN, type MidiKeySignature } from '../core/midi/types'
 import { pitchToKeyboardLabels } from '../core/music/jianpu'
 import type { Theme } from './theme'
@@ -62,6 +63,7 @@ function getIvoryNoiseCanvas(): HTMLCanvasElement {
 
 export class KeyboardRenderer {
   readonly container: Container
+  private keyboardMode: KeyboardMode = '88'
 
   // Static baked layers
   private whiteSprite: Sprite | null = null
@@ -132,6 +134,7 @@ export class KeyboardRenderer {
   // Call on init and whenever the canvas is resized.
   build(viewport: Viewport, yOffset: number): void {
     const { keyboardHeight, canvasWidth, pitchMin, pitchMax } = viewport.config
+    const profile = getKeyboardHeightProfile(this.keyboardMode)
     const positions = viewport.getAllKeyPositions()
     // Snapshot for the practice-hint layer (which redraws on its own ticker
     // and doesn't otherwise have a Viewport reference handy).
@@ -188,7 +191,7 @@ export class KeyboardRenderer {
       const x = pos.x + wMargin
       const y = 2
       const w = pos.width - wMargin * 2
-      const h = keyboardHeight - 4
+      const h = keyboardHeight - profile.whiteKeyBottomInset
 
       // Body
       whiteLayer.roundRect(x, y, w, h, wRadius).fill({ color: this.theme.whiteKey })
@@ -238,7 +241,7 @@ export class KeyboardRenderer {
     const blackBake = new Container()
     const blackLayer = new Graphics()
     const bRadius = 2
-    const blackHeight = keyboardHeight * 0.62
+    const blackHeight = keyboardHeight * profile.blackKeyHeightRatio
     for (let p = MIDI_MIN; p <= MIDI_MAX; p++) {
       if (!isBlackKey(p)) continue
       const pos = positions.get(p)
@@ -346,8 +349,14 @@ export class KeyboardRenderer {
       primary.anchor.set(0.5)
       primary.x = centerX
       primary.y = black
-        ? keyboardHeight * 0.22
-        : keyboardHeight - Math.max(34, primaryFontSize + secondaryFontSize + 9)
+        ? keyboardHeight * getKeyboardHeightProfile(this.keyboardMode).blackPrimaryLabelYRatio
+        : keyboardHeight -
+            Math.max(
+              34,
+              primaryFontSize +
+                secondaryFontSize +
+                getKeyboardHeightProfile(this.keyboardMode).whitePrimaryLabelGap,
+            )
       primary.alpha = black ? 0.95 : 0.98
 
       const secondary = new Text({
@@ -363,7 +372,9 @@ export class KeyboardRenderer {
       })
       secondary.anchor.set(0.5)
       secondary.x = centerX
-      secondary.y = black ? keyboardHeight * 0.42 : primary.y + primaryFontSize * 0.92 + 3
+      secondary.y = black
+        ? keyboardHeight * getKeyboardHeightProfile(this.keyboardMode).blackSecondaryLabelYRatio
+        : primary.y + primaryFontSize * 0.92 + 3
       secondary.alpha = black ? 0.84 : 0.88
 
       this.keyLabelLayer.addChild(primary, secondary)
@@ -394,7 +405,10 @@ export class KeyboardRenderer {
       const tint = color || fallback
       const isBlack = isBlackKey(pitch)
       const layer = isBlack ? this.blackActiveLayer : this.whiteActiveLayer
-      const h = isBlack ? keyboardHeight * 0.62 : keyboardHeight - 4
+      const profile = getKeyboardHeightProfile(this.keyboardMode)
+      const h = isBlack
+        ? keyboardHeight * profile.blackKeyHeightRatio
+        : keyboardHeight - profile.whiteKeyBottomInset
       const margin = isBlack ? 0 : 1
       const x = pos.x + margin
       const w = pos.width - margin * 2
@@ -431,6 +445,14 @@ export class KeyboardRenderer {
     if (this.labelsVisible === visible) return
     this.labelsVisible = visible
     this.lastBuildSignature = ''
+  }
+
+  setKeyboardMode(mode: KeyboardMode): void {
+    if (this.keyboardMode === mode) return
+    this.keyboardMode = mode
+    this.lastBuildSignature = ''
+    this.activeLayerDirty = true
+    this.practiceSignature = ''
   }
 
   private keySignatureCacheKey(keySignature: MidiKeySignature | null = this.keySignature): string {
@@ -538,7 +560,10 @@ export class KeyboardRenderer {
     const x = pos.x
     const w = pos.width
     const isBlack = isBlackKey(pitch)
-    const h = isBlack ? fullKbHeight * 0.62 : fullKbHeight - 4
+    const profile = getKeyboardHeightProfile(this.keyboardMode)
+    const h = isBlack
+      ? fullKbHeight * profile.blackKeyHeightRatio
+      : fullKbHeight - profile.whiteKeyBottomInset
     const y = isBlack ? 0 : 2
     const radius = isBlack ? 2 : 3
 

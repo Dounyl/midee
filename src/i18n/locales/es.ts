@@ -94,6 +94,11 @@ const es: Messages = {
   'console.transpose': 'Tonalidad',
   'console.transpose.enabled': 'Disponible cuando está detenido',
   'console.transpose.disabled': 'Detén la reproducción para cambiar la tonalidad',
+  'console.keyboard': 'Teclado',
+  'console.keyboard.61': '61 teclas',
+  'console.keyboard.88': '88 teclas',
+  'console.keyboard.tip.61': 'Rango centrado de 61 teclas para teclados compactos, con teclado más alto',
+  'console.keyboard.tip.88': 'Rango completo de piano',
   'console.labels': 'Etiquetas',
   'console.labels.on': 'Visibles',
   'console.labels.off': 'Ocultas',
@@ -206,6 +211,12 @@ const es: Messages = {
     'No se pudo cargar ese ejemplo — comprueba tu conexión y vuelve a intentarlo.',
   'error.audio.renderFailed': 'Falló el renderizado de audio — el MP4 será silencioso.',
   'error.export.generic': 'Falló la exportación — revisa la consola para más detalles.',
+  'keyboardModeSuggestion.title': 'Este MIDI necesita un teclado más amplio',
+  'keyboardModeSuggestion.body':
+    'La pieza actual supera el rango de 61 teclas. Elige abajo una tonalidad compatible o vuelve al teclado completo de 88 teclas.',
+  'keyboardModeSuggestion.bodyNoOptions':
+    'La pieza actual supera el rango de 61 teclas.',
+  'keyboardModeSuggestion.switch88': 'Usar 88 teclas',
 
   // ── Mode error boundary ────────────────────────────────────
   'modeError.title': 'Algo salió mal',

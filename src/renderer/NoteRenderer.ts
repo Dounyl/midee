@@ -10,7 +10,7 @@ import { type Viewport, visibleNoteRange } from './viewport'
 // so the expensive GlowFilter only runs over a small subset each frame.
 
 const PRACTICE_INACTIVE_ALPHA_SCALE = 0.24
-const NOTE_LABEL_BOTTOM_INSET = 12
+const NOTE_LABEL_BOTTOM_INSET = 16
 
 export class NoteRenderer {
   readonly container: Container

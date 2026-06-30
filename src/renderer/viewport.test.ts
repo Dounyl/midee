@@ -130,6 +130,13 @@ describe('Viewport.pitchAtPoint', () => {
     expect(isBlackKey(pitch!)).toBe(false)
   })
 
+  it('uses a deeper black-key zone when configured', () => {
+    const vp = makeViewport({ pitchMin: 60, pitchMax: 71, blackKeyHeightRatio: 0.7 })
+    const cSharp = vp.getAllKeyPositions().get(61)!
+    const xMid = cSharp.x + cSharp.width / 2
+    expect(vp.pitchAtPoint(xMid, 565)).toBe(61)
+  })
+
   it('resolves a clearly-white region to its white key in both zones', () => {
     const vp = makeViewport({ pitchMin: 60, pitchMax: 71 })
     const c4 = vp.getAllKeyPositions().get(60)!

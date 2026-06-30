@@ -1,13 +1,13 @@
 import type { LazyHandle } from '../core/lazyHandle'
-import type { AppServices } from '../core/services'
 import type { MidiFile } from '../core/midi/types'
+import type { AppServices } from '../core/services'
 import type { LearnController } from '../modes/LearnController'
-import type { ModeContext } from '../modes/ModeController'
 import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
 import type { Theme } from '../renderer/theme'
-import type { AppStore, AppMode } from '../store/state'
+import type { AppMode, AppStore } from '../store/state'
 import type { ExportSettings } from '../ui/ExportModal'
 import type { SessionAction } from '../ui/PostSessionModal'
+import type { KeyboardModeCoordinator } from './KeyboardModeCoordinator'
 
 export type MidiOpenTarget = 'play' | 'learn'
 export type MidiOpenSource = 'drag' | 'picker' | 'sample'
@@ -50,7 +50,7 @@ export interface AppRuntimeDeps {
   renderer: PianoRollRenderer
   persistence: AppPersistence
   ensureLearnController: () => Promise<LearnController>
-  getModeContext: () => ModeContext
+  keyboardMode: KeyboardModeCoordinator
   primeInteractiveAudio: () => void
   showLoading: () => void
   hideLoading: () => void

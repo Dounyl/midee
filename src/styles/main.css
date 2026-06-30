@@ -3982,10 +3982,126 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+.console-segmented {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 136px;
+}
+
+.console-segment {
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(12, 12, 22, 0.84);
+  color: var(--text-muted);
+  padding: 0 10px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.12s var(--ease-spring),
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+
+.console-segment:hover,
+.console-segment:focus-visible {
+  color: var(--text);
+  border-color: var(--border-hi);
+}
+
+.console-segment:active {
+  transform: scale(0.96);
+}
+
+.console-segment--active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .console-sub {
   font-family: var(--font);
   font-size: 11px;
   color: var(--text-muted);
+}
+
+#keyboard-mode-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(4, 4, 10, 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease-out);
+  z-index: 160;
+}
+
+#keyboard-mode-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.keyboard-mode-card {
+  width: min(420px, calc(100vw - 24px));
+  background: rgba(10, 10, 18, 0.96);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.keyboard-mode-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.keyboard-mode-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border);
+}
+
+.keyboard-mode-copy {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.keyboard-mode-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.keyboard-mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.keyboard-mode-option {
+  min-width: 0;
 }
 
 /* Instrument cycle button (live mode) — sized to match the other HUD pills */

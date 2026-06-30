@@ -1,3 +1,4 @@
+import type { KeyboardModeCoordinator } from '../app/KeyboardModeCoordinator'
 import type { AppServices } from '../core/services'
 import type { ComputerKeyboardInput } from '../midi/ComputerKeyboardInput'
 import type { MidiInputManager } from '../midi/MidiInputManager'
@@ -25,6 +26,7 @@ export interface ModeContext {
   // never reach into UI directly).
   setLearnFileName: (name: string | null) => void
   updateConsolePanel: () => void
+  keyboardMode: KeyboardModeCoordinator
 }
 
 // Live-mode entry options. Used by `setNextLiveOpts()` in LiveMode to

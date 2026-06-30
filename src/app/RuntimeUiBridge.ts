@@ -1,6 +1,7 @@
 import type { MidiFile } from '../core/midi/types'
 import type { InstrumentId } from '../audio/instruments'
 import type { ChordReading } from '../core/music/ChordDetector'
+import type { KeyboardMode } from '../core/keyboardLayout'
 import type { MidiKeySignature } from '../core/midi/types'
 import type { Theme } from '../renderer/theme'
 import type { MidiDeviceStatus } from '../midi/MidiInputManager'
@@ -111,9 +112,16 @@ export class RuntimeUiBridge {
     enabled: boolean,
     baseKey: MidiKeySignature | null,
     current: number,
+    keyboardMode: KeyboardMode,
     pitchLabelsVisible: boolean,
   ): void {
-    this.consolePanel.updateState(enabled, baseKey, current, pitchLabelsVisible)
+    this.consolePanel.updateState(
+      enabled,
+      baseKey,
+      current,
+      keyboardMode,
+      pitchLabelsVisible,
+    )
   }
 
   closeConsole(): void {

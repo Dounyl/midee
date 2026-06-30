@@ -101,8 +101,8 @@ describe('NoteRenderer', () => {
     const shortBottom = viewport.nowLineY
     const longBottom = viewport.nowLineY
 
-    expect(shortBottom - labels[0]!.y).toBeCloseTo(12)
-    expect(longBottom - labels[1]!.y).toBeCloseTo(12)
+    expect(shortBottom - labels[0]!.y).toBeCloseTo(16)
+    expect(longBottom - labels[1]!.y).toBeCloseTo(16)
     expect(labels[0]!.y).toBeCloseTo(labels[1]!.y)
   })
 })
