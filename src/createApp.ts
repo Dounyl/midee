@@ -1,5 +1,5 @@
 import { App } from './app'
-import { AppCtx as _AppCtx, type AppCtxValue } from './store/AppCtx'
+import { AppCtx as _AppCtx, type AppActions, type AppCtxValue } from './store/AppCtx'
 import { createAppStore, resolveInitialAppMode } from './store/state'
 
 // Boots the app. Constructs the single `AppStore`, hands it to the `App`
@@ -21,20 +21,29 @@ export async function createApp(): Promise<{ ctx: AppCtxValue; app: App }> {
   const store = createAppStore({ initialMode: resolveInitialAppMode() })
   const app = new App(store)
   await app.init()
+  const actions: AppActions = {
+    mode: {
+      request: (mode) => app.requestMode(mode),
+      mount: (mode, options) => app.mountMode(mode, options),
+    },
+    library: {
+      open: (request) => app.openLibraryRequest(request),
+    },
+    learn: {
+      mount: (signal) => app.mountLearnMode(signal),
+      exit: () => app.exitLearnMode(),
+      enter: (request) => app.enterLearnRequest(request),
+    },
+    session: {
+      resetInteractionState: () => app.resetInteractionState(),
+      primeInteractiveAudio: () => app.primeInteractiveAudio(),
+    },
+  }
   return {
     ctx: {
       services: app.services,
       store: app.store,
-      trackPanel: app.trackPanel,
-      dropzone: app.dropzone,
-      keyboardInput: app.keyboardInput,
-      midiInput: app.midiInput,
-      ensureLearnController: () => app.ensureLearnController(),
-      resetInteractionState: () => app.resetInteractionState(),
-      openFilePicker: (target) => app.openFilePicker(target),
-      openLocalMidi: (id, target) => void app.openLocalMidi(id, target),
-      openSample: (id, target) => void app.openSample(id, target),
-      primeInteractiveAudio: () => app.primeInteractiveAudio(),
+      actions,
     },
     app,
   }

@@ -6,6 +6,7 @@ import {
 } from '../core/midiLibrary'
 import { SAMPLES } from '../core/samples'
 import { t } from '../i18n'
+import type { LibraryOpenRequest } from '../store/AppCtx'
 import { icons } from './icons'
 import './RecentMidiList.css'
 
@@ -25,8 +26,7 @@ export interface RecentMidiListProps {
   emptyLabel?: string
   class?: string
   variant?: 'floating' | 'inline'
-  onOpenMidi: (id: string, target: 'play' | 'learn') => void
-  onOpenSample: (id: string, target: 'play' | 'learn') => void
+  onOpen: (request: LibraryOpenRequest) => void | Promise<void>
 }
 
 function formatDuration(s: number): string {
@@ -128,8 +128,11 @@ export function RecentMidiList(props: RecentMidiListProps) {
   const openEntry = (entry: RecentMidiEntry, target: 'play' | 'learn'): void => {
     clearHideTimer()
     if (!inline()) setOpen(false)
-    if (entry.kind === 'sample') props.onOpenSample(entry.id, target)
-    else props.onOpenMidi(entry.id, target)
+    void props.onOpen({
+      kind: 'recent',
+      target,
+      entry: { kind: entry.kind, id: entry.id },
+    })
   }
 
   return (

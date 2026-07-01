@@ -12,15 +12,10 @@ import { useApp } from '../store/AppCtx'
 // but keeps the shape resilient to callers that flipped `mode` without the
 // other fields.
 export function HomeMode() {
-  const { services, trackPanel, dropzone, keyboardInput, resetInteractionState } = useApp()
+  const { services, actions } = useApp()
   onMount(() => {
-    resetInteractionState()
     services.store.enterHome()
-    services.renderer.clearMidi()
-    trackPanel.close()
-    dropzone.show()
-    keyboardInput.enable()
-    document.title = t('doc.title.home')
+    actions.mode.mount('home')
   })
   return null
 }

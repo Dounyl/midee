@@ -12,16 +12,7 @@ import './PlayMode.css'
 // For the re-entry-from-live-or-learn path, loadedMidi was preserved from the
 // earlier play session.
 export function PlayMode() {
-  const {
-    services,
-    trackPanel,
-    dropzone,
-    keyboardInput,
-    openFilePicker,
-    openLocalMidi,
-    openSample,
-    resetInteractionState,
-  } = useApp()
+  const { services, actions } = useApp()
 
   const hasMidi = () => services.store.state.loadedMidi !== null
 
@@ -33,16 +24,10 @@ export function PlayMode() {
       // 1. User explicitly entered Play with nothing loaded yet.
       // 2. beginPlayLoad flipped mode='play' mid-load while status='loading'.
       if (status === 'loading') return
-      resetInteractionState()
-      services.renderer.clearMidi()
-      trackPanel.close()
-      dropzone.hide()
-      keyboardInput.enable()
-      document.title = `midee - ${t('topStrip.mode.play.label')}`
+      actions.mode.mount('play')
       return
     }
 
-    resetInteractionState()
     const props = { duration_s: Math.round(midi.duration) }
     trackEvent('play_mode_entered', props)
     track('file_mode_entered', props)
@@ -51,11 +36,7 @@ export function PlayMode() {
   createEffect(() => {
     const midi = services.store.state.loadedMidi
     if (!midi) return
-    services.renderer.loadMidi(midi)
-    trackPanel.render(midi)
-    dropzone.hide()
-    keyboardInput.enable()
-    document.title = `${midi.name} - midee`
+    actions.mode.mount('play', { skipAnalytics: true })
   })
 
   return (
@@ -74,7 +55,7 @@ export function PlayMode() {
               <button
                 class="hero-card__primary"
                 type="button"
-                onClick={() => openFilePicker('play')}
+                onClick={() => actions.library.open({ kind: 'picker', target: 'play' })}
               >
                 <span
                   class="hero-card__primary-icon"
@@ -92,8 +73,7 @@ export function PlayMode() {
             currentName={null}
             emptyLabel={t('midiLibrary.emptyHome')}
             variant="inline"
-            onOpenMidi={(id, target) => openLocalMidi(id, target)}
-            onOpenSample={(id, target) => openSample(id, target)}
+            onOpen={(request) => actions.library.open(request)}
           />
         </div>
       }
@@ -104,8 +84,7 @@ export function PlayMode() {
         target="play"
         currentName={services.store.state.loadedMidi?.name ?? null}
         emptyLabel={t('midiLibrary.emptyHome')}
-        onOpenMidi={(id, target) => openLocalMidi(id, target)}
-        onOpenSample={(id, target) => openSample(id, target)}
+        onOpen={(request) => actions.library.open(request)}
       />
     </Show>
   )

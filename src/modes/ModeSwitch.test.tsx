@@ -2,54 +2,39 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderWithApp } from '../test/renderWithApp'
 import { ModeSwitch } from './ModeSwitch'
 
-// ModeSwitch is the reactive router for the four app modes. It reads
-// `store.state.mode` inside a <Switch> and swaps the rendered surface when the
-// store changes. It calls `useApp()`, so it needs the harness. These tests use
-// the harness's REAL store to prove reactive re-rendering on mode changes — the
-// core value of wiring a real store into the fake ctx. We assert on the side
-// effects each branch drives through the fake ctx, since the mode surfaces
-// themselves render null.
 describe('ModeSwitch', () => {
   it('renders without throwing on useApp() inside the harness', () => {
     expect(() => renderWithApp(() => <ModeSwitch />)).not.toThrow()
   })
 
-  it('mounts the home surface by default and resets interaction state', () => {
-    // Default store mode is 'home' → HomeMode mounts and runs its reset path.
+  it('mounts the home surface by default through the mode action', () => {
     const { ctx } = renderWithApp(() => <ModeSwitch />)
-    expect(ctx.resetInteractionState).toHaveBeenCalledOnce()
-    expect(ctx.services.renderer.clearMidi).toHaveBeenCalledOnce()
-    expect(ctx.dropzone.show).toHaveBeenCalledOnce()
+    expect(ctx.actions.mode.mount).toHaveBeenCalledWith('home')
   })
 
   it('reactively swaps to the learn surface when the store mode changes', async () => {
     const { ctx } = renderWithApp(() => <ModeSwitch />)
-    expect(ctx.ensureLearnController).not.toHaveBeenCalled()
-    // Flipping mode → 'learn' remounts the Switch branch into LearnMode, whose
-    // onMount calls the controller. The call lands in a Solid effect (a microtask),
-    // not synchronously — assert with waitFor so it isn't a timing race on CI.
+    expect(ctx.actions.learn.mount).not.toHaveBeenCalled()
     ctx.store.setState({ mode: 'learn' })
-    await vi.waitFor(() => expect(ctx.ensureLearnController).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expect(ctx.actions.learn.mount).toHaveBeenCalledOnce())
   })
 
-  it('renders the play landing without forcing the file picker when no MIDI is loaded', () => {
+  it('renders the play landing without forcing the library action when no MIDI is loaded', () => {
     const { ctx } = renderWithApp(() => <ModeSwitch />)
     ctx.store.setState({ mode: 'play' })
-    expect(ctx.openFilePicker).not.toHaveBeenCalled()
-    expect(ctx.services.renderer.clearMidi).toHaveBeenCalledTimes(2)
+    expect(ctx.actions.library.open).not.toHaveBeenCalled()
+    expect(ctx.actions.mode.mount).toHaveBeenCalledWith('play')
   })
 
-  it('does not open the picker when play mode has a loaded MIDI', () => {
+  it('mounts play with skipAnalytics when a MIDI is already loaded', () => {
     const { ctx } = renderWithApp(() => <ModeSwitch />)
     ctx.store.completePlayLoad({
       name: 'demo.mid',
       duration: 12,
       tracks: [],
     } as never)
-    // completePlayLoad sets mode='play' + loadedMidi, so PlayMode renders the
-    // file instead of bouncing to the picker.
     expect(ctx.store.state.mode).toBe('play')
-    expect(ctx.openFilePicker).not.toHaveBeenCalled()
-    expect(ctx.services.renderer.loadMidi).toHaveBeenCalledOnce()
+    expect(ctx.actions.library.open).not.toHaveBeenCalled()
+    expect(ctx.actions.mode.mount).toHaveBeenCalledWith('play', { skipAnalytics: true })
   })
 })

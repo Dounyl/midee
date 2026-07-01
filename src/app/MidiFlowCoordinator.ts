@@ -5,6 +5,7 @@ import { transposeMidiFile } from '../core/music/KeySignature'
 import { fetchSampleMidi, getSample } from '../core/samples'
 import { t } from '../i18n'
 import { setNextLiveOpts } from '../modes/LiveMode'
+import type { LearnEnterRequest } from '../store/AppCtx'
 import {
   midiLoadErrorType,
   track,
@@ -55,12 +56,7 @@ export class MidiFlowCoordinator {
       try {
         const midi = await fetchSampleMidi(sample)
         recordSamplePlayback(sampleId)
-        const controller = await this.opts.ensureLearnController()
-        if (this.opts.store.state.mode === 'learn') await controller.loadPreparedMidi(midi)
-        else {
-          controller.queueMidi(midi)
-          this.opts.store.setState('mode', 'learn')
-        }
+        await this.handoffMidiToLearn(midi)
         trackMidiLoaded({
           source: 'sample',
           target: 'learn',
@@ -109,12 +105,7 @@ export class MidiFlowCoordinator {
       this.opts.primeInteractiveAudio()
       const midi = await loadLocalMidi(id)
       if (target === 'learn') {
-        const controller = await this.opts.ensureLearnController()
-        if (this.opts.store.state.mode === 'learn') await controller.loadPreparedMidi(midi)
-        else {
-          controller.queueMidi(midi)
-          this.opts.store.setState('mode', 'learn')
-        }
+        await this.handoffMidiToLearn(midi)
         trackMidiLoaded({
           source: 'picker',
           target: 'learn',
@@ -153,14 +144,59 @@ export class MidiFlowCoordinator {
     })
   }
 
-  enterLearnWithCurrentMidi(): void {
-    const midi = this.opts.store.state.loadedMidi
-    if (!midi) return
-    track('learn_from_play', { duration_s: Math.round(midi.duration) })
-    void this.opts.ensureLearnController().then((controller) => {
-      controller.queueMidi(midi)
-      this.opts.store.setState('mode', 'learn')
-    })
+  async enterLearn(request: LearnEnterRequest): Promise<void> {
+    if (request.kind === 'empty') {
+      this.requestMode('learn')
+      return
+    }
+
+    if (request.kind === 'current-midi') {
+      const midi = this.opts.store.state.loadedMidi
+      if (!midi) return
+      track('learn_from_play', { duration_s: Math.round(midi.duration) })
+      await this.handoffMidiToLearn(midi)
+      return
+    }
+
+    if (request.kind === 'sample') {
+      const sample = getSample(request.sampleId)
+      if (!sample) return
+      this.opts.primeInteractiveAudio()
+      try {
+        const midi = await fetchSampleMidi(sample)
+        recordSamplePlayback(request.sampleId)
+        await this.handoffMidiToLearn(midi)
+        trackMidiLoaded({
+          source: 'sample',
+          target: 'learn',
+          sampleId: request.sampleId,
+          trackCount: midi.tracks.length,
+          noteCount: countNotes(midi),
+          durationS: Math.round(midi.duration),
+        })
+      } catch (err) {
+        console.error('[enterLearn] sample fetch failed', err)
+        trackEvent('sample_load_failed', { sample_id: request.sampleId, target: 'learn' })
+        this.opts.showError(t('error.sample.fetchFailed'))
+      }
+      return
+    }
+
+    try {
+      this.opts.primeInteractiveAudio()
+      const midi = await loadLocalMidi(request.id)
+      await this.handoffMidiToLearn(midi)
+      trackMidiLoaded({
+        source: 'picker',
+        target: 'learn',
+        trackCount: midi.tracks.length,
+        noteCount: countNotes(midi),
+        durationS: Math.round(midi.duration),
+      })
+    } catch (err) {
+      console.error('[enterLearn] local midi failed', err)
+      this.opts.showError(t('error.midi.parseFailed'))
+    }
   }
 
   enterHomeMode(): void {
@@ -330,5 +366,15 @@ export class MidiFlowCoordinator {
         this.opts.store.setState('status', 'playing')
       }
     }, delayMs)
+  }
+
+  private async handoffMidiToLearn(midi: MidiFile): Promise<void> {
+    const controller = await this.opts.ensureLearnController()
+    if (this.opts.store.state.mode === 'learn') {
+      await controller.loadPreparedMidi(midi)
+      return
+    }
+    controller.queueMidi(midi)
+    this.opts.store.setState('mode', 'learn')
   }
 }

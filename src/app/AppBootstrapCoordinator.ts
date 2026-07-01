@@ -12,11 +12,13 @@ import { InstrumentMenu } from '../ui/InstrumentMenu'
 import { KeyboardResizer } from '../ui/KeyboardResizer'
 import { TrackPanel } from '../ui/TrackPanel'
 import { installViewportClassSync } from '../ui/utils'
+import type { AppActions } from '../store/AppCtx'
 import type { RuntimeUiCallbacks } from './types'
 import { RuntimeUiBridge } from './RuntimeUiBridge'
 
 interface AppBootstrapCoordinatorOptions {
   services: AppServices
+  actions: AppActions
   renderer: PianoRollRenderer
   skipHomeIntro: boolean
   initialHidden: boolean
@@ -41,6 +43,7 @@ export class AppBootstrapCoordinator {
     const controls = new Controls({
       container: overlay,
       services: this.opts.services,
+      actions: this.opts.actions,
       onSeek: this.opts.callbacks.onSeek,
       onZoom: this.opts.callbacks.onZoom,
       onThemeCycle: this.opts.callbacks.onThemeCycle,
@@ -48,11 +51,6 @@ export class AppBootstrapCoordinator {
       onOpenTracks: this.opts.callbacks.onOpenTracks,
       onRecord: this.opts.callbacks.onRecord,
       onTransposeChange: this.opts.callbacks.onTransposeChange,
-      onOpenFile: this.opts.callbacks.onOpenFile,
-      onOpenLocalMidi: this.opts.callbacks.onOpenLocalMidi,
-      onModeRequest: this.opts.callbacks.onModeRequest,
-      onLearnThis: this.opts.callbacks.onLearnThis,
-      onHome: this.opts.callbacks.onHome,
       onInstrumentCycle: this.opts.callbacks.onInstrumentCycle,
       onParticleCycle: this.opts.callbacks.onParticleCycle,
       onLoopToggle: this.opts.callbacks.onLoopToggle,
@@ -82,7 +80,7 @@ export class AppBootstrapCoordinator {
       overlay,
       this.opts.renderer,
       this.opts.onTrackEnabledChange,
-      this.opts.callbacks.onOpenFile,
+      () => void this.opts.actions.library.open({ kind: 'picker' }),
     )
     trackPanel.setTrigger(controls.tracksButton)
 

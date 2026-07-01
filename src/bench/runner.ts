@@ -69,16 +69,15 @@ export async function runBench(fixture: string, ctx: AppCtxValue): Promise<Bench
 
   const { store, renderer, synth, clock } = ctx.services
 
-  ctx.resetInteractionState()
+  ctx.actions.session.resetInteractionState()
   store.beginPlayLoad()
   renderer.clearMidi()
   await synth.load(midi)
   store.completePlayLoad(midi)
   renderer.loadMidi(midi)
-  ctx.trackPanel.render(midi)
-  ctx.dropzone.hide()
+  ctx.actions.mode.mount('play', { skipAnalytics: true })
 
-  ctx.primeInteractiveAudio()
+  ctx.actions.session.primeInteractiveAudio()
   clock.play()
   store.setState('status', 'playing')
 

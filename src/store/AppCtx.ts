@@ -1,35 +1,53 @@
 import { createContext, useContext } from 'solid-js'
 import type { AppServices } from '../core/services'
-import type { ComputerKeyboardInput } from '../midi/ComputerKeyboardInput'
-import type { MidiInputManager } from '../midi/MidiInputManager'
-import type { LearnController } from '../modes/LearnController'
-import type { DropZone } from '../ui/DropZone'
-import type { TrackPanel } from '../ui/TrackPanel'
-import type { AppStore } from './state'
+import type { AppMode, AppStore } from './state'
 
-// Context value threaded via `<AppCtx.Provider value={ctx}>`. `services` and
-// `store` are the long-term surface; the rest are handles Solid mode components
-// need while `App` still owns imperative UI shells (Controls, TrackPanel,
-// DropZone, modals, etc.) mounted outside `#solid-root`. Further collapsing
-// those into Solid-only wiring is optional follow-up, not a blocked migration.
+export interface ModeMountOptions {
+  skipAnalytics?: boolean
+}
+
+export type ShellMode = Exclude<AppMode, 'learn'>
+
+export interface LibraryOpenRequest {
+  kind: 'picker' | 'recent'
+  target?: 'play' | 'learn'
+  entry?: { kind: 'local' | 'sample'; id: string }
+}
+
+export type LearnEnterRequest =
+  | { kind: 'empty' }
+  | { kind: 'current-midi' }
+  | { kind: 'sample'; sampleId: string }
+  | { kind: 'local'; id: string }
+
+export interface AppActions {
+  mode: {
+    request(mode: AppMode): void
+    mount(mode: ShellMode, options?: ModeMountOptions): void
+  }
+  library: {
+    open(request: LibraryOpenRequest): Promise<void> | void
+  }
+  learn: {
+    mount(signal?: AbortSignal): Promise<void>
+    exit(): void
+    enter(request: LearnEnterRequest): Promise<void> | void
+  }
+  session: {
+    resetInteractionState(): void
+    primeInteractiveAudio(): void
+  }
+}
+
+// Context value threaded via `<AppCtx.Provider value={ctx}>`. Mode shells and
+// Solid components read app state from `services` / `store`, then express user
+// intent exclusively through `actions`. Avoid exposing imperative UI handles or
+// parallel entrypoints here — they create branching "which path do I change?"
+// decisions that make follow-up work more expensive.
 export interface AppCtxValue {
   services: AppServices
   store: AppStore
-  // Transitional handles (removed progressively as each module ports):
-  trackPanel: TrackPanel
-  dropzone: DropZone
-  keyboardInput: ComputerKeyboardInput
-  midiInput: MidiInputManager
-  // LearnController is dynamic-imported on first Learn entry so its module
-  // graph (LearnHub, LearnState, ExerciseRunner, IntervalsEngine, etc.)
-  // stays out of the initial bundle. Resolves the same instance on repeat
-  // calls.
-  ensureLearnController: () => Promise<LearnController>
-  resetInteractionState: () => void
-  openFilePicker: (target?: 'play' | 'learn') => void
-  openLocalMidi: (id: string, target: 'play' | 'learn') => void
-  openSample: (id: string, target: 'play' | 'learn') => void
-  primeInteractiveAudio: () => void
+  actions: AppActions
 }
 
 export const AppCtx = createContext<AppCtxValue>()

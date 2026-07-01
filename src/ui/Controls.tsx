@@ -7,6 +7,7 @@ import { t } from '../i18n'
 import type { LiveLooperState } from '../midi/LiveLooper'
 import type { MidiDeviceStatus } from '../midi/MidiInputManager'
 import type { AppMode } from '../store/state'
+import type { AppActions } from '../store/AppCtx'
 import { watch } from '../store/watch'
 import { trackEvent, trackEventSettled } from '../telemetry'
 import {
@@ -50,18 +51,14 @@ interface UiStoreShape {
 export interface ControlsOptions {
   container: HTMLElement
   services: AppServices
+  actions: AppActions
   onSeek?: (t: number) => void
   onZoom?: (pps: number) => void
   onThemeCycle?: () => void
   onMidiConnect?: () => void
   onOpenTracks?: () => void
   onRecord?: () => void
-  onOpenFile?: () => void
   onTransposeChange?: (semitones: number) => void
-  onOpenLocalMidi?: (id: string, target: 'play' | 'learn') => void
-  onLearnThis?: () => void
-  onModeRequest?: (mode: Exclude<AppMode, 'home'>) => void
-  onHome?: () => void
   onInstrumentCycle?: () => void
   onParticleCycle?: () => void
   onLoopToggle?: () => void
@@ -191,13 +188,13 @@ export class Controls {
             midiPillLabel={() => getMidiPillLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             midiMenuLabel={() => getMidiMenuLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             dim={dimTopStrip}
-            onHome={() => opts.onHome?.()}
-            onMode={(m) => opts.onModeRequest?.(m)}
-            onOpenFile={() => opts.onOpenFile?.()}
+            onHome={() => opts.actions.mode.request('home')}
+            onMode={(m) => opts.actions.mode.request(m)}
+            onOpenFile={() => void opts.actions.library.open({ kind: 'picker' })}
             onTracks={() => opts.onOpenTracks?.()}
             onMidi={() => opts.onMidiConnect?.()}
             onRecord={() => opts.onRecord?.()}
-            onLearnThis={() => opts.onLearnThis?.()}
+            onLearnThis={() => void opts.actions.learn.enter({ kind: 'current-midi' })}
             registerEl={(el) => {
               this.topStripEl = el
               this.setupCompactObserver(el)
@@ -730,7 +727,7 @@ export class Controls {
 
   private openLocalMidiFromStrip(id: string): void {
     const target = this.opts.services.store.state.mode === 'learn' ? 'learn' : 'play'
-    this.opts.onOpenLocalMidi?.(id, target)
+    void this.opts.actions.library.open({ kind: 'recent', target, entry: { kind: 'local', id } })
     this.setUi('midiLibrary', 'open', false)
     if (this.midiListHideTimer) {
       clearTimeout(this.midiListHideTimer)

@@ -69,11 +69,6 @@ export interface RuntimeUiCallbacks {
   onOpenTracks: () => void
   onRecord: () => void
   onTransposeChange: (semitones: number) => void
-  onOpenFile: () => void
-  onOpenLocalMidi: (id: string, target: MidiOpenTarget) => void
-  onModeRequest: (mode: ModeRequest) => void
-  onLearnThis: () => void
-  onHome: () => void
   onInstrumentCycle: () => void
   onParticleCycle: () => void
   onLoopToggle: () => void

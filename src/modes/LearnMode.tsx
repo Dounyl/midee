@@ -1,44 +1,30 @@
-import { createSignal, onCleanup, onMount, Show } from 'solid-js'
+import { onCleanup, onMount } from 'solid-js'
 import { t } from '../i18n'
 import { useApp } from '../store/AppCtx'
 import { RecentMidiList } from '../ui/RecentMidiList'
-import type { LearnController } from './LearnController'
 
-// Learn mode shell. LearnController is dynamic-imported on first entry —
-// onMount awaits the chunk, then calls enter(). If the user navigates away
-// before the chunk lands, the `cancelled` flag stops us from calling enter()
-// against a controller no one's watching, and onCleanup is a no-op since
-// `controller` is still null.
+// Learn mode shell delegates controller lifecycle to `actions.learn`, keeping
+// the component focused on mount/unmount timing instead of controller details.
 export function LearnMode() {
-  const { ensureLearnController, openLocalMidi, openSample } = useApp()
-  const [controller, setController] = createSignal<LearnController | null>(null)
-  let cancelled = false
+  const { actions } = useApp()
+
   onMount(() => {
-    void ensureLearnController().then((c) => {
-      if (cancelled) return
-      setController(c)
-      c.enter()
+    const abort = new AbortController()
+    void actions.learn.mount(abort.signal)
+    onCleanup(() => {
+      abort.abort()
+      actions.learn.exit()
     })
   })
-  onCleanup(() => {
-    cancelled = true
-    controller()?.exit()
-  })
+
   return (
-    <>
-      <Show when={controller()}>
-        {(c) => (
-          <RecentMidiList
-            class="recent-midi-card--learn-page"
-            title={t('learn.hub.library')}
-            target="learn"
-            currentName={c().learnState.state.loadedMidi?.name ?? null}
-            emptyLabel={t('midiLibrary.emptyLearn')}
-            onOpenMidi={(id, target) => openLocalMidi(id, target)}
-            onOpenSample={(id, target) => openSample(id, target)}
-          />
-        )}
-      </Show>
-    </>
+    <RecentMidiList
+      class="recent-midi-card--learn-page"
+      title={t('learn.hub.library')}
+      target="learn"
+      currentName={null}
+      emptyLabel={t('midiLibrary.emptyLearn')}
+      onOpen={(request) => actions.library.open(request)}
+    />
   )
 }

@@ -37,6 +37,12 @@ import { MODE_CAPTURES_LIVE, type ModeContext } from './modes/ModeController'
 import { PARTICLE_STYLES } from './renderer/ParticleSystem'
 import { PianoRollRenderer } from './renderer/PianoRollRenderer'
 import { THEMES, type Theme } from './renderer/theme'
+import type {
+  LearnEnterRequest,
+  LibraryOpenRequest,
+  ModeMountOptions,
+  ShellMode,
+} from './store/AppCtx'
 import { type AppMode, type AppStore, SKIP_HOME_INTRO_STORAGE_KEY } from './store/state'
 import { watch } from './store/watch'
 import {
@@ -357,8 +363,8 @@ export class App {
       (sampleId) => {
         void this.openSample(sampleId, this.store.state.mode === 'learn' ? 'learn' : 'play')
       },
-      (sampleId) => void this.openSample(sampleId, 'learn'),
-      () => this.store.setState('mode', 'learn'),
+      (sampleId) => void this.enterLearnRequest({ kind: 'sample', sampleId }),
+      () => this.requestMode('learn'),
       skipHomeIntroStore.load(),
       (next) => skipHomeIntroStore.save(next),
       this.store.state.mode !== 'home',
@@ -367,6 +373,24 @@ export class App {
     this.controls = new Controls({
       container: overlay,
       services: this.services,
+      actions: {
+        mode: {
+          request: (mode) => this.requestMode(mode),
+          mount: (mode, options) => this.mountMode(mode, options),
+        },
+        library: {
+          open: (request) => this.openLibraryRequest(request),
+        },
+        learn: {
+          mount: (signal) => this.mountLearnMode(signal),
+          exit: () => this.exitLearnMode(),
+          enter: (request) => this.enterLearnRequest(request),
+        },
+        session: {
+          resetInteractionState: () => this.resetInteractionState(),
+          primeInteractiveAudio: () => this.primeInteractiveAudio(),
+        },
+      },
       onSeek: (t) => {
         this.synth.seek(t)
         this.liveNotes.reset()
@@ -382,11 +406,6 @@ export class App {
         void this.openExportModal()
       },
       onTransposeChange: (semitones: number) => this.handleTransposeChange(semitones),
-      onOpenFile: () => this.openFilePicker(),
-      onOpenLocalMidi: (id, target) => void this.openLocalMidi(id, target),
-      onModeRequest: (mode) => this.requestMode(mode),
-      onLearnThis: () => this.enterLearnWithCurrentMidi(),
-      onHome: () => this.enterHomeMode(),
       onInstrumentCycle: () => this.cycleInstrument(),
       onParticleCycle: () => this.cycleParticleStyle(),
       onLoopToggle: () => this.liveLooper.toggle(),
@@ -974,7 +993,7 @@ export class App {
       modal.open({
         onFile: (file) => void this.midiFlow.openFile(file, 'picker', resolveTarget()),
         onSamplePlay: (id) => void this.openSample(id, 'play'),
-        onSamplePractice: (id) => void this.openSample(id, 'learn'),
+        onSamplePractice: (id) => void this.enterLearnRequest({ kind: 'sample', sampleId: id }),
       })
     })
   }
@@ -995,7 +1014,11 @@ export class App {
     await this.midiFlow.openLocal(id, target)
   }
 
-  private requestMode(mode: Exclude<AppMode, 'home'>): void {
+  requestMode(mode: AppMode): void {
+    if (mode === 'home') {
+      this.enterHomeMode()
+      return
+    }
     if (this.midiFlow) {
       this.midiFlow.requestMode(mode)
       return
@@ -1007,8 +1030,83 @@ export class App {
     })
   }
 
-  private enterLearnWithCurrentMidi(): void {
-    this.midiFlow.enterLearnWithCurrentMidi()
+  enterLearnRequest(request: LearnEnterRequest): Promise<void> | void {
+    return this.midiFlow.enterLearn(request)
+  }
+
+  async mountLearnMode(signal?: AbortSignal): Promise<void> {
+    const controller = await this.ensureLearnController()
+    if (signal?.aborted) return
+    controller.enter()
+  }
+
+  exitLearnMode(): void {
+    this.learnControllerHandle.peek()?.exit()
+  }
+
+  mountMode(mode: ShellMode, options: ModeMountOptions = {}): void {
+    const { skipAnalytics = false } = options
+    if (mode === 'home') {
+      this.resetInteractionState()
+      this.store.enterHome()
+      this.renderer.clearMidi()
+      this.trackPanel.close()
+      this.dropzone.show()
+      this.keyboardInput.enable()
+      document.title = t('doc.title.home')
+      return
+    }
+    if (mode === 'play') {
+      const midi = this.store.state.loadedMidi
+      const status = this.store.state.status
+      if (!midi) {
+        if (status === 'loading') return
+        this.renderer.clearMidi()
+        this.trackPanel.close()
+        this.dropzone.hide()
+        this.keyboardInput.enable()
+        document.title = `midee - ${t('topStrip.mode.play.label')}`
+        return
+      }
+      this.renderer.loadMidi(midi)
+      this.trackPanel.render(midi)
+      this.dropzone.hide()
+      this.keyboardInput.enable()
+      document.title = `${midi.name} - midee`
+      if (!skipAnalytics) {
+        const props = { duration_s: Math.round(midi.duration) }
+        trackEvent('play_mode_entered', props)
+        track('file_mode_entered', props)
+      }
+      return
+    }
+    if (mode === 'live') {
+      this.resetInteractionState()
+      this.renderer.clearMidi()
+      this.trackPanel.close()
+      this.dropzone.hide()
+      this.keyboardInput.enable()
+      document.title = t('doc.title.live')
+      return
+    }
+  }
+
+  openLibraryRequest(request: LibraryOpenRequest): Promise<void> | void {
+    if (request.kind === 'picker') {
+      this.openFilePicker(request.target)
+      return
+    }
+    if (!request.entry) return
+    if (request.target === 'learn') {
+      if (request.entry.kind === 'local') {
+        return this.enterLearnRequest({ kind: 'local', id: request.entry.id })
+      }
+      return this.enterLearnRequest({ kind: 'sample', sampleId: request.entry.id })
+    }
+    if (request.entry.kind === 'local') {
+      return this.openLocalMidi(request.entry.id, request.target ?? 'play')
+    }
+    return this.openSample(request.entry.id, request.target ?? 'play')
   }
 
   // Thin delegators: each flips the store and lets Solid's mode shell run
