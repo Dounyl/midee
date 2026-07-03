@@ -11,7 +11,7 @@ import { MasterClock } from './core/clock/MasterClock'
 import { type BusNoteEvent, InputBus } from './core/input/InputBus'
 import { getKeyboardHeightProfile, type KeyboardMode } from './core/keyboardLayout'
 import { lazyHandle } from './core/lazyHandle'
-import { transposeDeltaToTonic, transposeMidiFile } from './core/music/KeySignature'
+import { transposeDeltaToTonic } from './core/music/KeySignature'
 import {
   createLivePerformanceBus,
   type LivePerformanceBus,
@@ -57,15 +57,9 @@ import { ConsolePanel } from './ui/ConsolePanel'
 import { Controls } from './ui/Controls'
 import { CustomizeMenu } from './ui/CustomizeMenu'
 import { DropZone } from './ui/DropZone'
-// Modal classes that the user only reaches on demand (Record button, file
-// picker, post-session card) are dynamic-imported in ensureXModal() helpers
-// below so their JSX stays out of the initial bundle. The static side keeps
-// the type imports for signatures.
-import type { ExportSettings } from './ui/ExportModal'
 import { InstrumentMenu } from './ui/InstrumentMenu'
 import { KeyboardModeSuggestionModal } from './ui/KeyboardModeSuggestionModal'
 import { KeyboardResizer } from './ui/KeyboardResizer'
-import type { SessionAction } from './ui/PostSessionModal'
 import { showError, showSuccess } from './ui/Toast'
 import { TrackPanel } from './ui/TrackPanel'
 import { installViewportClassSync } from './ui/utils'
@@ -100,7 +94,7 @@ export class App {
   private postSessionHandle = lazyHandle(() =>
     import('./ui/PostSessionModal').then(({ PostSessionModal }) => {
       const m = new PostSessionModal(this.overlay)
-      m.onAction = (action) => void this.handleSessionAction(action)
+      m.onAction = (action) => void this.exportOverlay.handleSessionAction(action)
       return m
     }),
   )
@@ -121,8 +115,8 @@ export class App {
   private exportHandle = lazyHandle(() =>
     import('./ui/ExportModal').then(({ ExportModal }) => {
       const m = new ExportModal(this.overlay)
-      m.onStart = (settings) => void this.startExport(settings)
-      m.onCancel = () => this.cancelExport()
+      m.onStart = (settings) => void this.exportOverlay.startExport(settings)
+      m.onCancel = () => this.exportOverlay.cancelExport()
       return m
     }),
   )
@@ -396,25 +390,25 @@ export class App {
         this.liveNotes.reset()
       },
       onZoom: (pps) => this.renderer.setZoom(pps),
-      onThemeCycle: () => this.cycleTheme(),
+      onThemeCycle: () => this.exportOverlay.cycleTheme(),
       onMidiConnect: () => void this.connectMidi(),
       onOpenTracks: () => this.trackPanel.toggle(),
       onRecord: () => {
         // First-time vs repeat opens are derivable in PostHog funnels via
         // "first occurrence per user" 鈥?no need for a duplicate event.
         track('export_opened', { has_midi: this.store.state.loadedMidi !== null })
-        void this.openExportModal()
+        this.exportOverlay.openExportModal()
       },
-      onTransposeChange: (semitones: number) => this.handleTransposeChange(semitones),
-      onInstrumentCycle: () => this.cycleInstrument(),
-      onParticleCycle: () => this.cycleParticleStyle(),
+      onTransposeChange: (semitones: number) => this.exportOverlay.handleTransposeChange(semitones),
+      onInstrumentCycle: () => this.exportOverlay.cycleInstrument(),
+      onParticleCycle: () => this.exportOverlay.cycleParticleStyle(),
       onLoopToggle: () => this.liveLooper.toggle(),
       onLoopClear: () => {
         const layers = this.liveLooper.layerCount.value
         this.liveLooper.clear()
         if (layers > 0) track('loop_cleared', { layers })
       },
-      onLoopSave: () => void this.saveLoopAsMidi(),
+      onLoopSave: () => void this.exportOverlay.saveLoopAsMidi(),
       onLoopUndo: () => {
         const before = this.liveLooper.layerCount.value
         this.liveLooper.undo()
@@ -429,8 +423,8 @@ export class App {
         metronomeBpmStore.save(this.metronome.bpm.value)
         trackEventSettled('tempo_changed', { bpm: this.metronome.bpm.value })
       },
-      onSessionToggle: () => this.toggleSessionRecord(),
-      onChordToggle: () => this.toggleChordOverlay(),
+      onSessionToggle: () => this.exportOverlay.toggleSessionRecord(),
+      onChordToggle: () => this.exportOverlay.toggleChordOverlay(),
       onOctaveShift: (delta) => {
         if (delta < 0) this.keyboardInput.shiftOctaveDown()
         else this.keyboardInput.shiftOctaveUp()
@@ -450,10 +444,10 @@ export class App {
     this.trackPanel.setTrigger(this.controls.tracksButton)
     this.consolePanel = new ConsolePanel(
       overlay,
-      (value) => this.handleTransposeChange(value),
-      () => this.handleTransposeChange(this.resolveResetToC()),
+      (value) => this.exportOverlay.handleTransposeChange(value),
+      () => this.exportOverlay.handleTransposeChange(this.resolveResetToC()),
       (mode) => this.handleKeyboardModeChange(mode),
-      (visible) => this.setPitchLabelsVisible(visible),
+      (visible) => this.exportOverlay.setPitchLabelsVisible(visible),
     )
     this.keyboardModeModal = new KeyboardModeSuggestionModal(overlay)
     this.keyboardModeCoordinator = new KeyboardModeCoordinator({
@@ -461,13 +455,13 @@ export class App {
       modal: this.keyboardModeModal,
       persistMode: (mode) => keyboardModeStore.save(mode === '61'),
       applyMode: (mode) => this.renderer.setKeyboardMode(mode),
-      syncConsolePanel: () => this.syncConsolePanel(),
+      syncConsolePanel: () => this.exportOverlay?.syncConsolePanel(),
     })
     this.renderer.setKeyboardMode(this.keyboardMode)
     this.syncConsolePanel()
 
     this.instrumentMenu = new InstrumentMenu(this.controls.instrumentSlot, overlay)
-    this.instrumentMenu.onSelect = (id) => this.setInstrumentById(id)
+    this.instrumentMenu.onSelect = (id) => this.exportOverlay.setInstrumentById(id)
     this.unsubs.push(
       this.synth.loadingInstrument.subscribe((id) => {
         this.instrumentMenu.setLoading(id)
@@ -500,7 +494,7 @@ export class App {
     this.unsubs.push(
       watch(
         () => this.store.state.mode,
-        () => this.applyChordOverlayVisibility(),
+        () => this.exportOverlay?.applyChordOverlayVisibility(),
       ),
     )
 
@@ -512,9 +506,9 @@ export class App {
       THEMES,
       PARTICLE_STYLES,
       {
-        onSelectTheme: (idx) => this.setThemeByIndex(idx),
-        onSelectParticle: (idx) => this.setParticleByIndex(idx),
-        onToggleChord: () => this.toggleChordOverlay(),
+        onSelectTheme: (idx) => this.exportOverlay.setThemeByIndex(idx),
+        onSelectParticle: (idx) => this.exportOverlay.setParticleByIndex(idx),
+        onToggleChord: () => this.exportOverlay.toggleChordOverlay(),
         // Locale change is rare, and almost every part of the UI was built
         // with the previous locale baked in via template literals. Reload
         // is the simplest correct path: persistence happens in setLocale,
@@ -621,7 +615,7 @@ export class App {
       keyboardInput: this.keyboardInput,
       ui: this.ui,
       state: this.runtimeState,
-      onSyncConsolePanel: () => this.syncConsolePanel(),
+      onSyncConsolePanel: () => this.exportOverlay?.syncConsolePanel(),
       onResetInteractionState: () => this.resetInteractionState(),
     })
 
@@ -629,7 +623,6 @@ export class App {
       ...runtimeDeps,
       store: this.store,
       renderer: this.renderer,
-      synth: this.synth,
       liveNotes: this.liveNotes,
       loopNotes: this.loopNotes,
       liveLooper: this.liveLooper,
@@ -648,8 +641,8 @@ export class App {
     this.applyChordOverlayVisibility()
 
     this.applyTheme(THEMES[this.themeIndex]!)
-    this.applyInstrument()
-    this.applyParticleStyle()
+    this.exportOverlay.applyInstrument()
+    this.exportOverlay.applyParticleStyle()
 
     // Idle-time warmups. None of these affect first paint 鈥?they trade
     // background bandwidth for "feels instant" on first-click flows. All
@@ -682,14 +675,14 @@ export class App {
             if (m === 30) trackActivation('playback_30s')
           }
         }
-        this.maybeUpdateChordOverlay(t)
+        this.exportOverlay.maybeUpdateChordOverlay(t)
       }),
     )
     this.unsubs.push(
       watch(
         () => this.store.state.status,
         (status) => {
-          this.syncConsolePanel()
+          this.exportOverlay.syncConsolePanel()
           // Drives the synth for Play/Live only. Learn runs its own status
           // signal on `LearnState` and drives the synth from `LearnController`
           // so the two modes never race for control of the scheduler.
@@ -716,13 +709,13 @@ export class App {
       watch(
         () => this.store.state.loadedMidi,
         () => {
-          this.syncConsolePanel()
+          this.exportOverlay.syncConsolePanel()
         },
       ),
       watch(
         () => this.store.state.mode,
         () => {
-          this.syncConsolePanel()
+          this.exportOverlay.syncConsolePanel()
         },
       ),
       watch(
@@ -833,7 +826,7 @@ export class App {
       openLocalMidi: (id, target) => void this.openLocalMidi(id, target),
       primeInteractiveAudio: () => this.primeInteractiveAudio(),
       setLearnFileName: (name) => this.controls.updateLearnFileName(name),
-      updateConsolePanel: () => this.syncConsolePanel(),
+      updateConsolePanel: () => this.exportOverlay.syncConsolePanel(),
       keyboardMode: this.keyboardModeCoordinator,
     }
 
@@ -938,52 +931,6 @@ export class App {
     await this.midiInput.requestAccess({ silent: true })
   }
 
-  // Play-mode MIDI loader. Learn has its own loader on LearnController that
-  // never touches AppState; see the mode dispatch at the DropZone callback.
-  private async loadMidi(file: File, source: 'drag' | 'picker' = 'picker'): Promise<void> {
-    await this.midiFlow.openFile(file, source, 'play')
-  }
-
-  private cycleTheme(): void {
-    this.exportOverlay.cycleTheme()
-  }
-
-  private setThemeByIndex(idx: number): void {
-    this.exportOverlay.setThemeByIndex(idx)
-  }
-
-  private cycleInstrument(): void {
-    this.exportOverlay.cycleInstrument()
-  }
-
-  private setInstrumentById(id: string): void {
-    this.exportOverlay.setInstrumentById(id)
-  }
-
-  private applyInstrument(): void {
-    this.exportOverlay.applyInstrument()
-  }
-
-  private cycleParticleStyle(): void {
-    this.exportOverlay.cycleParticleStyle()
-  }
-
-  private setParticleByIndex(idx: number): void {
-    this.exportOverlay.setParticleByIndex(idx)
-  }
-
-  private applyParticleStyle(): void {
-    this.exportOverlay.applyParticleStyle()
-  }
-
-  private async startExport(settings: ExportSettings): Promise<void> {
-    await this.exportOverlay.startExport(settings)
-  }
-
-  private cancelExport(): void {
-    this.exportOverlay.cancelExport()
-  }
-
   // Entry point for every "open MIDI" action. `target` is resolved at click
   // time so Play-vs-Learn routing stays stable during async picker flows.
   openFilePicker(target?: 'play' | 'learn'): void {
@@ -1000,10 +947,6 @@ export class App {
 
   ensureLearnController(): Promise<LearnController> {
     return this.learnControllerHandle.get()
-  }
-
-  private openExportModal(): void {
-    void this.exportHandle.get().then((m) => m.open())
   }
 
   async openSample(sampleId: string, target: 'play' | 'learn'): Promise<void> {
@@ -1131,71 +1074,12 @@ export class App {
     this.playback.deferToCtxTime(ctxTime, fn)
   }
 
-  private toggleSessionRecord(): void {
-    this.exportOverlay.toggleSessionRecord()
-  }
-
-  private async handleSessionAction(action: SessionAction): Promise<void> {
-    await this.exportOverlay.handleSessionAction(action)
-  }
-
-  private async saveLoopAsMidi(): Promise<void> {
-    await this.exportOverlay.saveLoopAsMidi()
-  }
-
   private metronomeBpm(): number {
     return this.metronome.bpm.value
   }
 
-  private handleTransposeChange(semitones: number): void {
-    if (this.store.state.mode === 'learn') {
-      this.learnControllerHandle.peek()?.setTranspose(semitones)
-      return
-    }
-    if (!this.isTransposeEnabled()) return
-    const base = this.baseMidi ?? this.store.state.loadedMidi
-    if (!base) return
-    const next = Math.trunc(semitones)
-    if (next === this.transposeSemitones) return
-    this.transposeSemitones = next
-    const midi = transposeMidiFile(base, next)
-    if (
-      !this.keyboardModeCoordinator.ensureMidiFitsCurrentMode(midi, base, {
-        onTranspose: (semitones) => this.handleTransposeChange(semitones),
-      })
-    )
-      return
-    this.store.replaceLoadedMidi(midi)
-    this.renderer.loadMidi(midi)
-    this.trackPanel.render(midi)
-    this.syncConsolePanel()
-  }
-
   private syncConsolePanel(): void {
-    if (this.store.state.mode === 'learn') {
-      const state = this.learnControllerHandle.peek()?.getConsoleState() ?? {
-        enabled: false,
-        baseKey: null,
-        current: 0,
-      }
-      this.consolePanel?.updateState(
-        state.enabled,
-        state.baseKey,
-        state.current,
-        this.keyboardMode,
-        this.pitchLabelsVisible,
-      )
-      return
-    }
-
-    const baseKey = this.store.state.mode === 'play' ? (this.baseMidi?.keySignature ?? null) : null
-    this.consolePanel?.updateState(
-      this.isTransposeEnabled(),
-      baseKey,
-      this.transposeSemitones,
-      this.keyboardMode,
-      this.pitchLabelsVisible,
-    )
+    this.exportOverlay?.syncConsolePanel()
   }
 
   private isTransposeEnabled(): boolean {
@@ -1208,26 +1092,14 @@ export class App {
     )
   }
 
-  private setPitchLabelsVisible(visible: boolean): void {
-    if (this.pitchLabelsVisible === visible) return
-    this.pitchLabelsVisible = visible
-    pitchLabelsStore.save(visible)
-    this.renderer.setPitchLabelsVisible(visible)
-    this.syncConsolePanel()
-  }
-
   private handleKeyboardModeChange(mode: KeyboardMode): void {
     const activeMidi =
       this.store.state.mode === 'learn'
         ? (this.learnControllerHandle.peek()?.learnState.state.loadedMidi ?? null)
         : this.store.state.loadedMidi
     this.keyboardModeCoordinator.requestModeChange(mode, activeMidi, {
-      onTranspose: (semitones) => this.handleTransposeChange(semitones),
+      onTranspose: (semitones) => this.exportOverlay.handleTransposeChange(semitones),
     })
-  }
-
-  private setKeyboardMode(mode: KeyboardMode): void {
-    this.keyboardModeCoordinator.setMode(mode)
   }
 
   private resolveResetToC(): number {
@@ -1239,25 +1111,12 @@ export class App {
   }
 
   // 鈹€鈹€ Chord overlay 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-  private toggleChordOverlay(): void {
-    this.exportOverlay.toggleChordOverlay()
-  }
-
   // Effective visibility = user's saved preference AND current mode supports it.
   // Play mode is excluded 鈥?the chord readout is a "what am I playing?" cue,
   // not a passive playback annotation.
   private applyChordOverlayVisibility(): void {
     if (!this.exportOverlay) return
     this.exportOverlay.applyChordOverlayVisibility()
-  }
-
-  // Builds the active-pitch set from the right sources for the current mode,
-  // detects a chord, and pushes it to the overlay. Throttled to ~70ms because
-  // chords don't change at 60 fps and the per-frame cost on long files is
-  // wasted otherwise.
-  private maybeUpdateChordOverlay(time: number): void {
-    if (!this.exportOverlay) return
-    this.exportOverlay.maybeUpdateChordOverlay(time)
   }
 
   resetInteractionState(): void {
