@@ -9,6 +9,13 @@ import { createLearnState } from './LearnState'
 import { createLearnProgressStore, type LearnProgressStore } from './progress'
 import type { ExerciseResult } from './Result'
 
+const defaultCapabilities = {
+  requiresLoadedMidi: false,
+  usesOverlay: false,
+  usesInputBus: false,
+  supportsMidiReplacement: false,
+} as const
+
 // Stub — the runner only stores the overlay reference; no method is invoked
 // on it by the runner itself.
 const fakeOverlay = {} as LearnOverlay
@@ -141,6 +148,7 @@ describe('ExerciseRunner', () => {
       category: 'play-along',
       difficulty: 'beginner',
       blurb: '',
+      capabilities: defaultCapabilities,
       factory: (_ctx: ExerciseContext) =>
         makeExercise(descriptor, {
           exerciseId: 'test.play-along',
@@ -189,6 +197,7 @@ describe('ExerciseRunner', () => {
       category: 'ear-training',
       difficulty: 'beginner',
       blurb: '',
+      capabilities: defaultCapabilities,
       factory: () => {
         captured = makeExercise(descriptor, null)
         return captured
@@ -220,6 +229,7 @@ describe('ExerciseRunner', () => {
       category: 'play-along',
       difficulty: 'beginner',
       blurb: '',
+      capabilities: defaultCapabilities,
       factory: () =>
         makeExercise(descriptor, {
           // Exercise optimistically set `completed: true` — the runner should
@@ -255,6 +265,7 @@ describe('ExerciseRunner', () => {
       category: 'play-along',
       difficulty: 'beginner',
       blurb: '',
+      capabilities: defaultCapabilities,
       factory: () => {
         const e = makeExercise(first, null)
         firstExercises.push(e)
@@ -267,6 +278,7 @@ describe('ExerciseRunner', () => {
       category: 'play-along',
       difficulty: 'beginner',
       blurb: '',
+      capabilities: defaultCapabilities,
       factory: () => makeExercise(second, null),
     }
 

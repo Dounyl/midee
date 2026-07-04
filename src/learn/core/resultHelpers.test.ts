@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { standardResult } from './resultHelpers'
+import { performanceResult, standardResult } from './resultHelpers'
 
 describe('standardResult', () => {
   it('returns null when no attempts were made', () => {
@@ -71,5 +71,33 @@ describe('standardResult', () => {
       completed: true,
     })
     expect(r!.duration_s).toBe(0)
+  })
+})
+
+describe('performanceResult', () => {
+  it('maps perfect/good/errors into the shared result shape', () => {
+    const r = performanceResult({
+      exerciseId: 'play-along',
+      perfect: 3,
+      good: 2,
+      errors: 1,
+      difficultyWeight: 1,
+      completed: true,
+    })
+    expect(r).not.toBeNull()
+    expect(r!.accuracy).toBeCloseTo(5 / 6)
+    expect(r!.completed).toBe(true)
+  })
+
+  it('returns null when no graded attempts were made', () => {
+    const r = performanceResult({
+      exerciseId: 'play-along',
+      perfect: 0,
+      good: 0,
+      errors: 0,
+      difficultyWeight: 1,
+      completed: false,
+    })
+    expect(r).toBeNull()
   })
 })

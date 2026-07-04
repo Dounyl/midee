@@ -1,10 +1,38 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MidiFile } from '../core/midi/types'
 import { LearnController } from './LearnController'
 
+const runnerState = {
+  active: false,
+  activeId: null as string | null,
+  launchCalls: [] as Array<{ id: string }>,
+  closeCalls: [] as Array<'completed' | 'abandoned'>,
+  closeResult: null as
+    | {
+        exerciseId: string
+        duration_s: number
+        accuracy: number
+        xp: number
+        weakSpots: string[]
+        completed: boolean
+      }
+    | null,
+}
+
+const sessionSummaryShow = vi.fn()
+
+function resetRunnerState() {
+  runnerState.active = false
+  runnerState.activeId = null
+  runnerState.launchCalls = []
+  runnerState.closeCalls = []
+  runnerState.closeResult = null
+  sessionSummaryShow.mockReset()
+}
+
 // LearnOverlay pulls in PixiJS (Container / Graphics) which needs a real
-// WebGL context — not available in jsdom. Mock the whole module so
-// `new LearnOverlay()` returns a plain object with enough of the surface to
+// WebGL context, not available in jsdom. Mock the whole module so
+// `new LearnOverlay()` returns a plain object with enough surface area to
 // satisfy the controller without touching graphics.
 vi.mock('../learn/overlays/LearnOverlay', () => ({
   LearnOverlay: class {
@@ -15,37 +43,41 @@ vi.mock('../learn/overlays/LearnOverlay', () => ({
   },
 }))
 
-// ExerciseRunner.launch mounts a full exercise (Solid render + Tone). Mocking
-// it keeps the test focused on the controller's drain behaviour without
-// pulling in the entire play-along lifecycle.
+// ExerciseRunner.launch mounts a full exercise tree. Mocking it keeps the
+// test focused on controller orchestration rather than exercise internals.
 vi.mock('../learn/core/ExerciseRunner', () => ({
   ExerciseRunner: class {
     get isActive() {
-      return false
+      return runnerState.active
     }
     get activeId() {
-      return null
+      return runnerState.activeId
     }
-    launch() {
+    launch(descriptor: { id: string }) {
+      runnerState.launchCalls.push(descriptor)
+      runnerState.active = true
+      runnerState.activeId = descriptor.id
       return Promise.resolve()
     }
-    close() {
-      return null
+    close(reason: 'completed' | 'abandoned') {
+      runnerState.closeCalls.push(reason)
+      runnerState.active = false
+      runnerState.activeId = null
+      return runnerState.closeResult
     }
   },
 }))
 
-// LearnHub.mount calls solid-js/web `render` which tries to insert DOM.
-// Mocking it keeps the test hermetic (no stray Solid roots to clean up) and
-// avoids a dependency on the full catalog / i18n surface.
+// LearnHub.mount calls Solid render. Mocking it keeps the test hermetic and
+// avoids bringing in the full catalog surface.
 vi.mock('../learn/hub/LearnHub', () => ({
   createLearnHub: () => ({ mount: () => {}, unmount: () => {} }),
 }))
 
 // SessionSummary renders HTML into the hub host after an exercise closes.
-// Not exercised by these tests; mocking prevents stray DOM side-effects.
+// Not exercised directly here; we only need to observe that it would show.
 vi.mock('../learn/ui/SessionSummary', () => ({
-  createSessionSummary: () => ({ show: () => {}, dismiss: () => {} }),
+  createSessionSummary: () => ({ show: sessionSummaryShow, dismiss: () => {} }),
 }))
 
 vi.mock('../telemetry', () => ({
@@ -53,10 +85,8 @@ vi.mock('../telemetry', () => ({
   trackEvent: vi.fn(),
 }))
 
-// play-along/index.ts imports `getContext` from 'tone'; tone's ESM build
-// references internal paths that don't resolve in vitest's Node environment.
-// Mock the descriptor directly so the catalog + controller never trigger
-// the Tone import chain.
+// play-along/index.ts imports Tone. Mock the descriptor directly so the
+// controller never touches that import chain.
 vi.mock('../learn/exercises/play-along', () => ({
   playAlongDescriptor: {
     id: 'play-along',
@@ -65,6 +95,12 @@ vi.mock('../learn/exercises/play-along', () => ({
     },
     category: 'play-along',
     difficulty: 'beginner',
+    capabilities: {
+      requiresLoadedMidi: true,
+      usesOverlay: true,
+      usesInputBus: true,
+      supportsMidiReplacement: true,
+    },
     get blurb() {
       return ''
     },
@@ -78,8 +114,6 @@ vi.mock('../learn/hub/catalog', () => ({
   findExercise: vi.fn(() => undefined),
   CATALOG: [],
 }))
-
-// ── Helpers ───────────────────────────────────────────────────────────────
 
 function makeMidi(name = 'test.mid'): MidiFile {
   return {
@@ -116,6 +150,7 @@ function makeFakeCtx() {
       renderer: {
         clearMidi: vi.fn(),
         loadMidi: vi.fn(),
+        setKeyboardMode: vi.fn(),
         setLiveNotesVisible: vi.fn(),
         addLayer: vi.fn(),
         removeLayer: vi.fn(),
@@ -135,16 +170,21 @@ function makeFakeCtx() {
     primeInteractiveAudio: vi.fn(),
     setLearnFileName: vi.fn(),
     updateConsolePanel: vi.fn(),
+    keyboardMode: {
+      ensureMidiFitsCurrentMode: vi.fn(() => true),
+      getMode: vi.fn(() => 'full'),
+    },
   }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────
-
 describe('LearnController.queueMidi', () => {
+  beforeEach(() => {
+    resetRunnerState()
+  })
+
   it('does not consume the MIDI before enter() is called', () => {
     const ctrl = new LearnController(makeFakeCtx() as never)
     ctrl.queueMidi(makeMidi())
-    // learnState should still be clean — nothing was loaded yet.
     expect(ctrl.learnState.state.loadedMidi).toBeNull()
   })
 
@@ -154,12 +194,7 @@ describe('LearnController.queueMidi', () => {
     const midi = makeMidi('piece.mid')
     ctrl.queueMidi(midi)
     ctrl.enter()
-    // consumeMidi fires synth.load asynchronously but calls
-    // learnState.completeLoad synchronously — flush the microtask queue so
-    // any void-async tails settle.
     await Promise.resolve()
-    // Solid stores wrap values in reactive proxies, so reference equality
-    // fails; check the name field as a stable identity proxy instead.
     expect(ctrl.learnState.state.loadedMidi?.name).toBe('piece.mid')
   })
 
@@ -171,14 +206,11 @@ describe('LearnController.queueMidi', () => {
     await Promise.resolve()
     const firstMidi = ctrl.learnState.state.loadedMidi
 
-    // Simulate a hub back-button → re-enter without queuing anything.
     ctrl.exit()
     ctrl.enter()
     await Promise.resolve()
 
-    // Second enter must NOT re-load the first MIDI; the hub starts clean.
     expect(ctrl.learnState.state.loadedMidi).toBeNull()
-    // First midi was genuinely loaded during the first session.
     expect(firstMidi).not.toBeNull()
   })
 
@@ -196,5 +228,54 @@ describe('LearnController.queueMidi', () => {
     ctrl.enter()
     await Promise.resolve()
     expect(ctx.setLearnFileName).toHaveBeenCalledWith('bach-prelude.mid')
+  })
+
+  it('auto-launches play-along after draining queued MIDI', async () => {
+    const ctrl = new LearnController(makeFakeCtx() as never)
+    ctrl.queueMidi(makeMidi('autostart.mid'))
+    ctrl.enter()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(runnerState.launchCalls).toHaveLength(1)
+    expect(runnerState.launchCalls[0]?.id).toBe('play-along')
+  })
+
+  it('exit() abandons an active runner', async () => {
+    const ctrl = new LearnController(makeFakeCtx() as never)
+    ctrl.queueMidi(makeMidi('active.mid'))
+    ctrl.enter()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    ctrl.exit()
+
+    expect(runnerState.closeCalls).toEqual(['abandoned'])
+  })
+
+  it('closing the active exercise returns Learn to a clean hub state', async () => {
+    runnerState.closeResult = {
+      exerciseId: 'play-along',
+      duration_s: 12,
+      accuracy: 0.9,
+      xp: 10,
+      weakSpots: [],
+      completed: true,
+    }
+    const ctx = makeFakeCtx()
+    const ctrl = new LearnController(ctx as never)
+    ctrl.queueMidi(makeMidi('cleanup.mid'))
+    ctrl.enter()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    ;(ctrl as unknown as { closeActiveExercise(reason: 'completed' | 'abandoned'): void }).closeActiveExercise(
+      'completed',
+    )
+
+    expect(runnerState.closeCalls).toEqual(['completed'])
+    expect(ctrl.learnState.state.loadedMidi).toBeNull()
+    expect(ctx.setLearnFileName).toHaveBeenLastCalledWith(null)
+    expect(ctx.services.renderer.setVisible).toHaveBeenLastCalledWith(false)
+    expect(sessionSummaryShow).toHaveBeenCalledOnce()
   })
 })

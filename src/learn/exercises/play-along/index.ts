@@ -1,53 +1,35 @@
-// Play-along exercise — Exercise integration class.
-// Composes PracticeEngine (wait-mode), LoopRegion helpers (loop set/clear +
-// wrap + ramp), and a shared LearnOverlay (target zone + loop band) against
-// the Exercise interface consumed by the learn runner. Reads the MIDI from
-// LearnState (loaded before launch); the hub gates the start-card when none
-// is loaded.
-
 import { getContext } from 'tone'
 import type { BusNoteEvent } from '../../../core/input/InputBus'
 import type { MidiFile } from '../../../core/midi/types'
 import { t } from '../../../i18n'
 import { watch } from '../../../store/watch'
-import type { Exercise, ExerciseDescriptor } from '../../core/Exercise'
+import type { Exercise } from '../../core/Exercise'
 import type { ExerciseContext } from '../../core/ExerciseContext'
+import { defineExerciseDescriptor } from '../../core/exerciseDescriptor'
 import { createExerciseHarness } from '../../core/exerciseHarness'
 import { isKeyboardShortcutIgnored } from '../../core/keyboard'
 import type { ExerciseResult } from '../../core/Result'
-import { standardResult } from '../../core/resultHelpers'
+import { performanceResult } from '../../core/resultHelpers'
 import { DEFAULT_SPEED_PRESETS, PlayAlongEngine } from './engine'
 import { createPlayAlongHud, type PlayAlongHudOptions } from './hud'
 
-// Aggressive Tone scheduler headroom while Play-Along is active — 5 ms,
-// roughly an order of magnitude below Tone's 100 ms default. Pairs with
-// `ENGAGE_LEAD_SEC = 0.01` in `PracticeEngine.ts` (5 ms of safety margin)
-// to keep the visible "wait engaged" gap to ~one frame. Snapshot + restore
-// around the session so Play / Live keep the default headroom — they don't
-// need the tight pairing and the default is more forgiving on weaker
-// machines under CPU pressure.
 const PLAY_ALONG_LOOK_AHEAD_SEC = 0.005
 
-export const playAlongDescriptor: ExerciseDescriptor = {
+export const playAlongDescriptor = defineExerciseDescriptor({
   id: 'play-along',
-  // `title` / `blurb` are getters so the hub re-reads them after a locale
-  // flip — the descriptor object itself is constructed once at module load.
-  get title() {
-    return t('learn.exercise.playAlong.title')
-  },
+  title: () => t('learn.exercise.playAlong.title'),
   category: 'play-along',
   difficulty: 'beginner',
-  get blurb() {
-    return t('learn.exercise.playAlong.blurb')
+  blurb: () => t('learn.exercise.playAlong.blurb'),
+  capabilities: {
+    requiresLoadedMidi: true,
+    usesOverlay: true,
+    usesInputBus: true,
+    supportsMidiReplacement: true,
   },
   factory: (ctx) => new PlayAlongExercise(ctx),
-}
+})
 
-// Synthesia-class play-along. Composes PracticeEngine (wait mode), LoopRegion
-// helpers (loop set/clear + wrap + ramp), and a shared LearnOverlay (target
-// zone + loop band) behind a single Exercise surface. Reads the MIDI from
-// the shared app store — it must be loaded before launch; the hub gates the
-// card when it isn't.
 class PlayAlongExercise implements Exercise {
   readonly descriptor = playAlongDescriptor
   private engine: PlayAlongEngine
@@ -134,9 +116,7 @@ class PlayAlongExercise implements Exercise {
     if (this.prevLookAhead !== null) {
       try {
         getContext().lookAhead = this.prevLookAhead
-      } catch {
-        // Best effort.
-      }
+      } catch {}
       this.prevLookAhead = null
     }
   }
@@ -155,15 +135,11 @@ class PlayAlongExercise implements Exercise {
       this.ctx.log.error()
     }
     if (this.engine.practice.isWaiting === false) {
-      // A press that advanced past the wait or landed without one is "good":
-      // pulse the target zone in the accent color.
       this.ctx.overlay.pulseTargetZone(0xfbd38d)
     }
   }
 
   onNoteOff(evt: BusNoteEvent): void {
-    // Routed so the engine can maintain its `pressedPitches` set for the
-    // legato held-tick bonus. No score side-effect on its own.
     this.engine.onNoteOff(evt)
   }
 
@@ -173,16 +149,15 @@ class PlayAlongExercise implements Exercise {
   }
 
   result(): ExerciseResult | null {
-    return standardResult({
+    return performanceResult({
       exerciseId: this.descriptor.id,
-      hits: this.engine.state.perfect + this.engine.state.good,
-      misses: this.engine.state.errors,
+      perfect: this.engine.state.perfect,
+      good: this.engine.state.good,
+      errors: this.engine.state.errors,
       difficultyWeight: 1,
       completed: true,
     })
   }
-
-  // ── Local helpers ─────────────────────────────────────────────────────
 
   private onKeyDown = (e: KeyboardEvent): void => {
     if (e.shiftKey || isKeyboardShortcutIgnored(e)) return
@@ -198,8 +173,6 @@ class PlayAlongExercise implements Exercise {
     }
   }
 
-  // Mark-style loop: idle → mark A → mark B (loops) → clear. The HUD button
-  // and the `L` shortcut both route here so the two stay in sync.
   private markLoop(): void {
     if (!this.ctx.learnState.state.loadedMidi) return
     this.engine.markLoopPoint(this.ctx.services.clock.currentTime)
@@ -216,7 +189,6 @@ class PlayAlongExercise implements Exercise {
   }
 
   private onCleanPass(): void {
-    // Subtle swell at the now-line — no sound, just a breath.
     const viewport = this.ctx.services.renderer.currentViewport
     this.ctx.overlay.celebrationSwell(viewport.config.canvasWidth / 2, viewport.nowLineY, 0xfbd38d)
   }

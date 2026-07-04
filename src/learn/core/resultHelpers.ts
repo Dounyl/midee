@@ -25,3 +25,37 @@ export function standardResult(params: {
     completed: params.completed,
   }
 }
+
+export function performanceResult(params: {
+  exerciseId: string
+  perfect: number
+  good: number
+  errors: number
+  difficultyWeight: number
+  duration_s?: number
+  weakSpots?: ExerciseResult['weakSpots']
+  completed: boolean
+}): ExerciseResult | null {
+  const standardParams: {
+    exerciseId: string
+    hits: number
+    misses: number
+    difficultyWeight: number
+    duration_s?: number
+    weakSpots?: ExerciseResult['weakSpots']
+    completed: boolean
+  } = {
+    exerciseId: params.exerciseId,
+    hits: params.perfect + params.good,
+    misses: params.errors,
+    difficultyWeight: params.difficultyWeight,
+    completed: params.completed,
+  }
+  if (params.duration_s !== undefined) {
+    standardParams.duration_s = params.duration_s
+  }
+  if (params.weakSpots !== undefined) {
+    standardParams.weakSpots = params.weakSpots
+  }
+  return standardResult(standardParams)
+}

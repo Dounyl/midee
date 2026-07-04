@@ -5,7 +5,11 @@ import type { MidiFile } from '../../../core/midi/types'
 import type { AppServices } from '../../../core/services'
 import { watch } from '../../../store/watch'
 import type { LearnState } from '../../core/LearnState'
-import { classifyArticulation } from '../../core/scoring'
+import {
+  applyHeldTickBonus,
+  applyPerformanceAdvance,
+  applyPerformanceReject,
+} from '../../core/performanceScoring'
 import { type LoopRegion, makeRegionFromBars, ramp, wrapIfAtEnd } from '../../engines/LoopRegion'
 import { PracticeEngine } from '../../engines/PracticeEngine'
 
@@ -236,28 +240,20 @@ export class PlayAlongEngine {
     this.pressedPitches.add(evt.pitch)
     const outcome = this.practice.notePressed(evt.pitch)
     if (outcome.kind === 'advanced') {
-      const verdict = classifyArticulation(outcome.articulationMs)
       const expireAt = outcome.clearedStep.latestEnd + HELD_GRACE_SEC
       for (const pitch of outcome.clearedStep.pitches) {
         this.heldEligible.set(pitch, expireAt)
       }
+      const next = applyPerformanceAdvance(this.state, outcome.articulationMs)
       batch(() => {
-        if (verdict === 'perfect') {
-          this.setState('perfect', this.state.perfect + 1)
-        } else {
-          this.setState('good', this.state.good + 1)
-        }
-        this.setState('streak', this.state.streak + 1)
+        this.setState(next)
       })
       return 'advanced'
     }
     if (outcome.kind === 'rejected' && this.practice.isWaiting) {
+      const next = applyPerformanceReject(this.state)
       batch(() => {
-        this.setState({
-          errors: this.state.errors + 1,
-          streak: 0,
-          cleanPasses: 0,
-        })
+        this.setState(next)
       })
       return 'rejected'
     }
@@ -469,7 +465,7 @@ export class PlayAlongEngine {
       if (this.pressedPitches.has(pitch)) held++
     }
     if (held > 0) {
-      this.setState('heldTicks', this.state.heldTicks + held)
+      this.setState(applyHeldTickBonus(this.state, held))
     }
   }
 }

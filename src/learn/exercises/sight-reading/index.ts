@@ -1,14 +1,9 @@
-// Sight-reading exercise — Exercise integration class.
-// Wires the SightReadingEngine, SightReadLayer, and SightReadHud together
-// against the Exercise interface consumed by the learn runner. Each session
-// streams notes from a `generateNoteSource` (weighted random pitch pool);
-// the renderer owns the per-frame engine tick via `SightReadLayer.update()`.
-
 import { batch } from 'solid-js'
 import type { BusNoteEvent } from '../../../core/input/InputBus'
 import { t } from '../../../i18n'
-import type { Exercise, ExerciseDescriptor } from '../../core/Exercise'
+import type { Exercise } from '../../core/Exercise'
 import type { ExerciseContext } from '../../core/ExerciseContext'
+import { defineExerciseDescriptor } from '../../core/exerciseDescriptor'
 import { isKeyboardShortcutIgnored } from '../../core/keyboard'
 import type { ExerciseResult } from '../../core/Result'
 import { computeXp } from '../../core/scoring'
@@ -33,18 +28,20 @@ export function poolForClef(clef: ClefMode, tier: TierConfig): number[] {
   return [...pool].sort((a, b) => a - b)
 }
 
-export const sightReadingDescriptor: ExerciseDescriptor = {
+export const sightReadingDescriptor = defineExerciseDescriptor({
   id: 'sight-reading',
-  get title() {
-    return t('learn.exercise.sightReading.title')
-  },
+  title: () => t('learn.exercise.sightReading.title'),
   category: 'sight-reading',
   difficulty: 'beginner',
-  get blurb() {
-    return t('learn.exercise.sightReading.blurb')
+  blurb: () => t('learn.exercise.sightReading.blurb'),
+  capabilities: {
+    requiresLoadedMidi: false,
+    usesOverlay: false,
+    usesInputBus: true,
+    supportsMidiReplacement: false,
   },
   factory: (ctx) => new SightReadingExercise(ctx, 'landmark'),
-}
+})
 
 class SightReadingExercise implements Exercise {
   readonly descriptor = sightReadingDescriptor
@@ -82,20 +79,16 @@ class SightReadingExercise implements Exercise {
   mount(host: HTMLElement): void {
     const tier = TIER_CONFIGS[this.tierKey]
 
-    // Hide the piano-roll note waterfall — the staff layer owns the canvas.
     this.ctx.services.renderer.clearMidi()
-
-    // Register PixiJS layer.
     this.ctx.services.renderer.addLayer(this.staffLayer)
 
-    // Mount the HUD.
     this.hud.mount(host, {
       engine: this.engine,
       tier,
-      onPlayAgain: () => this._restart(),
-      onPracticeWeak: (pitches) => this._restart(pitches),
+      onPlayAgain: () => this.restart(),
+      onPracticeWeak: (pitches) => this.restart(pitches),
       onClose: () => this.ctx.onClose('abandoned'),
-      onRestart: () => this._restart(),
+      onRestart: () => this.restart(),
       onClefChange: (clef) => {
         this.staffLayer.setClef(clef)
         this.staffLayer.resetDone()
@@ -114,10 +107,7 @@ class SightReadingExercise implements Exercise {
   start(): void {
     const tier = TIER_CONFIGS[this.tierKey]
 
-    // Prime the synth for low-latency live playback.
     this.ctx.services.synth.primeLiveInput()
-
-    // Attach note source and start engine.
     this.engine.attach(
       generateNoteSource({
         pitchPool: poolForClef(tier.clef, tier),
@@ -126,7 +116,6 @@ class SightReadingExercise implements Exercise {
     )
     this.engine.start()
 
-    // Escape → pause/resume. [ / ] → tempo −5 / +5 while paused.
     this.onEscKey = (e: KeyboardEvent) => {
       if (isKeyboardShortcutIgnored(e)) return
       if (e.code === 'Escape') {
@@ -170,7 +159,6 @@ class SightReadingExercise implements Exercise {
       this.ctx.log.miss(evt.pitch)
     }
 
-    // Update active keys for ghost display.
     this.staffLayer.activeKeys.add(evt.pitch)
   }
 
@@ -185,7 +173,7 @@ class SightReadingExercise implements Exercise {
     if (acc === null) return null
     return {
       exerciseId: sightReadingDescriptor.id,
-      duration_s: 0, // runner computes from Session
+      duration_s: 0,
       accuracy: acc,
       xp: computeXp({ accuracy: acc, duration_s: 60, difficultyWeight: 1.0 }),
       weakSpots: this.engine.weakSpots,
@@ -193,7 +181,7 @@ class SightReadingExercise implements Exercise {
     }
   }
 
-  private _restart(focusPitches?: number[]): void {
+  private restart(focusPitches?: number[]): void {
     const tier = TIER_CONFIGS[this.tierKey]
     const clef = this.staffLayer.currentClef()
     const pool = poolForClef(clef, tier)
