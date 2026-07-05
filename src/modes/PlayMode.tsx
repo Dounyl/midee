@@ -1,4 +1,4 @@
-import { PlayPage } from '../pages/play/PlayPage'
+import { PlayPage } from '@/pages/PlayPage/PlayPage'
 
 // Playback surface for a loaded MIDI file. Mount happens when the store's
 // mode transitions to 'play', which only occurs in `completePlayLoad`, so

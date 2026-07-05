@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AppRoot } from './AppRoot'
-import { SKIP_HOME_INTRO_STORAGE_KEY } from './store/state'
+import { AppRoot } from '@/app/App'
+import { SKIP_HOME_INTRO_STORAGE_KEY } from '@/stores/app/state'
 import { renderWithApp } from './test/renderWithApp'
 
 describe('AppRoot routing', () => {

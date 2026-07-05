@@ -100,9 +100,9 @@ vi.mock('../learn/exercises/play-along', () => ({
   },
 }))
 
-// catalog.ts re-imports playAlongDescriptor; mock it independently so
+// registry.ts re-imports playAlongDescriptor; mock it independently so
 // findExercise(id) also avoids the Tone resolution chain.
-vi.mock('../learn/hub/catalog', () => ({
+vi.mock('../learn/hub/registry', () => ({
   findExercise: vi.fn(() => undefined),
   CATALOG: [],
 }))

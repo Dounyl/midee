@@ -1,4 +1,4 @@
-import './styles/global.css'
+import '@/styles/global.css'
 // Self-hosted fonts via @fontsource. Each CSS import emits a `@font-face`
 // rule into the main stylesheet bundle and ships its woff2 file to
 // `dist/assets/` as a long-cacheable hashed asset. Compared to
@@ -16,14 +16,14 @@ import '@fontsource/jetbrains-mono/latin-400.css'
 import '@fontsource/jetbrains-mono/latin-500.css'
 import '@fontsource/jetbrains-mono/latin-600.css'
 import { render } from 'solid-js/web'
-import { AppRoot } from './AppRoot'
-import { createApp } from './createApp'
-import { env } from './env'
-import { currentLocaleNativeName, initI18n, shouldShowLocaleHint, t } from './i18n'
-import localeHintStyles from './main/LocaleHint.module.css'
-import { AppCtx } from './store/AppCtx'
-import { loadPostHog, registerAnalyticsContext } from './telemetry'
-import { whenIdle } from './whenIdle'
+import { AppRoot } from '@/app/App'
+import { createApp } from '@/app/createApp'
+import { env } from '@/env'
+import { currentLocaleNativeName, initI18n, shouldShowLocaleHint, t } from '@/i18n'
+import localeHintStyles from '@/main/LocaleHint.module.css'
+import { AppCtx } from '@/stores/app/AppCtx'
+import { loadPostHog, registerAnalyticsContext } from '@/telemetry'
+import { whenIdle } from '@/whenIdle'
 
 // Both analytics SDKs are loaded on idle so they don't sit in the initial
 // bundle. PostHog alone is ~70 KB gz with autocapture / session_recording /
@@ -79,7 +79,7 @@ async function boot(): Promise<void> {
   // `?bench=...` URLs are inert in prod. Read `import.meta.env` directly (not
   // through env.ts) so the value is statically inlined for the dead-code pass.
   if (import.meta.env.VITE_ENABLE_BENCH) {
-    const { benchFixtureFromUrl, runBench } = await import('./bench/runner')
+    const { benchFixtureFromUrl, runBench } = await import('@/bench/runner')
     const fixture = benchFixtureFromUrl()
     if (fixture) {
       try {

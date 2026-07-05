@@ -1,0 +1,501 @@
+import { createSignal, For } from 'solid-js'
+import { render } from 'solid-js/web'
+import { LOCALES, type LocaleCode, locale, t } from '../i18n'
+import type { ParticleStyle, ParticleStyleInfo } from '../renderer/ParticleSystem'
+import type { Theme } from '../renderer/theme'
+import { trackEvent } from '../telemetry'
+import { FEEDBACK_URL, isNarrowViewport } from './utils'
+import styles from './CustomizeMenu.module.css'
+
+// Aesthetics popover — collapses theme, particles, and chord overlay (three
+// previously-separate topbar pills) into one trigger. Reduces topbar noise
+// while keeping every option one tap away once opened.
+//
+// Pattern mirrors InstrumentMenu: a pill trigger anchored in the topbar +
+// an absolutely-positioned popover anchored under it (or rendered as a
+// bottom sheet on narrow viewports via shared CSS).
+
+export interface CustomizeMenuCallbacks {
+  onSelectTheme: (index: number) => void
+  onSelectParticle: (index: number) => void
+  onToggleChord: () => void
+  onSelectLocale: (code: LocaleCode) => void
+}
+
+interface TriggerProps {
+  label: () => string
+  swatchStyle: () => { background: string; 'box-shadow': string }
+  isOpen: () => boolean
+  onToggle: () => void
+  registerEl: (el: HTMLButtonElement) => void
+}
+
+function TriggerView(props: TriggerProps) {
+  return (
+    <button
+      ref={(el) => props.registerEl(el)}
+      class={['ts-pill', styles.customizePill, props.isOpen() ? 'ts-pill--open' : '']
+        .filter(Boolean)
+        .join(' ')}
+      id="ts-customize"
+      type="button"
+      aria-label={t('customize.aria')}
+      data-tip={t('customize.aria')}
+      onClick={() => props.onToggle()}
+    >
+      <span
+        class={styles.customizeSwatch}
+        id="ts-customize-swatch"
+        aria-hidden="true"
+        style={props.swatchStyle()}
+      />
+      <span class={styles.customizeLabel} id="ts-customize-label">
+        {props.label()}
+      </span>
+      <svg
+        class={styles.customizeChev}
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </button>
+  )
+}
+
+interface MenuProps {
+  themes: readonly Theme[]
+  particles: readonly ParticleStyleInfo[]
+  themeIndex: () => number
+  particleIndex: () => number
+  chordOn: () => boolean
+  isOpen: () => boolean
+  isSheet: () => boolean
+  onSelectTheme: (i: number) => void
+  onSelectParticle: (i: number) => void
+  onToggleChord: () => void
+  onSelectLocale: (code: LocaleCode) => void
+  registerEl: (el: HTMLElement) => void
+}
+
+function MenuView(props: MenuProps) {
+  return (
+    <div
+      ref={(el) => props.registerEl(el)}
+      class={[
+        'ts-popover',
+        styles.customizeMenu,
+        props.isOpen() ? 'ts-popover--open' : '',
+        props.isSheet() ? 'popover--sheet' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div class="panel-header">
+        <span class="panel-label">{t('customize.title')}</span>
+      </div>
+
+      <div class={`${styles.customizeBody} scroll-surface`}>
+        <div class={styles.customizeSection}>
+          <div class={styles.customizeSectionHead}>
+            <span class={styles.customizeSectionLabel}>{t('customize.theme')}</span>
+          </div>
+          <div class={styles.customizeThemeGrid}>
+            <For each={props.themes}>
+              {(theme, i) => (
+                <button
+                  class={[
+                    styles.customizeThemeTile,
+                    props.themeIndex() === i() ? styles.customizeThemeTileOn : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  type="button"
+                  title={theme.name}
+                  aria-label={`${theme.name} theme`}
+                  onClick={() => props.onSelectTheme(i())}
+                >
+                  <span
+                    class={styles.customizeThemeTileDot}
+                    style={{ background: theme.uiAccentCSS }}
+                  />
+                  <span class={styles.customizeThemeTileLabel}>{theme.name}</span>
+                </button>
+              )}
+            </For>
+          </div>
+        </div>
+
+        <div class={styles.customizeSection}>
+          <div class={styles.customizeSectionHead}>
+            <span class={styles.customizeSectionLabel}>{t('customize.particles')}</span>
+          </div>
+          <div class={styles.customizeParticleRow}>
+            <For each={props.particles}>
+              {(p, i) => (
+                <button
+                  class={[
+                    styles.customizeParticleChip,
+                    props.particleIndex() === i() ? styles.customizeParticleChipOn : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  type="button"
+                  title={p.name}
+                  aria-label={`${p.name} particles`}
+                  onClick={() => props.onSelectParticle(i())}
+                >
+                  <span
+                    class={styles.customizeParticleChipGlyph}
+                    data-style={p.id}
+                    aria-hidden="true"
+                    innerHTML={PARTICLE_GLYPHS[p.id] ?? PARTICLE_GLYPHS['sparks'] ?? ''}
+                  />
+                  <span class={styles.customizeParticleChipLabel}>{p.name}</span>
+                </button>
+              )}
+            </For>
+          </div>
+        </div>
+
+        <div class={styles.customizeSection}>
+          <div class={styles.customizeSectionHead}>
+            <span class={styles.customizeSectionLabel}>{t('customize.language')}</span>
+          </div>
+          <div class={styles.customizeLocaleRow}>
+            <For each={LOCALES}>
+              {(l) => (
+                <button
+                  class={[
+                    styles.customizeLocaleChip,
+                    l.code === locale.value ? styles.customizeLocaleChipOn : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  type="button"
+                  data-locale={l.code}
+                  aria-label={l.nativeName}
+                  onClick={() => props.onSelectLocale(l.code)}
+                >
+                  <span>{l.nativeName}</span>
+                </button>
+              )}
+            </For>
+          </div>
+        </div>
+
+        <div class={`${styles.customizeSection} ${styles.customizeSectionToggle}`}>
+          <button
+            class={[
+              styles.customizeToggle,
+              props.chordOn() ? styles.customizeToggleOn : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            type="button"
+            aria-pressed={props.chordOn() ? 'true' : 'false'}
+            onClick={() => props.onToggleChord()}
+          >
+            <span class={styles.customizeToggleBody}>
+              <span class={styles.customizeToggleName}>{t('customize.chord')}</span>
+              <span class={styles.customizeToggleSub}>{t('customize.chord.sub')}</span>
+            </span>
+            <span class={styles.customizeToggleSwitch} aria-hidden="true">
+              <span class={styles.customizeToggleKnob}></span>
+            </span>
+          </button>
+        </div>
+
+        <div class={`${styles.customizeSection} ${styles.customizeSectionFooter}`}>
+          <a
+            class={styles.customizeFeedbackCard}
+            href={FEEDBACK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackEvent('feedback_clicked', { source: 'customize_menu' })}
+          >
+            <span class={styles.customizeFeedbackIcon} aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.6 9.6 0 0 1-4-.9L3 21l1.9-5.5a8.38 8.38 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z" />
+              </svg>
+            </span>
+            <span class={styles.customizeFeedbackLabel}>{t('feedback.menu')}</span>
+            <svg
+              class={styles.customizeFeedbackArrow}
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M7 17L17 7" />
+              <path d="M8 7h9v9" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export class CustomizeMenu {
+  readonly trigger: HTMLButtonElement
+  private menu!: HTMLElement
+  private isOpen = false
+  private disposeTrigger: (() => void) | null = null
+  private disposeMenu: (() => void) | null = null
+  private menuWrapper: HTMLDivElement | null = null
+
+  private readonly setThemeIdx: (v: number) => void
+  private readonly themeIdxFn: () => number
+  private readonly setParticleIdx: (v: number) => void
+  private readonly particleIdxFn: () => number
+  private readonly setChordOn: (v: boolean) => void
+  private readonly chordOnFn: () => boolean
+  private readonly setIsOpen: (v: boolean) => void
+  private readonly setIsSheet: (v: boolean) => void
+  private readonly setLabel: (v: string) => void
+  private readonly setSwatch: (v: { background: string; 'box-shadow': string }) => void
+
+  private onDocPointer = (e: PointerEvent): void => {
+    const target = e.target as Node
+    if (this.menu.contains(target)) return
+    if (this.trigger.contains(target)) return
+    this.close()
+  }
+  private onKey = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape' && this.isOpen) this.close()
+  }
+  private onResize = (): void => {
+    if (!this.isOpen) return
+    if (this.menu.classList.contains('popover--sheet') || isNarrowViewport()) {
+      this.close()
+      return
+    }
+    this.positionUnder()
+  }
+
+  constructor(
+    triggerHost: HTMLElement,
+    popoverHost: HTMLElement,
+    private themes: readonly Theme[],
+    particles: readonly ParticleStyleInfo[],
+    callbacks: CustomizeMenuCallbacks,
+  ) {
+    const [themeIdx, setThemeIdx] = createSignal(0)
+    const [particleIdx, setParticleIdx] = createSignal(0)
+    const [chordOn, setChordOn] = createSignal(false)
+    const [isOpen, setIsOpen] = createSignal(false)
+    const [isSheet, setIsSheet] = createSignal(false)
+    const [label, setLabel] = createSignal(t('customize.theme'))
+    const [swatch, setSwatch] = createSignal({ background: '', 'box-shadow': '' })
+
+    this.themeIdxFn = themeIdx
+    this.setThemeIdx = setThemeIdx
+    this.particleIdxFn = particleIdx
+    this.setParticleIdx = setParticleIdx
+    this.chordOnFn = chordOn
+    this.setChordOn = setChordOn
+    this.setIsOpen = setIsOpen
+    this.setIsSheet = setIsSheet
+    this.setLabel = setLabel
+    this.setSwatch = setSwatch
+
+    // Trigger: render into its own wrapper so the host gets exactly our pill
+    // and nothing else. We capture the button ref so existing callers can
+    // continue treating `.trigger` as a real DOM node.
+    const triggerWrapper = document.createElement('div')
+    triggerWrapper.style.display = 'contents'
+    triggerHost.appendChild(triggerWrapper)
+    let triggerEl!: HTMLButtonElement
+    this.disposeTrigger = render(
+      () => (
+        <TriggerView
+          label={label}
+          swatchStyle={swatch}
+          isOpen={isOpen}
+          onToggle={() => this.toggle()}
+          registerEl={(el) => {
+            triggerEl = el
+          }}
+        />
+      ),
+      triggerWrapper,
+    )
+    this.trigger = triggerEl
+
+    const menuWrapper = document.createElement('div')
+    popoverHost.appendChild(menuWrapper)
+    this.menuWrapper = menuWrapper
+    this.disposeMenu = render(
+      () => (
+        <MenuView
+          themes={themes}
+          particles={particles}
+          themeIndex={themeIdx}
+          particleIndex={particleIdx}
+          chordOn={chordOn}
+          isOpen={isOpen}
+          isSheet={isSheet}
+          onSelectTheme={(i) => callbacks.onSelectTheme(i)}
+          onSelectParticle={(i) => callbacks.onSelectParticle(i)}
+          onToggleChord={() => callbacks.onToggleChord()}
+          onSelectLocale={(code) => callbacks.onSelectLocale(code)}
+          registerEl={(el) => {
+            this.menu = el
+          }}
+        />
+      ),
+      menuWrapper,
+    )
+  }
+
+  // ── Public state setters (App pushes the active selection in) ──────────
+  setTheme(index: number): void {
+    this.setThemeIdx(index)
+    const theme = this.themes[index]
+    if (!theme) return
+    const accent = theme.uiAccentCSS
+    const second = numToHexCss(theme.trackColors[2] ?? theme.trackColors[0] ?? 0xffffff)
+    this.setSwatch({
+      background: `linear-gradient(135deg, ${accent}, ${second})`,
+      'box-shadow': `0 0 0 1px rgba(255, 255, 255, 0.18) inset, 0 0 12px ${accent}55`,
+    })
+    this.setLabel(theme.name)
+  }
+
+  setParticle(index: number): void {
+    this.setParticleIdx(index)
+  }
+
+  setChord(on: boolean): void {
+    this.setChordOn(on)
+  }
+
+  // ── Open / close ──────────────────────────────────────────────────────
+  private toggle(): void {
+    this.isOpen ? this.close() : this.open()
+  }
+
+  private open(): void {
+    if (this.isOpen) return
+    this.isOpen = true
+    this.setIsOpen(true)
+    if (isNarrowViewport()) {
+      this.setIsSheet(true)
+      this.menu.style.top = ''
+      this.menu.style.right = ''
+      this.menu.style.left = ''
+    } else {
+      this.setIsSheet(false)
+      this.positionUnder()
+    }
+    setTimeout(() => {
+      document.addEventListener('pointerdown', this.onDocPointer)
+      document.addEventListener('keydown', this.onKey)
+      window.addEventListener('resize', this.onResize)
+    }, 0)
+  }
+
+  private close(): void {
+    if (!this.isOpen) return
+    this.isOpen = false
+    this.setIsOpen(false)
+    this.setIsSheet(false)
+    document.removeEventListener('pointerdown', this.onDocPointer)
+    document.removeEventListener('keydown', this.onKey)
+    window.removeEventListener('resize', this.onResize)
+  }
+
+  private positionUnder(): void {
+    const rect = this.trigger.getBoundingClientRect()
+    const menuW = this.menu.offsetWidth || 280
+    const right = Math.max(12, window.innerWidth - rect.right)
+    const top = rect.bottom + 8
+    this.menu.style.right = `${right}px`
+    this.menu.style.top = `${top}px`
+    this.menu.style.left = ''
+    const desiredLeft = window.innerWidth - right - menuW
+    if (desiredLeft < 12)
+      this.menu.style.right = `${Math.max(12, window.innerWidth - menuW - 12)}px`
+  }
+
+  getCurrentTheme(): number {
+    return this.themeIdxFn()
+  }
+  getCurrentParticle(): number {
+    return this.particleIdxFn()
+  }
+  isChordOn(): boolean {
+    return this.chordOnFn()
+  }
+
+  dispose(): void {
+    this.close()
+    this.disposeTrigger?.()
+    this.disposeMenu?.()
+    this.disposeTrigger = null
+    this.disposeMenu = null
+    this.menuWrapper?.remove()
+    this.menuWrapper = null
+  }
+}
+
+// Kept for call sites that still import the ParticleStyle type by name.
+export type { ParticleStyle }
+
+function numToHexCss(n: number): string {
+  const hex = (n & 0xffffff).toString(16).padStart(6, '0')
+  return `#${hex}`
+}
+
+// Lightweight inline SVGs that hint at each particle style's behaviour.
+// All use currentColor so they pick up theme accent on hover / when active.
+const PARTICLE_GLYPHS: Record<string, string> = {
+  sparks: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/>
+    <path d="M5.6 5.6l2.8 2.8"/><path d="M15.6 15.6l2.8 2.8"/>
+    <path d="M5.6 18.4l2.8-2.8"/><path d="M15.6 8.4l2.8-2.8"/>
+  </svg>`,
+  embers: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <circle cx="8" cy="17" r="1.6"/>
+    <circle cx="13" cy="13" r="2" opacity="0.85"/>
+    <circle cx="17" cy="8" r="1.3" opacity="0.7"/>
+    <circle cx="10" cy="9" r="1" opacity="0.55"/>
+    <circle cx="6" cy="11" r="0.8" opacity="0.45"/>
+  </svg>`,
+  bloom: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+    <circle cx="12" cy="12" r="6" opacity="0.6"/>
+    <circle cx="12" cy="12" r="9.5" opacity="0.3"/>
+  </svg>`,
+  sparkle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12 4l1 4 4 1-4 1-1 4-1-4-4-1 4-1 1-4z"/>
+    <path d="M19 14l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z" opacity="0.7"/>
+  </svg>`,
+  none: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="8" opacity="0.5"/>
+    <line x1="6" y1="18" x2="18" y2="6" opacity="0.7"/>
+  </svg>`,
+}

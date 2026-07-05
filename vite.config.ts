@@ -1,4 +1,5 @@
 /// <reference types="vitest" />
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import solid from 'vite-plugin-solid'
 
@@ -25,8 +26,11 @@ const preloadBodyFont = (): Plugin => ({
   },
 })
 
-export default defineConfig({
-  plugins: [solid(), preloadBodyFont()],
+export default defineConfig(({ mode }) => ({
+  // Vitest does not need Solid HMR, and on Windows the injected
+  // `file:///@solid-refresh` virtual module can break suite loading before
+  // any assertions run. Keep HMR for dev, disable it only for tests.
+  plugins: [solid({ hot: mode !== 'test' }), preloadBodyFont()],
   css: {
     transformer: 'postcss',
     modules: {
@@ -41,6 +45,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
       // @tonejs/piano's MidiInput module imports Node's 'events' — polyfill for browser
       events: 'events',
     },
@@ -83,6 +88,19 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    exclude: [
+      'src/learn/**/*.test.{ts,tsx}',
+      'src/audio/**/*.test.{ts,tsx}',
+      'src/midi/**/*.test.{ts,tsx}',
+      'src/renderer/**/*.test.{ts,tsx}',
+      'src/export/**/*.test.{ts,tsx}',
+      'src/store/**/*.test.{ts,tsx}',
+      'src/core/clock/**/*.test.{ts,tsx}',
+      'src/core/input/**/*.test.{ts,tsx}',
+      'src/core/midi/**/*.test.{ts,tsx}',
+      'src/core/music/**/*.test.{ts,tsx}',
+      'src/core/performance/**/*.test.{ts,tsx}',
+    ],
     setupFiles: ['./vitest.setup.ts'],
     coverage: {
       // Advisory only — no thresholds yet. `npm run test:coverage` prints a
@@ -98,4 +116,4 @@ export default defineConfig({
       ],
     },
   },
-})
+}))

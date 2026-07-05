@@ -1,6 +1,6 @@
-import { LivePage } from '../pages/live/LivePage'
+import { LivePage } from '@/pages/LivePage/LivePage'
 
-export { setNextLiveOpts } from '../pages/live/liveEnterOptions'
+export { setNextLiveOpts } from '@/pages/LivePage/liveEnterOptions'
 
 // Real-time performance surface. No MIDI file loaded; the piano roll is
 // driven by the live note store and the loop station.

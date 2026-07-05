@@ -1,4 +1,4 @@
-import { HomePage } from '../pages/home/HomePage'
+import { HomePage } from '@/pages/HomePage/HomePage'
 
 // Landing surface — no loaded MIDI, no live session yet. Typing keyboard is
 // kept live so the first key-press dissolves into live mode without an extra

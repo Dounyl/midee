@@ -1,0 +1,429 @@
+// Single-pass H.264 MP4 via WebCodecs + Mediabunny (MP4 mux), with an optional AAC
+// audio track muxed from a pre-rendered AudioBuffer (see OfflineAudioRenderer).
+// Audio is encoded up front before the video loop — simpler than coordinating
+// two parallel encoders.
+
+import {
+  BufferTarget,
+  EncodedAudioPacketSource,
+  EncodedPacket,
+  EncodedVideoPacketSource,
+  Mp4OutputFormat,
+  Output,
+} from 'mediabunny'
+
+export type ExportStage =
+  | 'Rendering audio'
+  | 'Encoding audio'
+  | 'Encoding'
+  | 'Finalizing'
+  | 'Saving'
+  | 'Done'
+export type ExportProgressCallback = (stage: ExportStage, pct: number) => void
+
+export type ExportMode = 'av' | 'video-only' | 'audio-only'
+
+export interface ExportOptions {
+  fps?: number
+  duration: number
+  bitrate?: number
+  audio?: AudioBuffer
+  mode?: ExportMode
+  filename?: string
+  onProgress?: ExportProgressCallback
+  onRenderFrame: (time: number, dt: number) => void
+  onSeek: (time: number) => void
+}
+
+interface CodecPlan {
+  codecString: string // e.g. 'avc1.640028'
+  muxerCodec: 'avc' | 'hevc' | 'vp9' | 'av1'
+  label: string
+}
+
+const DEFAULT_FPS = 30
+const DEFAULT_BITRATE = 8_000_000
+const KEYFRAME_INTERVAL_SEC = 2
+const MAX_ENCODE_QUEUE = 20 // backpressure: yield when queue exceeds this
+const PROGRESS_UPDATE_EVERY_N_FRAMES = 3
+
+const AUDIO_CODEC_STRING = 'mp4a.40.2' // AAC-LC
+const AUDIO_BITRATE = 192_000
+// Chunk size in frames; wall duration follows `buffer.sampleRate` (offline render is 44.1 kHz).
+const AUDIO_CHUNK_FRAMES = 4096 // e.g. ~93 ms at 44.1 kHz — good encoder cadence
+// Progress contract: each stage reports `pct` in [0, 1] relative to that stage
+// only. The UI resets the bar when the stage name changes. Stages are not
+// globally scaled against one another because their wall-clock durations vary
+// unpredictably with MIDI length, resolution, and CPU — a fixed global scale
+// is always wrong for some input. Per-stage progress is always accurate.
+
+export class VideoExporter {
+  private cancelled = false
+  private encoder: VideoEncoder | null = null
+  private audioEncoder: AudioEncoder | null = null
+
+  constructor(private canvas: HTMLCanvasElement) {}
+
+  cancel(): void {
+    this.cancelled = true
+    // Close the encoders eagerly so in-flight encode() calls surface as errors
+    // rather than silently queueing more work after the abort.
+    if (this.encoder && this.encoder.state !== 'closed') {
+      this.encoder.close()
+    }
+    if (this.audioEncoder && this.audioEncoder.state !== 'closed') {
+      this.audioEncoder.close()
+    }
+  }
+
+  async export(opts: ExportOptions): Promise<void> {
+    const mode: ExportMode = opts.mode ?? 'av'
+
+    if (mode === 'audio-only') {
+      return this.exportAudioOnly(opts)
+    }
+
+    if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') {
+      throw new Error(
+        'This browser does not support WebCodecs video export. ' +
+          'Update to Chrome 94+, Safari 16.4+ or Firefox 130+.',
+      )
+    }
+
+    const fps = opts.fps ?? DEFAULT_FPS
+    const bitrate = opts.bitrate ?? DEFAULT_BITRATE
+    const dt = 1 / fps
+    const totalFrames = Math.max(1, Math.ceil(opts.duration * fps))
+
+    // H.264 requires even dimensions (YUV 4:2:0 subsampling). Round the canvas
+    // size down to the nearest even number and crop each frame via `visibleRect`
+    // — costs at most one pixel on the right/bottom edge, never visible.
+    const canvasW = this.canvas.width
+    const canvasH = this.canvas.height
+    if (canvasW < 2 || canvasH < 2) {
+      throw new Error('Canvas is too small to export — resize the window and try again.')
+    }
+    const width = canvasW & ~1
+    const height = canvasH & ~1
+
+    const plan = await pickCodec(width, height, fps, bitrate)
+
+    const includeAudio = mode === 'av' && !!opts.audio
+    const audio = includeAudio ? opts.audio! : null
+
+    const bufferTarget = new BufferTarget()
+    const output = new Output({
+      format: new Mp4OutputFormat({ fastStart: 'in-memory' }),
+      target: bufferTarget,
+    })
+    const videoSource = new EncodedVideoPacketSource(plan.muxerCodec)
+    output.addVideoTrack(videoSource, { frameRate: fps })
+
+    let audioSource: EncodedAudioPacketSource | null = null
+    if (audio) {
+      audioSource = new EncodedAudioPacketSource('aac')
+      output.addAudioTrack(audioSource)
+    }
+
+    await output.start()
+
+    // Encode audio up-front. It's typically < 1s of work for a multi-minute
+    // MIDI and gives the muxer all audio chunks before video starts streaming.
+    if (audio && audioSource) {
+      await this.encodeAudio(audio, audioSource, opts.onProgress)
+      audioSource.close()
+      this.throwIfStopped(null)
+    }
+
+    // The video encoder error callback fires asynchronously. Capture the first
+    // error so the frame loop can surface it on the next cancellation/error check.
+    // Mediabunny's track `add()` is async (backpressure); chain so chunks stay ordered.
+    let encoderError: Error | null = null
+    let videoMuxDrain = Promise.resolve()
+    const encoder = new VideoEncoder({
+      output: (chunk, meta) => {
+        videoMuxDrain = videoMuxDrain.then(() =>
+          videoSource.add(EncodedPacket.fromEncodedChunk(chunk), meta),
+        )
+      },
+      error: (e) => {
+        encoderError ??= e as Error
+      },
+    })
+    this.encoder = encoder
+
+    encoder.configure({
+      codec: plan.codecString,
+      width,
+      height,
+      bitrate,
+      framerate: fps,
+      hardwareAcceleration: 'prefer-hardware',
+      // 'realtime' skips the slower rate-distortion optimization passes the
+      // encoder otherwise runs in 'quality' mode — ~1.5-2× faster encode for
+      // the same bitrate, at a slight quality drop that is imperceptible at
+      // the bitrates we target (typically YouTube re-encodes anyway). This
+      // setting is unrelated to live audio latency — it only governs the
+      // H.264 encoder's internal search depth.
+      latencyMode: 'realtime',
+    })
+
+    const keyEvery = Math.max(1, Math.round(fps * KEYFRAME_INTERVAL_SEC))
+
+    try {
+      for (let i = 0; i < totalFrames; i++) {
+        this.throwIfStopped(encoderError)
+
+        const t = i * dt
+        opts.onSeek(t)
+        opts.onRenderFrame(t, dt)
+
+        const frame = new VideoFrame(this.canvas, {
+          timestamp: Math.round((i * 1_000_000) / fps),
+          visibleRect: { x: 0, y: 0, width, height },
+          displayWidth: width,
+          displayHeight: height,
+        })
+        encoder.encode(frame, { keyFrame: i % keyEvery === 0 })
+        frame.close()
+
+        if (i % PROGRESS_UPDATE_EVERY_N_FRAMES === 0) {
+          opts.onProgress?.('Encoding', i / totalFrames)
+        }
+
+        // Backpressure: if the encoder is falling behind, wait rather than
+        // blowing up memory with pending VideoFrames.
+        if (encoder.encodeQueueSize > MAX_ENCODE_QUEUE) {
+          while (encoder.encodeQueueSize > MAX_ENCODE_QUEUE / 2) {
+            this.throwIfStopped(encoderError)
+            await yieldTask()
+          }
+        } else if (i % 10 === 9) {
+          // Even when the encoder keeps up, periodically yield so the browser
+          // can run event loop tasks and the UI stays responsive. Uses
+          // scheduler.yield() where available (Chrome 129+) which returns
+          // ~immediately — setTimeout(0) has a hardcoded ~4 ms floor that
+          // adds up to hundreds of ms over a typical export.
+          await yieldToEventLoop()
+        }
+      }
+
+      this.throwIfStopped(encoderError)
+
+      opts.onProgress?.('Finalizing', 0)
+      await encoder.flush()
+      this.throwIfStopped(encoderError)
+      await videoMuxDrain
+      this.throwIfStopped(encoderError)
+      videoSource.close()
+
+      opts.onProgress?.('Finalizing', 1)
+      await output.finalize()
+
+      opts.onProgress?.('Saving', 0)
+      const buffer = bufferTarget.buffer
+      if (!buffer) throw new Error('Export produced no file buffer')
+      const blob = new Blob([buffer], { type: 'video/mp4' })
+      triggerDownload(URL.createObjectURL(blob), opts.filename ?? 'midee.mp4')
+      opts.onProgress?.('Saving', 1)
+      opts.onProgress?.('Done', 1)
+    } finally {
+      if (encoder.state !== 'closed') encoder.close()
+      this.encoder = null
+    }
+  }
+
+  // Audio-only path: skip all video encoding and mux just the audio buffer
+  // into an MP4 container. Output is .m4a (AAC-in-MP4, universally playable).
+  private async exportAudioOnly(opts: ExportOptions): Promise<void> {
+    const audio = opts.audio
+    if (!audio) throw new Error('Audio-only export requires an audio buffer')
+
+    if (typeof AudioEncoder === 'undefined' || typeof AudioData === 'undefined') {
+      throw new Error(
+        'This browser does not support WebCodecs audio export. ' +
+          'Update to a recent Chrome, Safari 17+, or Firefox 133+.',
+      )
+    }
+
+    const bufferTarget = new BufferTarget()
+    const output = new Output({
+      format: new Mp4OutputFormat({ fastStart: 'in-memory' }),
+      target: bufferTarget,
+    })
+    const audioSource = new EncodedAudioPacketSource('aac')
+    output.addAudioTrack(audioSource)
+    await output.start()
+
+    await this.encodeAudio(audio, audioSource, opts.onProgress)
+    this.throwIfStopped(null)
+    audioSource.close()
+
+    opts.onProgress?.('Finalizing', 0)
+    await output.finalize()
+    opts.onProgress?.('Finalizing', 1)
+
+    opts.onProgress?.('Saving', 0)
+    const buffer = bufferTarget.buffer
+    if (!buffer) throw new Error('Export produced no file buffer')
+    const blob = new Blob([buffer], { type: 'audio/mp4' })
+    triggerDownload(URL.createObjectURL(blob), opts.filename ?? 'midee.m4a')
+    opts.onProgress?.('Saving', 1)
+    opts.onProgress?.('Done', 1)
+  }
+
+  private async encodeAudio(
+    audio: AudioBuffer,
+    audioSource: EncodedAudioPacketSource,
+    onProgress: ExportProgressCallback | undefined,
+  ): Promise<void> {
+    if (typeof AudioEncoder === 'undefined' || typeof AudioData === 'undefined') {
+      // Silently skip audio if the browser lacks AudioEncoder (very rare where
+      // VideoEncoder is supported but AudioEncoder is not). Video still exports.
+      console.warn('AudioEncoder unavailable — exporting without audio')
+      return
+    }
+
+    let encoderError: Error | null = null
+    let audioMuxDrain = Promise.resolve()
+    const encoder = new AudioEncoder({
+      output: (chunk, meta) => {
+        audioMuxDrain = audioMuxDrain.then(() =>
+          audioSource.add(EncodedPacket.fromEncodedChunk(chunk), meta),
+        )
+      },
+      error: (e) => {
+        encoderError ??= e as Error
+      },
+    })
+    this.audioEncoder = encoder
+
+    encoder.configure({
+      codec: AUDIO_CODEC_STRING,
+      sampleRate: audio.sampleRate,
+      numberOfChannels: audio.numberOfChannels,
+      bitrate: AUDIO_BITRATE,
+    })
+
+    const channelCount = audio.numberOfChannels
+    const sampleRate = audio.sampleRate
+    const totalFrames = audio.length
+
+    const channels: Float32Array[] = []
+    for (let ch = 0; ch < channelCount; ch++) {
+      channels.push(audio.getChannelData(ch))
+    }
+
+    // AudioData copies from the provided buffer, so we can reuse one pack
+    // buffer across every chunk instead of allocating per-iteration.
+    const packed = new Float32Array(AUDIO_CHUNK_FRAMES * channelCount)
+
+    try {
+      for (let offset = 0; offset < totalFrames; offset += AUDIO_CHUNK_FRAMES) {
+        if (encoderError) throw encoderError
+        if (this.cancelled) throw new DOMException('Export cancelled', 'AbortError')
+
+        const frames = Math.min(AUDIO_CHUNK_FRAMES, totalFrames - offset)
+        // f32-planar layout: [ch0 samples..., ch1 samples..., ...].
+        for (let ch = 0; ch < channelCount; ch++) {
+          packed.set(channels[ch]!.subarray(offset, offset + frames), ch * frames)
+        }
+
+        const data = new AudioData({
+          format: 'f32-planar',
+          sampleRate,
+          numberOfFrames: frames,
+          numberOfChannels: channelCount,
+          timestamp: Math.round((offset * 1_000_000) / sampleRate),
+          data: packed,
+        })
+        encoder.encode(data)
+        data.close()
+
+        onProgress?.('Encoding audio', offset / totalFrames)
+
+        if (encoder.encodeQueueSize > MAX_ENCODE_QUEUE) {
+          while (encoder.encodeQueueSize > MAX_ENCODE_QUEUE / 2) {
+            if (this.cancelled) throw new DOMException('Export cancelled', 'AbortError')
+            await yieldTask()
+          }
+        }
+      }
+
+      await encoder.flush()
+      if (encoderError) throw encoderError
+      await audioMuxDrain
+      onProgress?.('Encoding audio', 1)
+    } finally {
+      if (encoder.state !== 'closed') encoder.close()
+      this.audioEncoder = null
+    }
+  }
+
+  private throwIfStopped(encoderError: Error | null): void {
+    if (this.cancelled) throw new DOMException('Export cancelled', 'AbortError')
+    if (encoderError) throw encoderError
+  }
+}
+
+// Probes a short list of H.264 profiles in descending quality order. Returns
+// the first one the browser will actually hardware-encode at the given size.
+async function pickCodec(
+  width: number,
+  height: number,
+  fps: number,
+  bitrate: number,
+): Promise<CodecPlan> {
+  const candidates: CodecPlan[] = [
+    // Highest level first so the browser's first accept gives us the broadest
+    // frame-size + MB/s budget. 5.2 is required for 4K@60 (4K@30 fits in 5.1);
+    // 5.1 covers 4K@30 and 2K@60; 5.0 covers 2K@30 and 1080p@60.
+    { codecString: 'avc1.640034', muxerCodec: 'avc', label: 'H.264 High 5.2 (4K@60)' },
+    { codecString: 'avc1.640033', muxerCodec: 'avc', label: 'H.264 High 5.1 (4K@30)' },
+    { codecString: 'avc1.640032', muxerCodec: 'avc', label: 'H.264 High 5.0 (2K)' },
+    { codecString: 'avc1.640028', muxerCodec: 'avc', label: 'H.264 High 4.0' },
+    { codecString: 'avc1.4D001F', muxerCodec: 'avc', label: 'H.264 Main 3.1' },
+    { codecString: 'avc1.42E01F', muxerCodec: 'avc', label: 'H.264 Baseline 3.1' },
+  ]
+
+  for (const c of candidates) {
+    const res = await VideoEncoder.isConfigSupported({
+      codec: c.codecString,
+      width,
+      height,
+      bitrate,
+      framerate: fps,
+      hardwareAcceleration: 'prefer-hardware',
+    })
+    if (res.supported) return c
+  }
+
+  throw new Error(
+    'No supported H.264 profile was accepted by this browser for the current canvas size. ' +
+      'Try resizing the window or updating your browser.',
+  )
+}
+
+function yieldTask(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+// Lower-overhead yield for the keep-alive path. `scheduler.yield()` resolves
+// on the next event loop tick without the ~4 ms setTimeout-0 clamp. Falls
+// back to setTimeout for browsers that don't support the scheduler API.
+function yieldToEventLoop(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const scheduler = (globalThis as any).scheduler
+  if (scheduler && typeof scheduler.yield === 'function') {
+    return scheduler.yield() as Promise<void>
+  }
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+function triggerDownload(url: string, filename: string): void {
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 5000)
+}
