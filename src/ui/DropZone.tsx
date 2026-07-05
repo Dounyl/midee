@@ -4,6 +4,7 @@ import { t } from '../i18n'
 import type { MidiDeviceStatus } from '../midi/MidiInputManager'
 import { icons } from './icons'
 import { SamplesGrid } from './SamplesGrid'
+import styles from './DropZone.module.css'
 
 export type LoadSource = 'drag' | 'picker'
 type DropHandler = (file: File, source: LoadSource) => void
@@ -118,24 +119,27 @@ function DropZoneView(props: DropZoneProps) {
     <div
       id="dropzone"
       ref={el}
-      classList={{
-        'dz--hidden': props.hidden(),
-        'drag-over': dragOver(),
-        'dropzone--touch': coarse(),
-      }}
+      class={[
+        styles.dropzone,
+        props.hidden() ? styles.hidden : '',
+        dragOver() ? styles.dragOver : '',
+        coarse() ? styles.touch : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      <div class="home-card">
-        <span class="home-kicker">{t('home.kicker')}</span>
+      <div class={styles.homeCard}>
+        <span class={styles.homeKicker}>{t('home.kicker')}</span>
         {/* biome-ignore lint/a11y/useHeadingContent: `home.title.html` is
             a translation key whose value is raw HTML (for per-locale inline
             markup); biome can't introspect innerHTML. Content is always
             present at runtime. */}
-        <h1 class="home-title" innerHTML={t('home.title.html')} />
-        <p class="home-sub">{t('home.subtitle')}</p>
+        <h1 class={styles.homeTitle} innerHTML={t('home.title.html')} />
+        <p class={styles.homeSub}>{t('home.subtitle')}</p>
 
-        <div class="home-actions">
+        <div class={styles.homeActions}>
           <button
-            class="home-primary-btn"
+            class={styles.homePrimaryBtn}
             id="home-open"
             type="button"
             onClick={() => inputEl.click()}
@@ -146,7 +150,7 @@ function DropZoneView(props: DropZoneProps) {
           <Show when={props.onLiveMode}>
             {(cb) => (
               <button
-                class="home-secondary-btn"
+                class={styles.homeSecondaryBtn}
                 id="home-live"
                 type="button"
                 onClick={() => cb()()}
@@ -159,35 +163,35 @@ function DropZoneView(props: DropZoneProps) {
           <Show when={props.onLearnMode}>
             {(cb) => (
               <button
-                class="home-secondary-btn home-secondary-btn--learn"
+                class={`${styles.homeSecondaryBtn} ${styles.homeSecondaryBtnLearn}`}
                 id="home-learn"
                 type="button"
                 onClick={() => cb()()}
               >
                 <span innerHTML={icons.practice(13)} />
                 <span>{t('home.cta.learn.title')}</span>
-                <span class="home-learn-badge">New</span>
+                <span class={styles.homeLearnBadge}>New</span>
               </button>
             )}
           </Show>
         </div>
 
-        <div class="home-samples">
-          <div class="home-samples-label">{t('home.samples.label')}</div>
-          <div class="home-samples-mount" ref={samplesHost} />
+        <div class={styles.homeSamples}>
+          <div class={styles.homeSamplesLabel}>{t('home.samples.label')}</div>
+          <div ref={samplesHost} />
         </div>
 
-        <div class="home-footnotes">
+        <div class={styles.homeFootnotes}>
           <div
-            class="home-midi-status"
+            class={styles.homeMidiStatus}
             id="home-midi-status"
             data-midi-status={props.midiStatus().status}
           >
             {getHomeMidiStatus(props.midiStatus().status, props.midiStatus().deviceName)}
           </div>
-          <div class="home-drop-hint" innerHTML={t('home.dropHint.html')} />
+          <div class={styles.homeDropHint} innerHTML={t('home.dropHint.html')} />
         </div>
-        <label class="home-pref">
+        <label class={styles.homePref}>
           <input
             type="checkbox"
             checked={props.skipIntro()}
@@ -195,17 +199,17 @@ function DropZoneView(props: DropZoneProps) {
           />
           <span>{t('home.skipIntro')}</span>
         </label>
-        <nav class="home-meta-links" aria-label={t('home.metaLinks.aria')}>
+        <nav class={styles.homeMetaLinks} aria-label={t('home.metaLinks.aria')}>
           <a
             href="/blog/"
-            class="home-meta-link"
+            class={styles.homeMetaLink}
             aria-label={t('home.metaLink.blog')}
             data-tip={t('home.metaLink.blog')}
             innerHTML={icons.blog()}
           />
           <a
             href="https://github.com/aayushdutt/midee"
-            class="home-meta-link"
+            class={styles.homeMetaLink}
             aria-label={t('home.metaLink.github')}
             data-tip={t('home.metaLink.github')}
             target="_blank"
@@ -214,7 +218,7 @@ function DropZoneView(props: DropZoneProps) {
           />
           <a
             href="https://discord.gg/7As2NHHd"
-            class="home-meta-link"
+            class={styles.homeMetaLink}
             aria-label={t('home.metaLink.discord')}
             data-tip={t('home.metaLink.discord')}
             target="_blank"

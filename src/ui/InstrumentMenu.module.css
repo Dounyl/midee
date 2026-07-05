@@ -1,0 +1,161 @@
+@layer components {
+  .instrumentPill {
+    min-width: 0;
+  }
+
+  .instrumentPill .instrumentLabel {
+    max-width: 108px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .instrumentIconSlot {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+  }
+
+  .instrumentIconSlot > svg {
+    transition: opacity 0.18s var(--ease-out);
+  }
+
+  .instrumentSpinner {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-top-color: var(--accent);
+    opacity: 0;
+    transform: scale(0.75);
+    transition:
+      opacity 0.18s var(--ease-out),
+      transform 0.18s var(--ease-out);
+  }
+
+  .instrumentPillLoading .instrumentIconSlot > svg {
+    opacity: 0;
+  }
+
+  .instrumentPillLoading .instrumentSpinner {
+    opacity: 1;
+    animation: instrument-spin 0.7s linear infinite;
+  }
+
+  .instrumentPillLoading .instrumentLabel {
+    color: var(--accent);
+  }
+
+  @keyframes instrument-spin {
+    to {
+      transform: scale(1) rotate(360deg);
+    }
+  }
+
+  .instrumentMenu {
+    width: 260px;
+  }
+
+  .instrumentItems {
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    gap: 2px;
+    overflow-y: auto;
+  }
+
+  .instrumentItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--r-md);
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition:
+      background 0.14s,
+      color 0.14s;
+  }
+
+  .instrumentItem:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .instrumentItemDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .instrumentItemOn .instrumentItemDot {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .instrumentItemBody {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .instrumentItemName {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .instrumentItemSub {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    letter-spacing: 0.01em;
+  }
+
+  .instrumentItemCheck {
+    opacity: 0;
+    color: var(--accent);
+    transition: opacity 0.14s;
+    flex-shrink: 0;
+  }
+
+  .instrumentItemOn .instrumentItemCheck {
+    opacity: 1;
+  }
+
+  .instrumentItemLoading .instrumentItemDot {
+    background: transparent;
+    border: 1.5px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    box-shadow: none;
+    animation: instrument-spin 0.7s linear infinite;
+  }
+
+  .instrumentItemLoading .instrumentItemSub {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .instrumentItemLoading .instrumentItemSub::after {
+    content: " - loading samples";
+  }
+
+  @media (max-width: 1120px) {
+    .instrumentLabel {
+      display: none;
+    }
+  }
+}

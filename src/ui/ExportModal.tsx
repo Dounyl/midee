@@ -2,9 +2,9 @@ import { createSignal, For, Show } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
 import type { ExportStage } from '../export/VideoExporter'
 import { t } from '../i18n'
+import styles from './ExportModal.module.css'
 import { icons } from './icons'
-import './ModalShared.css'
-import './ExportModal.css'
+import { cssModuleClass } from './utils'
 
 // Supported export resolution presets. `match` keeps the current canvas size
 // (whatever the user's window is) — useful for already-well-sized displays or
@@ -112,54 +112,67 @@ function ExportView(props: ViewProps) {
       {/* biome-ignore-start lint/a11y/noStaticElementInteractions: modal backdrop, click dismisses */}
       <div
         id="export-modal"
-        classList={{ open: props.isOpen() }}
+        class={styles.exportModal}
+        classList={{ [styles.open!]: props.isOpen() }}
         onClick={(e) => {
           if (e.target === e.currentTarget && props.phase() === 'settings') props.onDismiss()
         }}
       >
         {/* biome-ignore-end lint/a11y/useKeyWithClickEvents: — */}
         {/* biome-ignore-end lint/a11y/noStaticElementInteractions: — */}
-        <div class="export-card modal-scroll">
-          <div class="export-phase" classList={{ hidden: props.phase() !== 'settings' }}>
-            <header class="export-header">
-              <div class="export-card-icon" innerHTML={icons.film()} />
-              <div class="export-header-text">
-                <h2 class="export-card-title">{t('export.title')}</h2>
-                <p class="export-card-sub">{t('export.sub')}</p>
+        <div class={cssModuleClass(styles, 'export-card', 'modal-scroll')}>
+          <div class={styles['export-phase']!} classList={{ hidden: props.phase() !== 'settings' }}>
+            <header class={styles['export-header']!}>
+              <div class={styles['export-card-icon']!} innerHTML={icons.film()} />
+              <div class={styles['export-header-text']!}>
+                <h2 class={styles['export-card-title']!}>{t('export.title')}</h2>
+                <p class={styles['export-card-sub']!}>{t('export.sub')}</p>
               </div>
             </header>
 
-            <section class="export-section">
-              <span class="export-section-label">{t('export.outputLabel')}</span>
-              <div class="fps-group out-group">
+            <section class={styles['export-section']!}>
+              <span class={styles['export-section-label']!}>{t('export.outputLabel')}</span>
+              <div class={styles['fps-group']!}>
                 <button
                   type="button"
-                  class="fps-btn"
-                  classList={{ 'fps-btn--on': props.output() === 'av' }}
+                  class={cssModuleClass(
+                    styles,
+                    'fps-btn',
+                    props.output() === 'av' && 'fps-btn--on',
+                  )}
                   onClick={() => props.setOutput('av')}
                 >
                   {t('export.output.av')}
                 </button>
                 <button
                   type="button"
-                  class="fps-btn"
-                  classList={{ 'fps-btn--on': props.output() === 'video-only' }}
+                  class={cssModuleClass(
+                    styles,
+                    'fps-btn',
+                    props.output() === 'video-only' && 'fps-btn--on',
+                  )}
                   onClick={() => props.setOutput('video-only')}
                 >
                   {t('export.output.video')}
                 </button>
                 <button
                   type="button"
-                  class="fps-btn"
-                  classList={{ 'fps-btn--on': props.output() === 'audio-only' }}
+                  class={cssModuleClass(
+                    styles,
+                    'fps-btn',
+                    props.output() === 'audio-only' && 'fps-btn--on',
+                  )}
                   onClick={() => props.setOutput('audio-only')}
                 >
                   {t('export.output.audio')}
                 </button>
                 <button
                   type="button"
-                  class="fps-btn"
-                  classList={{ 'fps-btn--on': props.output() === 'midi' }}
+                  class={cssModuleClass(
+                    styles,
+                    'fps-btn',
+                    props.output() === 'midi' && 'fps-btn--on',
+                  )}
                   title={t('export.output.midi.tip')}
                   onClick={() => props.setOutput('midi')}
                 >
@@ -168,36 +181,57 @@ function ExportView(props: ViewProps) {
               </div>
             </section>
 
-            <section class="export-section" classList={{ 'export-section--disabled': noVideo() }}>
-              <span class="export-section-label">{t('export.resolutionLabel')}</span>
-              <div class="res-grid">
+            <section
+              class={cssModuleClass(
+                styles,
+                'export-section',
+                noVideo() && 'export-section--disabled',
+              )}
+            >
+              <span class={styles['export-section-label']!}>{t('export.resolutionLabel')}</span>
+              <div class={styles['res-grid']!}>
                 <For each={buildPresets()}>
                   {(p) => (
                     <button
                       type="button"
-                      class="res-card"
-                      classList={{ 'res-card--on': props.resolution() === p.id }}
+                      class={cssModuleClass(
+                        styles,
+                        'res-card',
+                        props.resolution() === p.id && 'res-card--on',
+                      )}
                       title={p.hint}
                       onClick={() => props.setResolution(p.id)}
                     >
-                      <div class={`res-preview res-preview--${p.aspect}`} aria-hidden="true" />
-                      <div class="res-card-label">{p.label}</div>
-                      <div class="res-card-dim">{p.dim}</div>
+                      <div
+                        class={cssModuleClass(styles, 'res-preview', `res-preview--${p.aspect}`)}
+                        aria-hidden="true"
+                      />
+                      <div class={styles['res-card-label']!}>{p.label}</div>
+                      <div class={styles['res-card-dim']!}>{p.dim}</div>
                     </button>
                   )}
                 </For>
               </div>
             </section>
 
-            <section class="export-section" classList={{ 'export-section--disabled': noVideo() }}>
-              <span class="export-section-label">{t('export.fpsLabel')}</span>
-              <div class="fps-group">
+            <section
+              class={cssModuleClass(
+                styles,
+                'export-section',
+                noVideo() && 'export-section--disabled',
+              )}
+            >
+              <span class={styles['export-section-label']!}>{t('export.fpsLabel')}</span>
+              <div class={styles['fps-group']!}>
                 <For each={FPS_OPTIONS}>
                   {(fps) => (
                     <button
                       type="button"
-                      class="fps-btn"
-                      classList={{ 'fps-btn--on': props.fps() === fps }}
+                      class={cssModuleClass(
+                        styles,
+                        'fps-btn',
+                        props.fps() === fps && 'fps-btn--on',
+                      )}
                       onClick={() => props.setFps(fps)}
                     >
                       {t('export.fps.unit', { fps })}
@@ -209,12 +243,15 @@ function ExportView(props: ViewProps) {
 
             <Show when={isSocial()}>
               <section class="export-section">
-                <span class="export-section-label">{t('export.focusLabel')}</span>
-                <div class="fps-group">
+                <span class={styles['export-section-label']!}>{t('export.focusLabel')}</span>
+                <div class={styles['fps-group']!}>
                   <button
                     type="button"
-                    class="fps-btn"
-                    classList={{ 'fps-btn--on': props.focus() === 'fit' }}
+                    class={cssModuleClass(
+                      styles,
+                      'fps-btn',
+                      props.focus() === 'fit' && 'fps-btn--on',
+                    )}
                     title={t('export.focus.fit.tip')}
                     onClick={() => props.setFocus('fit')}
                   >
@@ -222,8 +259,11 @@ function ExportView(props: ViewProps) {
                   </button>
                   <button
                     type="button"
-                    class="fps-btn"
-                    classList={{ 'fps-btn--on': props.focus() === 'all' }}
+                    class={cssModuleClass(
+                      styles,
+                      'fps-btn',
+                      props.focus() === 'all' && 'fps-btn--on',
+                    )}
                     title={t('export.focus.all.tip')}
                     onClick={() => props.setFocus('all')}
                   >
@@ -232,13 +272,16 @@ function ExportView(props: ViewProps) {
                 </div>
               </section>
 
-              <section class="export-section">
-                <span class="export-section-label">{t('export.speedLabel')}</span>
-                <div class="fps-group">
+              <section class={styles['export-section']!}>
+                <span class={styles['export-section-label']!}>{t('export.speedLabel')}</span>
+                <div class={styles['fps-group']!}>
                   <button
                     type="button"
-                    class="fps-btn"
-                    classList={{ 'fps-btn--on': props.speed() === 'compact' }}
+                    class={cssModuleClass(
+                      styles,
+                      'fps-btn',
+                      props.speed() === 'compact' && 'fps-btn--on',
+                    )}
                     title={t('export.speed.compact.tip')}
                     onClick={() => props.setSpeed('compact')}
                   >
@@ -246,8 +289,11 @@ function ExportView(props: ViewProps) {
                   </button>
                   <button
                     type="button"
-                    class="fps-btn"
-                    classList={{ 'fps-btn--on': props.speed() === 'standard' }}
+                    class={cssModuleClass(
+                      styles,
+                      'fps-btn',
+                      props.speed() === 'standard' && 'fps-btn--on',
+                    )}
                     title={t('export.speed.standard.tip')}
                     onClick={() => props.setSpeed('standard')}
                   >
@@ -255,8 +301,11 @@ function ExportView(props: ViewProps) {
                   </button>
                   <button
                     type="button"
-                    class="fps-btn"
-                    classList={{ 'fps-btn--on': props.speed() === 'drama' }}
+                    class={cssModuleClass(
+                      styles,
+                      'fps-btn',
+                      props.speed() === 'drama' && 'fps-btn--on',
+                    )}
                     title={t('export.speed.drama.tip')}
                     onClick={() => props.setSpeed('drama')}
                   >
@@ -266,13 +315,13 @@ function ExportView(props: ViewProps) {
               </section>
             </Show>
 
-            <div class="export-actions">
-              <button type="button" class="modal-btn" onClick={() => props.onDismiss()}>
+            <div class={styles['export-actions']!}>
+              <button type="button" class={styles['modal-btn']!} onClick={() => props.onDismiss()}>
                 {t('export.cancel')}
               </button>
               <button
                 type="button"
-                class="modal-btn modal-btn--accent"
+                class={cssModuleClass(styles, 'modal-btn', 'modal-btn--accent')}
                 onClick={() => props.onStart()}
               >
                 <span innerHTML={icons.exportArrow()} />
@@ -282,24 +331,25 @@ function ExportView(props: ViewProps) {
           </div>
 
           <div
-            class="export-phase"
-            classList={{
-              hidden: props.phase() !== 'progress',
-              indeterminate: props.indeterminate(),
-            }}
+            class={cssModuleClass(styles, 'export-phase', props.indeterminate() && 'indeterminate')}
+            classList={{ hidden: props.phase() !== 'progress' }}
           >
-            <div class="export-spinner"></div>
-            <div class="export-stage">{props.stage()}</div>
-            <div class="export-progress-wrap">
+            <div class={styles['export-spinner']!}></div>
+            <div class={styles['export-stage']!}>{props.stage()}</div>
+            <div class={styles['export-progress-wrap']!}>
               <div
-                class="export-progress-bar"
+                class={styles['export-progress-bar']!}
                 style={{ width: props.indeterminate() ? '' : `${Math.round(props.pct() * 100)}%` }}
               />
             </div>
-            <div class="export-pct">
+            <div class={styles['export-pct']!}>
               {props.indeterminate() ? '' : `${Math.round(props.pct() * 100)}%`}
             </div>
-            <button type="button" class="modal-btn" onClick={() => props.onCancelProgress()}>
+            <button
+              type="button"
+              class={styles['modal-btn']!}
+              onClick={() => props.onCancelProgress()}
+            >
               {t('export.cancel')}
             </button>
           </div>

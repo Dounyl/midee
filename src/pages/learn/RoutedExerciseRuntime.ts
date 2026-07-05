@@ -4,7 +4,9 @@ import { ExerciseRunner } from '../../learn/core/ExerciseRunner'
 import { createLearnState } from '../../learn/core/LearnState'
 import { createLearnProgressStore } from '../../learn/core/progress'
 import { LearnOverlay } from '../../learn/overlays/LearnOverlay'
+import learnHostStyles from '../../learn/ui/LearnHost.module.css'
 import { createSessionSummary } from '../../learn/ui/SessionSummary'
+import { cssModuleClass } from '../../ui/utils'
 
 export class RoutedExerciseRuntime {
   private readonly learnState = createLearnState()
@@ -25,11 +27,16 @@ export class RoutedExerciseRuntime {
     const overlayRoot = document.querySelector<HTMLElement>('#ui-overlay')
     if (!overlayRoot) return
     this.host = document.createElement('div')
-    this.host.className = 'learn-host learn-host--exercise'
+    this.host.className = cssModuleClass(learnHostStyles, 'learnHost', 'learnHostExercise')
     overlayRoot.appendChild(this.host)
 
     this.summaryHost = document.createElement('div')
-    this.summaryHost.className = 'learn-host learn-host--hub learn-host--hidden'
+    this.summaryHost.className = cssModuleClass(
+      learnHostStyles,
+      'learnHost',
+      'learnHostHub',
+      'learnHostHidden',
+    )
     overlayRoot.appendChild(this.summaryHost)
 
     this.overlay = new LearnOverlay()
@@ -67,7 +74,7 @@ export class RoutedExerciseRuntime {
     const streakBefore = this.progress.streakDays
     const result = this.runner.close(reason)
     if (!result || !this.summaryHost) return
-    this.summaryHost.classList.remove('learn-host--hidden')
+    this.summaryHost.classList.remove(learnHostStyles.learnHostHidden!)
     const summary = createSessionSummary({
       onAgain: () => {
         summary.dismiss()
@@ -91,6 +98,6 @@ export class RoutedExerciseRuntime {
   }
 
   private hideSummaryHost(): void {
-    this.summaryHost?.classList.add('learn-host--hidden')
+    this.summaryHost?.classList.add(learnHostStyles.learnHostHidden!)
   }
 }

@@ -1,0 +1,165 @@
+@layer components {
+  .ts-chord-slot {
+    flex: 0 0 auto;
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .tsChordReadout {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    height: 24px;
+    padding: 0 12px;
+    /* Clean bordered chip. Quiet by default — picks up the accent via the
+     toggle button, not by demanding attention itself. */
+    border: 1px solid var(--border);
+    border-radius: var(--r-pill);
+    background: rgba(255, 255, 255, 0.025);
+    color: var(--text-muted);
+    font-family: var(--font);
+    white-space: nowrap;
+    position: relative;
+    opacity: 0;
+    transform: translateY(1px);
+    transition:
+      opacity 0.22s var(--ease-out),
+      transform 0.22s var(--ease-out),
+      border-color 0.2s ease,
+      background 0.2s ease;
+    /* Fixed width (not just a min) — now that the readout sits in the status
+     flow, a stable box keeps the title from reflowing as the chord text grows
+     or shrinks ("C" → "F♯m7♭5"). Overflow is centred and clipped for the rare
+     extra-long symbol rather than widening the row. */
+    width: 76px;
+    overflow: hidden;
+  }
+
+  .tsChordReadoutOn {
+    display: inline-flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .tsChordReadoutName {
+    display: inline-flex;
+    /* Bottom-align so the suffix "m" / "maj7" sits flush on the baseline of
+     the tonic instead of riding as a superscript — reads as one symbol. */
+    align-items: baseline;
+    gap: 0.5px;
+    line-height: 1;
+    font-feature-settings:
+      "tnum" 1,
+      "lnum" 1;
+  }
+
+  .tsChordReadoutTonic {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    color: var(--text);
+  }
+
+  .tsChordReadoutQuality {
+    font-family: var(--font);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    color: var(--text-muted);
+  }
+
+  .tsChordReadoutBass {
+    color: var(--text-dim);
+    opacity: 0.85;
+    margin-left: 0;
+    font-weight: 500;
+  }
+
+  .tsChordReadoutEmpty .tsChordReadoutTonic {
+    color: var(--text-dim);
+    opacity: 0.55;
+  }
+  @keyframes tsChordReadoutPulse {
+    0% {
+      transform: scale(0.985);
+      filter: brightness(1.04);
+    }
+    55% {
+      transform: scale(1.012);
+      filter: brightness(1.16);
+    }
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+  }
+
+  .tsChordReadoutPulse {
+    animation: tsChordReadoutPulse 0.32s var(--ease-spring);
+  }
+  .ts-chord-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-dim);
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0.55;
+    transition:
+      color 0.18s ease,
+      opacity 0.18s ease,
+      background 0.18s ease;
+  }
+
+  .ts-chord-btn:hover {
+    opacity: 1;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .ts-chord-btn .ts-chord-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+  }
+
+  .ts-chord-btn--on {
+    opacity: 1;
+    color: var(--accent);
+    background: transparent;
+  }
+
+  .ts-chord-btn--on:hover {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  @media (max-width: 720px) {
+    .tsChordReadout {
+      padding: 0 9px;
+      height: 22px;
+      min-width: 48px;
+    }
+    .tsChordReadoutTonic {
+      font-size: 12px;
+    }
+    .tsChordReadoutQuality {
+      font-size: 10.5px;
+    }
+  }
+  @media (max-width: 480px) {
+    .tsChordReadoutOn {
+      display: none;
+    }
+  }
+}

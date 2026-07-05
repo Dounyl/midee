@@ -1,7 +1,7 @@
 import { Show } from 'solid-js'
 import { t } from '../../i18n'
 import type { ExerciseCategory, ExerciseDifficulty } from '../core/Exercise'
-import './ExerciseCard.css'
+import styles from './ExerciseCard.module.css'
 
 export interface ExerciseCardDescriptorLike {
   category: ExerciseCategory
@@ -20,16 +20,16 @@ export function ExerciseCardView(props: CardOptions) {
   return (
     <button
       type="button"
-      class="ex-card"
+      class={styles.exCard}
       data-category={props.descriptor.category}
       data-difficulty={props.descriptor.difficulty}
       onClick={() => props.onLaunch(props.descriptor)}
     >
       <Show when={props.icon}>
-        {(icon) => <span class="ex-card__icon" aria-hidden="true" innerHTML={icon()} />}
+        {(icon) => <span class={styles.exCardIcon} aria-hidden="true" innerHTML={icon()} />}
       </Show>
-      <span class="ex-card__title">{props.descriptor.title}</span>
-      <span class="ex-card__blurb">{props.descriptor.blurb}</span>
+      <span class={styles.exCardTitle}>{props.descriptor.title}</span>
+      <span class={styles.exCardBlurb}>{props.descriptor.blurb}</span>
     </button>
   )
 }
@@ -42,12 +42,12 @@ export interface ComingSoonProps {
 
 export function ComingSoonCardView(props: ComingSoonProps) {
   return (
-    <div class="ex-card ex-card--coming" data-category={props.category}>
+    <div class={`${styles.exCard} ${styles.exCardComing}`} data-category={props.category}>
       <Show when={props.icon}>
-        {(icon) => <span class="ex-card__icon" aria-hidden="true" innerHTML={icon()} />}
+        {(icon) => <span class={styles.exCardIcon} aria-hidden="true" innerHTML={icon()} />}
       </Show>
-      <span class="ex-card__title">{props.label}</span>
-      <span class="ex-card__blurb">{t('learn.hub.comingSoon')}</span>
+      <span class={styles.exCardTitle}>{props.label}</span>
+      <span class={styles.exCardBlurb}>{t('learn.hub.comingSoon')}</span>
     </div>
   )
 }

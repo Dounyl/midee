@@ -1,0 +1,154 @@
+@layer components {
+  .trackPanel {
+    width: 300px;
+    max-height: calc(
+      100vh -
+      112px -
+      var(--keyboard-h) -
+      env(safe-area-inset-top) -
+      env(safe-area-inset-bottom)
+    );
+  }
+
+  .panelItems {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+  }
+
+  .panelFooter {
+    border-top: 1px solid var(--border);
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+
+  .panelLoadBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--r-md);
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      background 0.15s,
+      border-color 0.15s;
+  }
+
+  .panelLoadBtn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-hi);
+  }
+
+  .trackItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px 5px 18px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .trackItem:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .trackSwatch {
+    width: 3px;
+    height: 20px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    opacity: 0.9;
+  }
+
+  .trackInfo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .trackName {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .trackMeta {
+    color: var(--text-dim);
+    font-size: 10.5px;
+  }
+
+  .trackToggleWrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .trackToggle {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .toggleTrack {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    transition: background 0.18s;
+  }
+
+  .toggleTrack::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition:
+      transform 0.18s var(--ease-spring),
+      background 0.18s;
+  }
+
+  .trackToggle:checked + .toggleTrack {
+    background: color-mix(in srgb, var(--track-color, var(--accent)) 32%, transparent);
+  }
+
+  .trackToggle:checked + .toggleTrack::after {
+    transform: translateX(12px);
+    background: var(--track-color, var(--accent));
+  }
+
+  .trackItem:has(.trackToggle:not(:checked)) .trackName,
+  .trackItem:has(.trackToggle:not(:checked)) .trackSwatch {
+    opacity: 0.45;
+  }
+
+  .trackPanel:global(.popover--sheet) {
+    bottom: calc(var(--keyboard-h) + env(safe-area-inset-bottom)) !important;
+    max-height: calc(
+      100svh -
+      var(--keyboard-h) -
+      24px -
+      env(safe-area-inset-top) -
+      env(safe-area-inset-bottom)
+    ) !important;
+  }
+}

@@ -1,0 +1,401 @@
+@layer reset, tokens, base, layout, components, utilities, overrides;
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+}
+
+@layer tokens {
+  :root {
+    --bg: #06060e;
+    --surface: rgba(11, 13, 24, 0.84);
+    --surface-hi: rgba(10, 12, 22, 0.96);
+
+    --border: rgba(255, 255, 255, 0.07);
+    --border-hi: rgba(255, 255, 255, 0.12);
+
+    --text: #f4f4fb;
+    --text-muted: #b0b4d4;
+    --text-dim: #6c7298;
+
+    --accent: #f97316;
+    --accent-soft: rgba(249, 115, 22, 0.16);
+    --accent-glow: rgba(249, 115, 22, 0.3);
+
+    --red: rgba(239, 68, 68, 0.1);
+    --red-border: rgba(239, 68, 68, 0.22);
+    --red-text: #fca5a5;
+
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 16px;
+    --r-xl: 22px;
+    --r-pill: 999px;
+
+    --keyboard-h: 120px;
+    --hud-gap: 28px;
+
+    --font: "Inter", system-ui, sans-serif;
+    --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  html:lang(zh-CN) {
+    --font:
+      "Inter", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+      "Source Han Sans SC", system-ui, sans-serif;
+    --font-display: "Noto Serif SC", "Songti SC", "STSong", "Source Han Serif SC", ui-serif, serif;
+  }
+
+  @media (max-width: 900px) and (orientation: landscape), (max-height: 500px) {
+    :root {
+      --hud-gap: 20px;
+    }
+  }
+
+  @media (max-height: 640px) {
+    :root {
+      --hud-gap: 14px;
+    }
+  }
+}
+
+@layer base {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #dropzone,
+    #top-strip,
+    #hud,
+    #track-panel,
+    .panel-backdrop,
+    #export-modal,
+    #post-session-modal,
+    .export-card,
+    .post-session-card,
+    .export-progress-bar,
+    .scrubber,
+    .mini-slider,
+    .toggle-track,
+    .toggle-track::after,
+    .theme-dot,
+    .ts-record-btn,
+    .ts-context,
+    .ts-menu,
+    .ts-menu-item,
+    .modal-btn,
+    .fps-btn {
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer layout {
+  #app {
+    position: relative;
+    width: 100vw;
+    height: 100svh;
+    min-height: 100vh;
+  }
+
+  #pianoroll {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  #ui-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  #solid-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+}
+
+@layer utilities {
+  .scroll-surface {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .scroll-viewport {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .scroll-surface,
+  .scroll-viewport,
+  #export-modal .modal-scroll,
+  #post-session-modal .modal-scroll,
+  .ts-popover,
+  .ts-popover * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  }
+
+  .scroll-surface::-webkit-scrollbar,
+  .scroll-viewport::-webkit-scrollbar,
+  #export-modal .modal-scroll::-webkit-scrollbar,
+  #post-session-modal .modal-scroll::-webkit-scrollbar,
+  .ts-popover::-webkit-scrollbar,
+  .ts-popover *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scroll-surface::-webkit-scrollbar-track,
+  .scroll-viewport::-webkit-scrollbar-track,
+  #export-modal .modal-scroll::-webkit-scrollbar-track,
+  #post-session-modal .modal-scroll::-webkit-scrollbar-track,
+  .ts-popover::-webkit-scrollbar-track,
+  .ts-popover *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-surface::-webkit-scrollbar-thumb,
+  .scroll-viewport::-webkit-scrollbar-thumb,
+  #export-modal .modal-scroll::-webkit-scrollbar-thumb,
+  #post-session-modal .modal-scroll::-webkit-scrollbar-thumb,
+  .ts-popover::-webkit-scrollbar-thumb,
+  .ts-popover *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+    transition: background 0.18s ease;
+  }
+
+  .scroll-surface::-webkit-scrollbar-thumb:hover,
+  .scroll-viewport::-webkit-scrollbar-thumb:hover,
+  #export-modal .modal-scroll::-webkit-scrollbar-thumb:hover,
+  #post-session-modal .modal-scroll::-webkit-scrollbar-thumb:hover,
+  .ts-popover::-webkit-scrollbar-thumb:hover,
+  .ts-popover *::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+    background-clip: padding-box;
+  }
+
+  .scroll-surface::-webkit-scrollbar-corner,
+  .scroll-viewport::-webkit-scrollbar-corner,
+  #export-modal .modal-scroll::-webkit-scrollbar-corner,
+  #post-session-modal .modal-scroll::-webkit-scrollbar-corner,
+  .ts-popover::-webkit-scrollbar-corner,
+  .ts-popover *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  [data-tip] {
+    position: relative;
+  }
+
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 60;
+    max-width: 80vw;
+    padding: 5px 9px;
+    transform: translateX(-50%) translateY(-4px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 6px;
+    background: rgba(12, 12, 20, 0.98);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+    color: var(--text);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.12s ease,
+      transform 0.12s ease;
+  }
+
+  [data-tip]:hover::after,
+  [data-tip]:focus-visible::after,
+  [data-tip]:active::after {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .float-hud [data-tip]::after {
+    top: auto;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+  }
+
+  .float-hud [data-tip]:hover::after,
+  .float-hud [data-tip]:focus-visible::after,
+  .float-hud [data-tip]:active::after {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 640px) and (orientation: portrait) {
+    .float-hud [data-tip]::after {
+      top: calc(100% + 8px);
+      bottom: auto;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    .float-hud [data-tip]:hover::after,
+    .float-hud [data-tip]:focus-visible::after,
+    .float-hud [data-tip]:active::after {
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  #key-hint [data-tip]::after {
+    top: auto;
+    bottom: calc(100% + 8px);
+    left: 0;
+    transform: translateX(0) translateY(4px);
+  }
+
+  #key-hint [data-tip]:hover::after,
+  #key-hint [data-tip]:focus-visible::after,
+  #key-hint [data-tip]:active::after {
+    transform: translateX(0) translateY(0);
+  }
+
+  .console-panel.popover--sheet {
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  #console-panel.popover--sheet {
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  .ts-popover {
+    position: absolute;
+    z-index: 60;
+    min-width: 260px;
+    max-width: 340px;
+    max-height: min(60vh, 520px);
+    display: flex;
+    flex-direction: column;
+    background: rgba(10, 10, 18, 0.96);
+    backdrop-filter: blur(32px) saturate(150%);
+    -webkit-backdrop-filter: blur(32px) saturate(150%);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-lg);
+    box-shadow:
+      0 20px 48px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition:
+      opacity 0.18s var(--ease-out),
+      transform 0.18s var(--ease-out);
+  }
+
+  .ts-popover.ts-popover--open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px 12px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .panel-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+  }
+
+  .popover--sheet {
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    max-height: 75svh !important;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 8px) !important;
+    transform: translateY(100%) !important;
+    border-radius: 16px 16px 0 0 !important;
+    box-shadow:
+      0 -18px 40px rgba(0, 0, 0, 0.55),
+      0 0 0 100vmax rgba(0, 0, 0, 0.5);
+    opacity: 1 !important;
+    transition:
+      transform 0.28s var(--ease-out),
+      opacity 0.2s var(--ease-out) !important;
+  }
+
+  .popover--sheet.ts-popover--open,
+  .popover--sheet.is-open {
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+  }
+
+  .popover--sheet::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    z-index: 1;
+    width: 38px;
+    height: 4px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+  }
+
+  .popover--sheet > :first-child {
+    margin-top: 8px;
+  }
+}

@@ -1,6 +1,4 @@
-@layer components {
-
-#midi-picker-modal {
+.midiPickerModal {
   position: absolute;
   inset: 0;
   display: flex;
@@ -16,7 +14,7 @@
     backdrop-filter 0.28s;
 }
 
-#midi-picker-modal.open {
+.midiPickerModal.open {
   background: rgba(4, 4, 10, 0.7);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -45,7 +43,7 @@
     transform 0.24s var(--ease-out);
 }
 
-#midi-picker-modal.open .midi-picker-card {
+.midiPickerModal.open .midi-picker-card {
   opacity: 1;
   transform: scale(1) translateY(0);
   pointer-events: auto;
@@ -127,7 +125,7 @@
   border-color: var(--accent);
 }
 
-.midi-picker-drop.drag-over {
+.drag-over {
   background: var(--accent-soft);
   border-color: var(--accent);
   border-style: solid;
@@ -162,5 +160,4 @@
 
 .midi-picker-samples-mount {
   display: contents;
-}
 }

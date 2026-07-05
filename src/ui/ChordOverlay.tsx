@@ -2,7 +2,7 @@ import { createSignal, Show } from 'solid-js'
 import { render } from 'solid-js/web'
 import type { ChordReading } from '../core/music/ChordDetector'
 import { t } from '../i18n'
-import './ChordOverlay.css'
+import styles from './ChordOverlay.module.css'
 
 // Inline chord readout — lives in the top strip rather than as a floating
 // card, so it sits as a quiet supplementary cue beside the now-playing
@@ -18,23 +18,28 @@ interface ViewProps {
 }
 
 function ChordReadoutView(props: ViewProps) {
+  const readoutClass = () =>
+    [
+      styles.tsChordReadout,
+      props.visible() ? styles.tsChordReadoutOn : '',
+      props.empty() ? styles.tsChordReadoutEmpty : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
+
   return (
     <span
       ref={(el) => props.registerEl(el)}
       id="ts-chord-readout"
-      class="ts-chord-readout"
-      classList={{
-        'ts-chord-readout--on': props.visible(),
-        'ts-chord-readout--empty': props.empty(),
-      }}
+      class={readoutClass()}
       role="status"
       aria-live="polite"
       aria-label={t('chord.aria')}
     >
-      <span class="ts-chord-readout-name">
-        <span class="ts-chord-readout-tonic">{props.tonic()}</span>
-        <Show when={props.qualityHtml()} fallback={<span class="ts-chord-readout-quality" />}>
-          <span class="ts-chord-readout-quality" innerHTML={props.qualityHtml()} />
+      <span class={styles.tsChordReadoutName}>
+        <span class={styles.tsChordReadoutTonic}>{props.tonic()}</span>
+        <Show when={props.qualityHtml()} fallback={<span class={styles.tsChordReadoutQuality} />}>
+          <span class={styles.tsChordReadoutQuality} innerHTML={props.qualityHtml()} />
         </Show>
       </span>
     </span>
@@ -128,12 +133,13 @@ export class ChordOverlay {
 
   private applyReading(r: ChordReading): void {
     const isEmpty = !r.name && r.pitchClasses.length === 0
+    const pulseClass = styles.tsChordReadoutPulse ?? 'ts-chord-readout--pulse'
     this.setEmpty(isEmpty)
     // Force-restart the entry animation so each chord change reads as a small
     // beat. Toggle the class off first, then re-add after a forced reflow.
-    this.rootEl.classList.remove('ts-chord-readout--pulse')
+    this.rootEl.classList.remove(pulseClass)
     void this.rootEl.offsetWidth
-    this.rootEl.classList.add('ts-chord-readout--pulse')
+    this.rootEl.classList.add(pulseClass)
 
     if (isEmpty) {
       this.setTonic('—')
@@ -195,7 +201,7 @@ function formatQualityHtml(quality: string): string {
   if (slashIdx < 0) return escapeHtml(formatTonic(quality))
   const head = quality.slice(0, slashIdx)
   const tail = quality.slice(slashIdx + 1)
-  return `${escapeHtml(formatTonic(head))}<span class="ts-chord-readout-bass">/${escapeHtml(formatTonic(tail))}</span>`
+  return `${escapeHtml(formatTonic(head))}<span class="${styles.tsChordReadoutBass}">/${escapeHtml(formatTonic(tail))}</span>`
 }
 
 function escapeHtml(s: string): string {

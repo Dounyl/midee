@@ -1,5 +1,6 @@
 import { createSignal, For } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
+import styles from './Toast.module.css'
 
 // Simple one-shot toast queue. Each entry auto-removes after its duration;
 // multiple toasts stack in DOM order (latest below, matching the old
@@ -41,9 +42,9 @@ export function showToast(message: string, className: string, duration: number):
 }
 
 export function showError(message: string): void {
-  showToast(message, 'toast', 4000)
+  showToast(message, styles.toast!, 4000)
 }
 
 export function showSuccess(message: string): void {
-  showToast(message, 'toast toast--success', 3500)
+  showToast(message, `${styles.toast!} ${styles.toastSuccess!}`, 3500)
 }

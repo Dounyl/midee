@@ -4,11 +4,12 @@ import { MidiFlowCoordinator } from './app/MidiFlowCoordinator'
 import { PlaybackCoordinator } from './app/PlaybackCoordinator'
 import { RuntimeUiBridge } from './app/RuntimeUiBridge'
 import type { ExportOverlayState } from './app/types'
+import loadingStyles from './app.module.css'
 import { Metronome } from './audio/Metronome'
 import { INSTRUMENTS, SynthEngine } from './audio/SynthEngine'
 import { MasterClock } from './core/clock/MasterClock'
 import { type BusNoteEvent, InputBus } from './core/input/InputBus'
-import { getKeyboardHeightProfile, type KeyboardMode } from './core/keyboardLayout'
+import type { KeyboardMode } from './core/keyboardLayout'
 import { lazyHandle } from './core/lazyHandle'
 import { transposeDeltaToTonic } from './core/music/KeySignature'
 import {
@@ -64,7 +65,6 @@ import { CustomizeMenu } from './ui/CustomizeMenu'
 import { DropZone } from './ui/DropZone'
 import { InstrumentMenu } from './ui/InstrumentMenu'
 import { KeyboardModeSuggestionModal } from './ui/KeyboardModeSuggestionModal'
-import { KeyboardResizer } from './ui/KeyboardResizer'
 import { showError, showSuccess } from './ui/Toast'
 import { TrackPanel } from './ui/TrackPanel'
 import { installViewportClassSync } from './ui/utils'
@@ -128,7 +128,6 @@ export class App {
   // Captured in init() so the lazy ensureXModal() helpers can construct
   // without re-querying the DOM.
   private overlay!: HTMLElement
-  private kbdResizer!: KeyboardResizer
   private chordOverlay!: ChordOverlay
   private customizeMenu!: CustomizeMenu
   // Shared handles passed into subsystems (Controls today, mode controllers and
@@ -501,15 +500,6 @@ export class App {
     // boot, and keeping them out of the initial chunk shaves ~835 LOC of JSX
     // off the first-paint bundle.
 
-    this.kbdResizer = new KeyboardResizer(
-      overlay,
-      () => this.renderer.currentKeyboardHeight,
-      () => this.renderer.currentKeyboardMode,
-      (px) => this.renderer.setKeyboardHeight(px),
-      (mode) => getKeyboardHeightProfile(mode).desktop,
-    )
-    this.kbdResizer.restoreSaved()
-
     this.chordOverlay = new ChordOverlay(this.controls.chordSlot)
     this.chordOverlayOn = chordOverlayStore.load()
     // File mode actively plays a MIDI 鈥?the chord chip would just narrate
@@ -558,7 +548,6 @@ export class App {
       trackPanel: this.trackPanel,
       consolePanel: this.consolePanel,
       instrumentMenu: this.instrumentMenu,
-      keyboardResizer: this.kbdResizer,
       chordOverlay: this.chordOverlay,
       customizeMenu: this.customizeMenu,
     })
@@ -1180,10 +1169,11 @@ export class App {
   private showLoading(): void {
     this.loadingEl = document.createElement('div')
     this.loadingEl.id = 'loading-overlay'
+    this.loadingEl.className = loadingStyles.loadingOverlay!
     this.loadingEl.innerHTML = `
-      <div class="loading-inner">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Loading...</div>
+      <div class="${loadingStyles.loadingInner!}">
+        <div class="${loadingStyles.loadingSpinner!}"></div>
+        <div class="${loadingStyles.loadingText!}">Loading...</div>
       </div>
     `
     document.querySelector('#ui-overlay')!.appendChild(this.loadingEl)

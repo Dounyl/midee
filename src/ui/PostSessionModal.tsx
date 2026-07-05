@@ -7,9 +7,8 @@ import { Portal, render } from 'solid-js/web'
 import { t, tn } from '../i18n'
 import { trackEvent } from '../telemetry'
 import { icons } from './icons'
-import { FEEDBACK_URL } from './utils'
-import './ModalShared.css'
-import './PostSessionModal.css'
+import styles from './PostSessionModal.module.css'
+import { cssModuleClass, FEEDBACK_URL } from './utils'
 
 export type SessionAction = 'open-in-file' | 'download' | 'discard'
 
@@ -27,45 +26,52 @@ function PostSessionView(props: ViewProps) {
       {/* biome-ignore-start lint/a11y/noStaticElementInteractions: modal backdrop, click dismisses */}
       <div
         id="post-session-modal"
-        classList={{ open: props.isOpen() }}
+        class={styles.postSessionModal}
+        classList={{ [styles.open!]: props.isOpen() }}
         onClick={(e) => {
           if (e.target === e.currentTarget) props.onAction('discard')
         }}
       >
         {/* biome-ignore-end lint/a11y/useKeyWithClickEvents: — */}
         {/* biome-ignore-end lint/a11y/noStaticElementInteractions: — */}
-        <div class="post-session-card modal-scroll">
-          <header class="export-header">
-            <div class="export-card-icon" innerHTML={icons.waveform()} />
-            <div class="export-header-text">
-              <h2 class="export-card-title">{t('postSession.title')}</h2>
-              <p class="export-card-sub">{props.stats()}</p>
+        <div class={cssModuleClass(styles, 'post-session-card', 'modal-scroll')}>
+          <header class={styles['export-header']!}>
+            <div class={styles['export-card-icon']!} innerHTML={icons.waveform()} />
+            <div class={styles['export-header-text']!}>
+              <h2 class={styles['export-card-title']!}>{t('postSession.title')}</h2>
+              <p class={styles['export-card-sub']!}>{props.stats()}</p>
             </div>
           </header>
 
-          <div class="post-session-actions">
+          <div class={styles['post-session-actions']!}>
             <button
               type="button"
-              class="post-session-option post-session-option--primary"
+              class={cssModuleClass(styles, 'post-session-option', 'post-session-option--primary')}
               onClick={() => props.onAction('open-in-file')}
             >
-              <span class="post-session-option-icon" innerHTML={icons.timeline()} />
-              <span class="post-session-option-body">
-                <span class="post-session-option-title">{t('postSession.openInFile.title')}</span>
-                <span class="post-session-option-sub">{t('postSession.openInFile.sub')}</span>
+              <span class={styles['post-session-option-icon']!} innerHTML={icons.timeline()} />
+              <span class={styles['post-session-option-body']!}>
+                <span class={styles['post-session-option-title']!}>
+                  {t('postSession.openInFile.title')}
+                </span>
+                <span class={styles['post-session-option-sub']!}>
+                  {t('postSession.openInFile.sub')}
+                </span>
               </span>
             </button>
 
             <button
               type="button"
-              class="post-session-option"
+              class={styles['post-session-option']!}
               onClick={() => props.onAction('download')}
             >
-              <span class="post-session-option-icon" innerHTML={icons.download(18)} />
-              <span class="post-session-option-body">
-                <span class="post-session-option-title">{t('postSession.download.title')}</span>
+              <span class={styles['post-session-option-icon']!} innerHTML={icons.download(18)} />
+              <span class={styles['post-session-option-body']!}>
+                <span class={styles['post-session-option-title']!}>
+                  {t('postSession.download.title')}
+                </span>
                 <span
-                  class="post-session-option-sub"
+                  class={styles['post-session-option-sub']!}
                   innerHTML={t('postSession.download.sub.html')}
                 />
               </span>
@@ -73,19 +79,23 @@ function PostSessionView(props: ViewProps) {
 
             <button
               type="button"
-              class="post-session-option post-session-option--muted"
+              class={cssModuleClass(styles, 'post-session-option', 'post-session-option--muted')}
               onClick={() => props.onAction('discard')}
             >
-              <span class="post-session-option-icon" innerHTML={icons.trash()} />
-              <span class="post-session-option-body">
-                <span class="post-session-option-title">{t('postSession.discard.title')}</span>
-                <span class="post-session-option-sub">{t('postSession.discard.sub')}</span>
+              <span class={styles['post-session-option-icon']!} innerHTML={icons.trash()} />
+              <span class={styles['post-session-option-body']!}>
+                <span class={styles['post-session-option-title']!}>
+                  {t('postSession.discard.title')}
+                </span>
+                <span class={styles['post-session-option-sub']!}>
+                  {t('postSession.discard.sub')}
+                </span>
               </span>
             </button>
           </div>
 
           <a
-            class="post-session-feedback"
+            class={styles['post-session-feedback']!}
             href={FEEDBACK_URL}
             target="_blank"
             rel="noopener noreferrer"

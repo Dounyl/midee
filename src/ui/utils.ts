@@ -11,6 +11,17 @@ export function hexToCSS(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`
 }
 
+export function cssModuleClass(
+  styles: Record<string, string>,
+  ...names: Array<string | false | null | undefined>
+): string {
+  return names
+    .filter((name): name is string => Boolean(name))
+    .map((name) => styles[name] ?? '')
+    .filter(Boolean)
+    .join(' ')
+}
+
 // Narrow viewport = bottom-sheet popover mode. Kept in sync with the CSS
 // breakpoint used by the `.popover--sheet` styling.
 const NARROW_VIEWPORT_MQ = '(max-width: 640px)'

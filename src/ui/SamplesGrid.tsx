@@ -3,7 +3,7 @@ import { render } from 'solid-js/web'
 import { computeSparkline, fetchSampleMidi, SAMPLES, type Sample } from '../core/samples'
 import { t } from '../i18n'
 import { icons } from './icons'
-import './SamplesGrid.css'
+import styles from './SamplesGrid.module.css'
 
 // Row of sample cards. Each card shows a pitch-density sparkline pulled from
 // the parsed MIDI — so the bars follow the actual shape of the piece rather
@@ -27,13 +27,13 @@ interface CardProps {
 function SampleCardView(props: CardProps) {
   return (
     <article
-      class="sample-card"
+      class={styles.sampleCard}
       data-sample-id={props.sample.id}
       style={{ '--sample-accent': props.sample.accent }}
     >
-      <button class="sample-card-main" type="button" onClick={() => props.onSelect(props.sample.id)}>
-        <div class="sample-card-viz" aria-hidden="true">
-          <div class="sample-card-bars">
+      <button class={styles.sampleCardMain} type="button" onClick={() => props.onSelect(props.sample.id)}>
+        <div class={styles.sampleCardViz} aria-hidden="true">
+          <div class={styles.sampleCardBars}>
             <For each={props.state().bars}>
               {(h, i) => (
                 <span
@@ -46,14 +46,14 @@ function SampleCardView(props: CardProps) {
             </For>
           </div>
         </div>
-        <div class="sample-card-meta">
-          <div class="sample-card-title">{props.sample.title}</div>
-          <div class="sample-card-sub">{props.state().sub}</div>
+        <div class={styles.sampleCardMeta}>
+          <div class={styles.sampleCardTitle}>{props.sample.title}</div>
+          <div class={styles.sampleCardSub}>{props.state().sub}</div>
         </div>
       </button>
-      <div class="sample-card-actions">
+      <div class={styles.sampleCardActions}>
         <button
-          class="sample-card-action sample-card-action--play"
+          class={`${styles.sampleCardAction} ${styles.sampleCardActionPlay}`}
           type="button"
           onClick={() => props.onSelect(props.sample.id)}
         >
@@ -61,7 +61,7 @@ function SampleCardView(props: CardProps) {
           <span>{t('midiLibrary.play')}</span>
         </button>
         <button
-          class="sample-card-action"
+          class={styles.sampleCardAction}
           type="button"
           onClick={() => (props.onPractice ?? props.onSelect)(props.sample.id)}
         >
@@ -98,7 +98,7 @@ function SamplesGridView(props: GridProps) {
   })
 
   return (
-    <div class="samples-grid">
+    <div class={styles.samplesGrid}>
       <For each={states}>
         {(entry) => {
           const cardProps: CardProps = {

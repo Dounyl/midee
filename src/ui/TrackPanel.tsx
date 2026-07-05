@@ -6,6 +6,7 @@ import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
 import { getTrackColor, type Theme } from '../renderer/theme'
 import { icons } from './icons'
 import { hexToCSS, isNarrowViewport } from './utils'
+import styles from './TrackPanel.module.css'
 
 // Popover dropdown anchored under the Tracks button in the top strip.
 // Each track has a mute toggle; a "Load new file" footer reopens the Open
@@ -26,17 +27,20 @@ function TrackPanelView(props: PanelProps) {
   return (
     <div
       id="track-panel"
-      class="ts-popover"
-      classList={{
-        'ts-popover--open': props.isOpen(),
-        'popover--sheet': props.isSheet(),
-      }}
+      class={[
+        'ts-popover',
+        styles.trackPanel,
+        props.isOpen() ? 'ts-popover--open' : '',
+        props.isSheet() ? 'popover--sheet' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       ref={(el) => props.registerPanelEl(el)}
     >
       <div class="panel-header">
         <span class="panel-label">{t('tracks.title')}</span>
       </div>
-      <div class="panel-items">
+      <div class={`${styles.panelItems} scroll-surface`}>
         <For each={props.tracks()}>
           {(tr) => {
             // Resolve from the active theme so the swatch matches what
@@ -44,18 +48,18 @@ function TrackPanelView(props: PanelProps) {
             // hardcoded palette and only coincidentally matches in Dark.
             const color = (): string => hexToCSS(getTrackColor(tr, props.theme()))
             return (
-              <label class="track-item">
-                <span class="track-swatch" style={{ background: color() }} />
-                <span class="track-info">
-                  <span class="track-name">{tr.name}</span>
-                  <span class="track-meta">
+              <label class={styles.trackItem}>
+                <span class={styles.trackSwatch} style={{ background: color() }} />
+                <span class={styles.trackInfo}>
+                  <span class={styles.trackName}>{tr.name}</span>
+                  <span class={styles.trackMeta}>
                     {tn('tracks.notes', tr.notes.length, { channel: tr.channel + 1 })}
                   </span>
                 </span>
-                <span class="track-toggle-wrap" style={{ '--track-color': color() }}>
+                <span class={styles.trackToggleWrap} style={{ '--track-color': color() }}>
                   <input
                     type="checkbox"
-                    class="track-toggle"
+                    class={styles.trackToggle}
                     data-id={tr.id}
                     checked
                     onChange={(e) => {
@@ -65,15 +69,15 @@ function TrackPanelView(props: PanelProps) {
                       props.onTrackEnabledChange(tr.id, enabled)
                     }}
                   />
-                  <span class="toggle-track" />
+                  <span class={styles.toggleTrack} />
                 </span>
               </label>
             )
           }}
         </For>
       </div>
-      <div class="panel-footer">
-        <button class="panel-load-btn" type="button" onClick={() => props.onLoadNew()}>
+      <div class={styles.panelFooter}>
+        <button class={styles.panelLoadBtn} type="button" onClick={() => props.onLoadNew()}>
           <span innerHTML={icons.upload(11)} />
           {t('tracks.loadNew')}
         </button>

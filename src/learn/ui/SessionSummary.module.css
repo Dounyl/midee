@@ -1,0 +1,81 @@
+.sessionSummary {
+  pointer-events: auto;
+  position: fixed;
+  bottom: calc(var(--keyboard-h, 120px) + 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 380px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  background: rgba(10, 10, 15, 0.7);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  animation: summaryIn 0.26s var(--ease-out) both;
+}
+
+@keyframes summaryIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.sessionSummaryRow {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.sessionSummaryMetric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessionSummaryValue {
+  font: 700 18px / 1 var(--font);
+}
+
+.sessionSummaryLabel {
+  font: 400 10.5px / 1 var(--font);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sessionSummaryMetricStreak .sessionSummaryValue {
+  color: var(--accent);
+}
+
+.sessionSummaryActions {
+  display: inline-flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.sessionSummaryBtn {
+  font: 500 12px / 1 var(--font);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.sessionSummaryBtn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.sessionSummaryBtnPrimary {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}

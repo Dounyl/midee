@@ -27,6 +27,12 @@ const preloadBodyFont = (): Plugin => ({
 
 export default defineConfig({
   plugins: [solid(), preloadBodyFont()],
+  css: {
+    transformer: 'postcss',
+    modules: {
+      localsConvention: 'camelCase',
+    },
+  },
   // Pre-bundle Mediabunny at dev startup. It is only reached via `import('./export/VideoExporter')`
   // in `app.ts`; lazy discovery can re-run the dep optimizer while the tab still references old
   // `node_modules/.vite/deps/*` URLs → 504 (Outdated Optimize Dep) + failed dynamic import.

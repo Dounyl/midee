@@ -1,15 +1,16 @@
 import { createEffect, createMemo, createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
 import type { KeyboardMode } from '../core/keyboardLayout'
-import { t } from '../i18n'
 import type { MidiKeySignature } from '../core/midi/types'
 import {
   buildTransposeOptions,
   keySignatureLabel,
   transposeKeySignature,
 } from '../core/music/KeySignature'
+import { t } from '../i18n'
 import { icons } from './icons'
 import { isNarrowViewport } from './utils'
+import styles from './ConsolePanel.module.css'
 
 interface PanelProps {
   isOpen: () => boolean
@@ -45,43 +46,46 @@ function ConsolePanelView(props: PanelProps) {
   })
 
   return (
-    <div class="console-dock">
+    <div class={styles.consoleDock}>
       <button
         ref={(el) => props.registerTriggerEl(el)}
-        class="console-trigger"
-        classList={{ 'console-trigger--open': props.isOpen() }}
+        class={`${styles.consoleTrigger} ${props.isOpen() ? styles.consoleTriggerOpen : ''}`}
         type="button"
         aria-label={t('topStrip.console')}
         data-tip={t('topStrip.console')}
         onClick={() => props.onToggle()}
       >
-        <span class="console-trigger-icon" aria-hidden="true" innerHTML={icons.chord(14)} />
-        <span class="console-trigger-chev" aria-hidden="true" innerHTML={icons.chevronDown(11)} />
+        <span class={styles.consoleTriggerIcon} aria-hidden="true" innerHTML={icons.chord(14)} />
+        <span class={styles.consoleTriggerChev} aria-hidden="true" innerHTML={icons.chevronDown(11)} />
         <span class="sr-visually-hidden">{t('topStrip.console')}</span>
       </button>
       <div
         id="console-panel"
-        class="console-panel"
-        classList={{
-          'console-panel--open': props.isOpen(),
-          'popover--sheet': props.isSheet(),
-        }}
+        class={[
+          'ts-popover',
+          styles.consolePanel,
+          props.isOpen() ? 'ts-popover--open' : '',
+          props.isOpen() ? styles.consolePanelOpen : '',
+          props.isSheet() ? 'popover--sheet' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         ref={(el) => props.registerPanelEl(el)}
       >
         <div class="panel-header">
           <span class="panel-label">{t('topStrip.console')}</span>
         </div>
-        <div class="console-body">
-          <div class="console-row">
-            <span class="console-label">{t('console.transpose')}</span>
-            <span class="console-value">{currentKeyLabel()}</span>
+        <div class={styles.consoleBody}>
+          <div class={styles.consoleRow}>
+            <span class={styles.consoleLabel}>{t('console.transpose')}</span>
+            <span class={styles.consoleValue}>{currentKeyLabel()}</span>
           </div>
-          <div class="console-row console-row--transpose">
+          <div class={`${styles.consoleRow} ${styles.consoleRowTranspose}`}>
             <select
               ref={(el) => {
                 selectEl = el
               }}
-              class="console-select"
+              class={styles.consoleSelect}
               value={String(props.current())}
               disabled={!props.enabled()}
               aria-label={t('hud.aria.transpose')}
@@ -95,7 +99,7 @@ function ConsolePanelView(props: PanelProps) {
               </For>
             </select>
             <button
-              class="console-reset"
+              class={styles.consoleReset}
               type="button"
               disabled={!props.enabled()}
               aria-label={t('hud.aria.transposeReset')}
@@ -108,17 +112,16 @@ function ConsolePanelView(props: PanelProps) {
               C
             </button>
           </div>
-          <div class="console-sub">
+          <div class={styles.consoleSub}>
             {props.enabled() ? t('console.transpose.enabled') : t('console.transpose.disabled')}
           </div>
-          <div class="console-row">
-            <span class="console-label">{t('console.keyboard')}</span>
-            <div class="console-segmented" role="group" aria-label={t('console.keyboard')}>
-              <For each={(['61', '88'] as const)}>
+          <div class={styles.consoleRow}>
+            <span class={styles.consoleLabel}>{t('console.keyboard')}</span>
+            <div class={styles.consoleSegmented}>
+              <For each={['61', '88'] as const}>
                 {(mode) => (
                   <button
-                    class="console-segment"
-                    classList={{ 'console-segment--active': props.keyboardMode() === mode }}
+                    class={`${styles.consoleSegment} ${props.keyboardMode() === mode ? styles.consoleSegmentActive : ''}`}
                     type="button"
                     aria-pressed={props.keyboardMode() === mode}
                     onPointerDown={(e) => e.stopPropagation()}
@@ -133,12 +136,11 @@ function ConsolePanelView(props: PanelProps) {
               </For>
             </div>
           </div>
-          <div class="console-sub">{t(`console.keyboard.tip.${props.keyboardMode()}`)}</div>
-          <div class="console-row">
-            <span class="console-label">{t('console.labels')}</span>
+          <div class={styles.consoleSub}>{t(`console.keyboard.tip.${props.keyboardMode()}`)}</div>
+          <div class={styles.consoleRow}>
+            <span class={styles.consoleLabel}>{t('console.labels')}</span>
             <button
-              class="console-toggle"
-              classList={{ 'console-toggle--on': props.labelsVisible() }}
+              class={`${styles.consoleToggle} ${props.labelsVisible() ? styles.consoleToggleOn : ''}`}
               type="button"
               aria-pressed={props.labelsVisible()}
               onPointerDown={(e) => e.stopPropagation()}
@@ -150,7 +152,7 @@ function ConsolePanelView(props: PanelProps) {
               {props.labelsVisible() ? t('console.labels.on') : t('console.labels.off')}
             </button>
           </div>
-          <div class="console-sub">
+          <div class={styles.consoleSub}>
             {props.labelsVisible() ? t('console.labels.visible') : t('console.labels.hidden')}
           </div>
         </div>

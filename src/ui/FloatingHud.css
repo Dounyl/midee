@@ -1,7 +1,4 @@
-@layer components {
-
 @media (max-width: 640px) {
-
   .hud-drag-handle {
     order: -1;
   }
@@ -171,5 +168,4 @@
 .float-hud.sr-hud {
   height: 44px;
   padding-right: 16px;
-}
 }

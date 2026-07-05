@@ -8,8 +8,9 @@ import { createSignal, onCleanup, onMount } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
 import { t } from '../i18n'
 import { icons } from './icons'
+import styles from './MidiPickerModal.module.css'
 import { SamplesGrid } from './SamplesGrid'
-import './MidiPickerModal.css'
+import { cssModuleClass } from './utils'
 
 interface OpenOpts {
   onFile: (file: File) => void
@@ -79,7 +80,8 @@ function MidiPickerView(props: ViewProps) {
       {/* biome-ignore-start lint/a11y/noStaticElementInteractions: backdrop dismiss */}
       <div
         id="midi-picker-modal"
-        classList={{ open: props.isOpen() }}
+        class={styles.midiPickerModal}
+        classList={{ [styles.open!]: props.isOpen() }}
         onClick={(e) => {
           if (e.target === e.currentTarget && props.isOpen()) props.onClose()
         }}
@@ -87,19 +89,19 @@ function MidiPickerView(props: ViewProps) {
         {/* biome-ignore-end lint/a11y/useKeyWithClickEvents: — */}
         {/* biome-ignore-end lint/a11y/noStaticElementInteractions: — */}
         <div
-          class="midi-picker-card"
+          class={styles['midi-picker-card']!}
           role="dialog"
           aria-label={t('midiPicker.aria')}
           aria-hidden={!props.isOpen()}
         >
-          <header class="midi-picker-head">
+          <header class={styles['midi-picker-head']!}>
             <div>
-              <h2 class="midi-picker-title">{t('midiPicker.title')}</h2>
-              <p class="midi-picker-sub">{t('midiPicker.sub')}</p>
+              <h2 class={styles['midi-picker-title']!}>{t('midiPicker.title')}</h2>
+              <p class={styles['midi-picker-sub']!}>{t('midiPicker.sub')}</p>
             </div>
             <button
               type="button"
-              class="midi-picker-close"
+              class={styles['midi-picker-close']!}
               aria-label={t('midiPicker.close')}
               onClick={() => props.onClose()}
               innerHTML={icons.close(14)}
@@ -108,22 +110,21 @@ function MidiPickerView(props: ViewProps) {
 
           <button
             type="button"
-            class="midi-picker-drop"
-            classList={{ 'drag-over': dragOver() }}
+            class={cssModuleClass(styles, 'midi-picker-drop', dragOver() && 'drag-over')}
             onClick={() => inputEl.click()}
             onDragEnter={onDragEnter}
             onDragLeave={onDragLeave}
             onDragOver={onDragOver}
             onDrop={onDrop}
           >
-            <span class="midi-picker-drop-icon" innerHTML={icons.upload(20)} />
-            <span class="midi-picker-drop-title">{t('midiPicker.dropTitle')}</span>
-            <span class="midi-picker-drop-sub">{t('midiPicker.dropSub')}</span>
+            <span class={styles['midi-picker-drop-icon']!} innerHTML={icons.upload(20)} />
+            <span class={styles['midi-picker-drop-title']!}>{t('midiPicker.dropTitle')}</span>
+            <span class={styles['midi-picker-drop-sub']!}>{t('midiPicker.dropSub')}</span>
           </button>
 
-          <section class="midi-picker-samples">
-            <div class="midi-picker-section-label">{t('midiPicker.samplesLabel')}</div>
-            <div class="midi-picker-samples-mount" ref={samplesHost} />
+          <section>
+            <div class={styles['midi-picker-section-label']!}>{t('midiPicker.samplesLabel')}</div>
+            <div class={styles['midi-picker-samples-mount']!} ref={samplesHost} />
           </section>
 
           <input

@@ -5,6 +5,7 @@ import type { ParticleStyle, ParticleStyleInfo } from '../renderer/ParticleSyste
 import type { Theme } from '../renderer/theme'
 import { trackEvent } from '../telemetry'
 import { FEEDBACK_URL, isNarrowViewport } from './utils'
+import styles from './CustomizeMenu.module.css'
 
 // Aesthetics popover — collapses theme, particles, and chord overlay (three
 // previously-separate topbar pills) into one trigger. Reduces topbar noise
@@ -33,8 +34,9 @@ function TriggerView(props: TriggerProps) {
   return (
     <button
       ref={(el) => props.registerEl(el)}
-      class="ts-pill ts-pill--customize"
-      classList={{ 'ts-pill--open': props.isOpen() }}
+      class={['ts-pill', styles.customizePill, props.isOpen() ? 'ts-pill--open' : '']
+        .filter(Boolean)
+        .join(' ')}
       id="ts-customize"
       type="button"
       aria-label={t('customize.aria')}
@@ -42,16 +44,16 @@ function TriggerView(props: TriggerProps) {
       onClick={() => props.onToggle()}
     >
       <span
-        class="ts-customize-swatch"
+        class={styles.customizeSwatch}
         id="ts-customize-swatch"
         aria-hidden="true"
         style={props.swatchStyle()}
       />
-      <span class="ts-customize-label" id="ts-customize-label">
+      <span class={styles.customizeLabel} id="ts-customize-label">
         {props.label()}
       </span>
       <svg
-        class="ts-customize-chev"
+        class={styles.customizeChev}
         width="10"
         height="10"
         viewBox="0 0 24 24"
@@ -87,120 +89,139 @@ function MenuView(props: MenuProps) {
   return (
     <div
       ref={(el) => props.registerEl(el)}
-      class="ts-popover ts-customize-menu"
-      classList={{
-        'ts-popover--open': props.isOpen(),
-        'popover--sheet': props.isSheet(),
-      }}
+      class={[
+        'ts-popover',
+        styles.customizeMenu,
+        props.isOpen() ? 'ts-popover--open' : '',
+        props.isSheet() ? 'popover--sheet' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       <div class="panel-header">
         <span class="panel-label">{t('customize.title')}</span>
       </div>
 
-      <div class="ts-customize-body">
-        <div class="customize-section">
-          <div class="customize-section-head">
-            <span class="customize-section-label">{t('customize.theme')}</span>
+      <div class={`${styles.customizeBody} scroll-surface`}>
+        <div class={styles.customizeSection}>
+          <div class={styles.customizeSectionHead}>
+            <span class={styles.customizeSectionLabel}>{t('customize.theme')}</span>
           </div>
-          <div class="customize-theme-grid">
+          <div class={styles.customizeThemeGrid}>
             <For each={props.themes}>
               {(theme, i) => (
                 <button
-                  class="customize-theme-tile"
-                  classList={{ 'customize-theme-tile--on': props.themeIndex() === i() }}
+                  class={[
+                    styles.customizeThemeTile,
+                    props.themeIndex() === i() ? styles.customizeThemeTileOn : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   type="button"
                   title={theme.name}
                   aria-label={`${theme.name} theme`}
                   onClick={() => props.onSelectTheme(i())}
                 >
                   <span
-                    class="customize-theme-tile-dot"
+                    class={styles.customizeThemeTileDot}
                     style={{ background: theme.uiAccentCSS }}
                   />
-                  <span class="customize-theme-tile-label">{theme.name}</span>
+                  <span class={styles.customizeThemeTileLabel}>{theme.name}</span>
                 </button>
               )}
             </For>
           </div>
         </div>
 
-        <div class="customize-section">
-          <div class="customize-section-head">
-            <span class="customize-section-label">{t('customize.particles')}</span>
+        <div class={styles.customizeSection}>
+          <div class={styles.customizeSectionHead}>
+            <span class={styles.customizeSectionLabel}>{t('customize.particles')}</span>
           </div>
-          <div class="customize-particle-row">
+          <div class={styles.customizeParticleRow}>
             <For each={props.particles}>
               {(p, i) => (
                 <button
-                  class="customize-particle-chip"
-                  classList={{ 'customize-particle-chip--on': props.particleIndex() === i() }}
+                  class={[
+                    styles.customizeParticleChip,
+                    props.particleIndex() === i() ? styles.customizeParticleChipOn : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   type="button"
                   title={p.name}
                   aria-label={`${p.name} particles`}
                   onClick={() => props.onSelectParticle(i())}
                 >
                   <span
-                    class="customize-particle-chip-glyph"
+                    class={styles.customizeParticleChipGlyph}
                     data-style={p.id}
                     aria-hidden="true"
                     innerHTML={PARTICLE_GLYPHS[p.id] ?? PARTICLE_GLYPHS['sparks'] ?? ''}
                   />
-                  <span class="customize-particle-chip-label">{p.name}</span>
+                  <span class={styles.customizeParticleChipLabel}>{p.name}</span>
                 </button>
               )}
             </For>
           </div>
         </div>
 
-        <div class="customize-section">
-          <div class="customize-section-head">
-            <span class="customize-section-label">{t('customize.language')}</span>
+        <div class={styles.customizeSection}>
+          <div class={styles.customizeSectionHead}>
+            <span class={styles.customizeSectionLabel}>{t('customize.language')}</span>
           </div>
-          <div class="customize-locale-row">
+          <div class={styles.customizeLocaleRow}>
             <For each={LOCALES}>
               {(l) => (
                 <button
-                  class="customize-locale-chip"
-                  classList={{ 'customize-locale-chip--on': l.code === locale.value }}
+                  class={[
+                    styles.customizeLocaleChip,
+                    l.code === locale.value ? styles.customizeLocaleChipOn : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   type="button"
                   data-locale={l.code}
                   aria-label={l.nativeName}
                   onClick={() => props.onSelectLocale(l.code)}
                 >
-                  <span class="customize-locale-chip-label">{l.nativeName}</span>
+                  <span>{l.nativeName}</span>
                 </button>
               )}
             </For>
           </div>
         </div>
 
-        <div class="customize-section customize-section--toggle">
+        <div class={`${styles.customizeSection} ${styles.customizeSectionToggle}`}>
           <button
-            class="customize-toggle"
-            classList={{ 'customize-toggle--on': props.chordOn() }}
+            class={[
+              styles.customizeToggle,
+              props.chordOn() ? styles.customizeToggleOn : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             type="button"
             aria-pressed={props.chordOn() ? 'true' : 'false'}
             onClick={() => props.onToggleChord()}
           >
-            <span class="customize-toggle-body">
-              <span class="customize-toggle-name">{t('customize.chord')}</span>
-              <span class="customize-toggle-sub">{t('customize.chord.sub')}</span>
+            <span class={styles.customizeToggleBody}>
+              <span class={styles.customizeToggleName}>{t('customize.chord')}</span>
+              <span class={styles.customizeToggleSub}>{t('customize.chord.sub')}</span>
             </span>
-            <span class="customize-toggle-switch" aria-hidden="true">
-              <span class="customize-toggle-knob"></span>
+            <span class={styles.customizeToggleSwitch} aria-hidden="true">
+              <span class={styles.customizeToggleKnob}></span>
             </span>
           </button>
         </div>
 
-        <div class="customize-section customize-section--footer">
+        <div class={`${styles.customizeSection} ${styles.customizeSectionFooter}`}>
           <a
-            class="customize-feedback-card"
+            class={styles.customizeFeedbackCard}
             href={FEEDBACK_URL}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent('feedback_clicked', { source: 'customize_menu' })}
           >
-            <span class="customize-feedback-icon" aria-hidden="true">
+            <span class={styles.customizeFeedbackIcon} aria-hidden="true">
               <svg
                 width="16"
                 height="16"
@@ -215,9 +236,9 @@ function MenuView(props: MenuProps) {
                 <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.6 9.6 0 0 1-4-.9L3 21l1.9-5.5a8.38 8.38 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z" />
               </svg>
             </span>
-            <span class="customize-feedback-label">{t('feedback.menu')}</span>
+            <span class={styles.customizeFeedbackLabel}>{t('feedback.menu')}</span>
             <svg
-              class="customize-feedback-arrow"
+              class={styles.customizeFeedbackArrow}
               width="13"
               height="13"
               viewBox="0 0 24 24"

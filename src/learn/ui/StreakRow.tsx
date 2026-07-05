@@ -1,7 +1,9 @@
 import { createMemo, For } from 'solid-js'
 import { t } from '../../i18n'
+import { cssModuleClass } from '../../ui/utils'
 import type { LearnProgressStore } from '../core/progress'
 import { isoDay } from '../core/progress-actions'
+import styles from './StreakRow.module.css'
 
 const WINDOW_DAYS = 14
 
@@ -36,20 +38,25 @@ export function StreakRowView(props: { progress: LearnProgressStore }) {
   })
 
   return (
-    <div class="streak-row" data-tip={t('learn.streak.tip')}>
-      <span class="streak-row__flame" aria-hidden="true">
+    <div class={styles.streakRow} data-tip={t('learn.streak.tip')}>
+      <span class={styles.streakRowFlame} aria-hidden="true">
         <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
           <title>{t('learn.streak.flameTitle')}</title>
           <path d="M8 1c1 2 3 3 3 6 0 2-1.3 3.5-3 3.5-2 0-3-1.5-3-3.5 0-1 .5-1.5 1-2 .5 1 1 1.5 2-.5-1-1.5 0-2.5 0-3.5z" />
         </svg>
       </span>
-      <span class="streak-row__count">{days()}</span>
-      <span class="streak-row__label">{t('learn.streak.label')}</span>
-      <span class="streak-row__dots" aria-hidden="true">
+      <span class={styles.streakRowCount}>{days()}</span>
+      <span class={styles.streakRowLabel}>{t('learn.streak.label')}</span>
+      <span class={styles.streakRowDots} aria-hidden="true">
         <For each={dots()}>
           {(dot) => (
             <span
-              class={`streak-dot${dot.filled ? ' streak-dot--filled' : ''}${dot.isToday ? ' streak-dot--today' : ''}`}
+              class={cssModuleClass(
+                styles,
+                'streakDot',
+                dot.filled && 'streakDotFilled',
+                dot.isToday && 'streakDotToday',
+              )}
               title={dot.key}
             />
           )}

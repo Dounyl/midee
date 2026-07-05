@@ -3,10 +3,12 @@ import { createMemo, For, onCleanup, onMount } from 'solid-js'
 import { t } from '../../i18n'
 import { createLearnProgressStore } from '../../learn/core/progress'
 import { LEARN_ROUTE_CATALOG, type LearnRouteEntry } from '../../learn/hub/catalog'
-import '../../learn/hub/LearnHub.css'
 import { ExerciseCardView } from '../../learn/ui/ExerciseCard'
+import { HeroCard, heroCardStyles } from '../../learn/ui/HeroCard'
 import { StreakRowView } from '../../learn/ui/StreakRow'
 import { useApp } from '../../store/AppCtx'
+import { RecentMidiList } from '../../ui/RecentMidiList'
+import styles from './LearnHubPage.module.css'
 import { LearnLayout } from './LearnLayout'
 
 const CATEGORY_ORDER = ['ear-training', 'sight-reading'] as const
@@ -56,36 +58,47 @@ export function LearnHubPage() {
 
   return (
     <LearnLayout variant="hub">
-      <div class="learn-hub">
-        <div class="learn-hub__glow" aria-hidden="true" />
-        <header class="learn-hub__topbar">
-          <div class="learn-hub__streak">
+      <div class={styles.learnHub}>
+        <div class={styles.learnHubGlow} aria-hidden="true" />
+        <RecentMidiList
+          title={t('learn.hub.library')}
+          eyebrow={null}
+          target="learn"
+          tone="learn-page"
+          emptyLabel={t('midiLibrary.emptyLearn')}
+          onOpen={(request) => actions.library.open(request)}
+        />
+        <header class={styles.learnHubTopbar}>
+          <div class={styles.learnHubStreak}>
             <StreakRowView progress={progress} />
           </div>
         </header>
-        <div class="learn-hub__scroll">
-          <div class="learn-hub__inner">
+        <div class={styles.learnHubScroll}>
+          <div class={styles.learnHubInner}>
             {featured() ? (
-              <section class="learn-hub__hero">
-                <button
-                  type="button"
-                  class="hero-card"
-                  data-category={featured()!.category}
+              <section class={styles.learnHubHero}>
+                <HeroCard
+                  interactive
+                  class="learn-hub__hero-card"
+                  dataCategory={featured()!.category}
                   onClick={() => navigate(featured()!.route)}
                 >
-                  <div class="hero-card__badge" innerHTML={CATEGORY_ICON[featured()!.category]} />
-                  <div class="hero-card__body">
-                    <span class="hero-card__kicker">{t('learn.hub.recommended')}</span>
-                    <h2 class="hero-card__title">{featured()!.title}</h2>
-                    <p class="hero-card__blurb">{featured()!.blurb}</p>
+                  <div
+                    class={`${heroCardStyles.heroCardBadge!} ${styles.learnHubHeroCardBadge}`}
+                    innerHTML={CATEGORY_ICON[featured()!.category]}
+                  />
+                  <div class={heroCardStyles.heroCardBody}>
+                    <span class={heroCardStyles.heroCardKicker}>{t('learn.hub.recommended')}</span>
+                    <h2 class={heroCardStyles.heroCardTitle}>{featured()!.title}</h2>
+                    <p class={heroCardStyles.heroCardBlurb}>{featured()!.blurb}</p>
                   </div>
-                </button>
+                </HeroCard>
               </section>
             ) : null}
 
-            <section class="learn-hub__grid-section">
-              <div class="learn-hub__grid-label">{t('learn.hub.explore')}</div>
-              <div class="learn-hub__grid-cards">
+            <section class={styles.learnHubGridSection}>
+              <div class={styles.learnHubGridLabel}>{t('learn.hub.explore')}</div>
+              <div class={styles.learnHubGridCards}>
                 <For each={CATEGORY_ORDER.flatMap((category) => grouped().get(category) ?? [])}>
                   {(entry) => (
                     <ExerciseCardView

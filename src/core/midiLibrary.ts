@@ -4,6 +4,7 @@ import type { MidiFile } from './midi/types'
 const DB_NAME = 'midee-midi-library'
 const DB_VERSION = 1
 const STORE_NAME = 'midis'
+const LOCAL_MIDI_LIMIT = 20
 export const MIDI_LIBRARY_CHANGED = 'midee:midi-library-changed'
 const SAMPLE_HISTORY_KEY = 'midee.sample-history'
 
@@ -69,6 +70,22 @@ function countNotes(midi: MidiFile): number {
   return midi.tracks.reduce((sum, track) => sum + track.notes.length, 0)
 }
 
+function sortByRecency<T extends Pick<LocalMidiEntry, 'lastPlayedAt' | 'updatedAt'>>(
+  entries: T[],
+): T[] {
+  return entries.sort((a, b) => b.lastPlayedAt - a.lastPlayedAt || b.updatedAt - a.updatedAt)
+}
+
+function stripBytes({ bytes: _bytes, ...entry }: StoredLocalMidi): LocalMidiEntry {
+  return entry
+}
+
+async function trimLocalMidiLibrary(limit = LOCAL_MIDI_LIMIT): Promise<void> {
+  const rows = await withStore<StoredLocalMidi[]>('readonly', (store) => store.getAll())
+  const staleRows = sortByRecency(rows).slice(limit)
+  await Promise.all(staleRows.map((row) => withStore('readwrite', (store) => store.delete(row.id))))
+}
+
 function announceChange(): void {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(MIDI_LIBRARY_CHANGED))
@@ -108,17 +125,14 @@ export async function saveLocalMidi(file: File, midi: MidiFile): Promise<LocalMi
     bytes,
   }
   await withStore('readwrite', (store) => store.put(entry))
+  await trimLocalMidiLibrary()
   announceChange()
-  const { bytes: _bytes, ...meta } = entry
-  return meta
+  return stripBytes(entry)
 }
 
 export async function listLocalMidiEntries(limit = 8): Promise<LocalMidiEntry[]> {
   const rows = await withStore<StoredLocalMidi[]>('readonly', (store) => store.getAll())
-  return rows
-    .map(({ bytes: _bytes, ...entry }) => entry)
-    .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt || b.updatedAt - a.updatedAt)
-    .slice(0, limit)
+  return sortByRecency(rows.map(stripBytes)).slice(0, Math.max(0, limit))
 }
 
 export async function loadLocalMidi(id: string): Promise<MidiFile> {

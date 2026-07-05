@@ -1,0 +1,22 @@
+.learnHost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.learnHostHub {
+  pointer-events: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.learnHostExercise {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.learnHostHidden {
+  display: none;
+}

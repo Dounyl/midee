@@ -4,7 +4,7 @@ import { useApp } from '../../store/AppCtx'
 import { track, trackEvent } from '../../telemetry'
 import { icons } from '../../ui/icons'
 import { RecentMidiList } from '../../ui/RecentMidiList'
-import '../../modes/PlayMode.css'
+import styles from './PlayPage.module.css'
 
 export function PlayPage() {
   const { services, actions, store } = useApp()
@@ -42,33 +42,33 @@ export function PlayPage() {
     <Show
       when={hasMidi()}
       fallback={
-        <div class="play-empty-shell">
-          <section class="hero-card play-empty-card">
-            <div class="hero-card__badge" innerHTML={icons.upload(24)} />
-            <div class="hero-card__body">
-              <span class="hero-card__kicker">{t('topStrip.context.play.kicker')}</span>
-              <h2 class="hero-card__title">{t('topStrip.context.play.fallback')}</h2>
-              <p class="hero-card__blurb">{t('midiLibrary.emptyHome')}</p>
+        <div class={styles.playEmptyShell}>
+          <section class={styles.playEmptyCard}>
+            <div class={styles.playEmptyCardBadge} innerHTML={icons.upload(24)} />
+            <div class={styles.playEmptyCardBody}>
+              <span class={styles.playEmptyCardKicker}>{t('topStrip.context.play.kicker')}</span>
+              <h2 class={styles.playEmptyCardTitle}>{t('topStrip.context.play.fallback')}</h2>
+              <p class={styles.playEmptyCardBlurb}>{t('midiLibrary.emptyHome')}</p>
             </div>
-            <div class="hero-card__actions">
+            <div class={styles.playEmptyCardActions}>
               <button
-                class="hero-card__primary"
+                class={styles.playEmptyCardPrimary}
                 type="button"
                 onClick={() => actions.library.open({ kind: 'picker', target: 'play' })}
               >
                 <span
-                  class="hero-card__primary-icon"
+                  class={styles.playEmptyCardPrimaryIcon}
                   aria-hidden="true"
                   innerHTML={icons.upload(16)}
                 />
-                <span class="hero-card__primary-label">{t('home.cta.openMidi')}</span>
+                <span class={styles.playEmptyCardPrimaryLabel}>{t('home.cta.openMidi')}</span>
               </button>
             </div>
           </section>
           <RecentMidiList
-            class="play-empty-library"
             title={t('midiLibrary.homeLabel')}
             target="play"
+            tone="play-empty"
             currentName={null}
             emptyLabel={t('midiLibrary.emptyHome')}
             variant="inline"
@@ -78,7 +78,6 @@ export function PlayPage() {
       }
     >
       <RecentMidiList
-        class="recent-midi-card--play"
         title={t('midiLibrary.homeLabel')}
         target="play"
         currentName={services.store.state.loadedMidi?.name ?? null}

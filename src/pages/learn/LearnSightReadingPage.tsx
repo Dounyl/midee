@@ -3,7 +3,7 @@ import { onCleanup, onMount } from 'solid-js'
 import { t } from '../../i18n'
 import { sightReadingDescriptor } from '../../learn/exercises/sight-reading'
 import { useApp } from '../../store/AppCtx'
-import { LearnLayout } from './LearnLayout'
+import { LearnLayout, learnLayoutStyles } from './LearnLayout'
 import { RoutedExerciseRuntime } from './RoutedExerciseRuntime'
 
 export function LearnSightReadingPage() {
@@ -33,9 +33,9 @@ export function LearnSightReadingPage() {
       blurb={t('learn.exercise.sightReading.blurb')}
       backToHub
     >
-      <div class="learn-route-card">
-        <div class="learn-route-card__hint">{t('learn.hub.recommended')}</div>
-        <p class="learn-route-page__blurb">{t('learn.exercise.sightReading.blurb')}</p>
+      <div class={learnLayoutStyles.learnRouteCard}>
+        <div class={learnLayoutStyles.learnRouteCardHint}>{t('learn.hub.recommended')}</div>
+        <p class={learnLayoutStyles.learnRoutePageBlurb}>{t('learn.exercise.sightReading.blurb')}</p>
       </div>
     </LearnLayout>
   )

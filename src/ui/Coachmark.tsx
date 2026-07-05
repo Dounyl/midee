@@ -1,6 +1,7 @@
 import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { Portal } from 'solid-js/web'
 import { type MessageKey, t } from '../i18n'
+import styles from './Coachmark.module.css'
 
 // Generic first-encounter coachmark anchored to a DOM element by id. Surfaces
 // once per browser profile (localStorage-gated) the first time `eligible()`
@@ -51,6 +52,8 @@ function markSeen(key: string): void {
 
 export function Coachmark(props: CoachmarkProps) {
   const placement = (): CoachmarkPlacement => props.placement ?? 'below'
+  const placementClass = () =>
+    placement() === 'above' ? styles.coachmarkAbove : styles.coachmarkBelow
   const [shown, setShown] = createSignal(false)
   const [pos, setPos] = createSignal<{ top: number; left: number }>({ top: 0, left: 0 })
   let showTimer: number | null = null
@@ -133,16 +136,16 @@ export function Coachmark(props: CoachmarkProps) {
     <Show when={shown()}>
       <Portal>
         <div
-          class={`coachmark coachmark--${placement()}`}
+          class={`${styles.coachmark} ${placementClass()}`}
           role="status"
           aria-live="polite"
           style={{ top: `${pos().top}px`, left: `${pos().left}px` }}
         >
-          <div class="coachmark__arrow" aria-hidden="true" />
-          <div class="coachmark__title">{t(props.titleKey)}</div>
-          <div class="coachmark__body">{t(props.bodyKey)}</div>
+          <div class={styles.coachmarkArrow} aria-hidden="true" />
+          <div class={styles.coachmarkTitle}>{t(props.titleKey)}</div>
+          <div class={styles.coachmarkBody}>{t(props.bodyKey)}</div>
           <button
-            class="coachmark__close"
+            class={styles.coachmarkClose}
             type="button"
             aria-label={t('coachmark.dismiss')}
             onClick={() => dismiss()}

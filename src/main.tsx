@@ -1,4 +1,4 @@
-import './styles/index.css'
+import './styles/global.css'
 // Self-hosted fonts via @fontsource. Each CSS import emits a `@font-face`
 // rule into the main stylesheet bundle and ships its woff2 file to
 // `dist/assets/` as a long-cacheable hashed asset. Compared to
@@ -20,6 +20,7 @@ import { AppRoot } from './AppRoot'
 import { createApp } from './createApp'
 import { env } from './env'
 import { currentLocaleNativeName, initI18n, shouldShowLocaleHint, t } from './i18n'
+import localeHintStyles from './main/LocaleHint.module.css'
 import { AppCtx } from './store/AppCtx'
 import { loadPostHog, registerAnalyticsContext } from './telemetry'
 import { whenIdle } from './whenIdle'
@@ -27,11 +28,11 @@ import { whenIdle } from './whenIdle'
 // Both analytics SDKs are loaded on idle so they don't sit in the initial
 // bundle. PostHog alone is ~70 KB gz with autocapture / session_recording /
 // feature_flags; @vercel/analytics is small but still a deferrable import.
-// Buffered events fire once the SDK lands — see telemetry.ts → `loadPostHog`.
+// Buffered events fire once the SDK lands - see telemetry.ts -> `loadPostHog`.
 const posthogKey = env.VITE_POSTHOG_KEY
 if (posthogKey) {
   // Snapshot context props at boot time even though the SDK isn't loaded
-  // yet — they get queued and replayed in order on first init.
+  // yet - they get queued and replayed in order on first init.
   registerAnalyticsContext()
 }
 whenIdle(() => {
@@ -46,7 +47,7 @@ whenIdle(() => {
 })
 
 // Load the right locale before constructing UI so the first paint is already
-// translated — avoids an English-then-French flash. Adds ~5–15ms for the
+// translated - avoids an English-then-French flash. Adds ~5-15ms for the
 // dynamic import on non-English; English is bundled and resolves instantly.
 async function boot(): Promise<void> {
   await initI18n()
@@ -74,7 +75,7 @@ async function boot(): Promise<void> {
   // Bench runner is a build-time opt-in. `npm run bench` sets
   // VITE_ENABLE_BENCH=1; public prod builds don't, so Vite constant-folds the
   // condition to `false` and tree-shakes both the dynamic import and the
-  // branch — `bench/runner.ts` never reaches the public bundle, and
+  // branch - `bench/runner.ts` never reaches the public bundle, and
   // `?bench=...` URLs are inert in prod. Read `import.meta.env` directly (not
   // through env.ts) so the value is statically inlined for the dead-code pass.
   if (import.meta.env.VITE_ENABLE_BENCH) {
@@ -93,18 +94,19 @@ async function boot(): Promise<void> {
 
 function showLocaleHint(): void {
   const el = document.createElement('div')
-  el.className = 'locale-hint'
+  el.className = localeHintStyles.localeHint!
+  const closeClass = localeHintStyles.localeHintClose!
   el.innerHTML = `
     <span>${t('onboarding.localeDetected', { language: currentLocaleNativeName() })}</span>
-    <button class="locale-hint-close" type="button" aria-label="${escapeAttr(t('coachmark.dismiss'))}">×</button>
+    <button class="${closeClass}" type="button" aria-label="${escapeAttr(t('coachmark.dismiss'))}">×</button>
   `
   document.body.appendChild(el)
-  requestAnimationFrame(() => el.classList.add('locale-hint--shown'))
+  requestAnimationFrame(() => el.classList.add(localeHintStyles.localeHintShown!))
   const dismiss = (): void => {
-    el.classList.remove('locale-hint--shown')
+    el.classList.remove(localeHintStyles.localeHintShown!)
     setTimeout(() => el.remove(), 400)
   }
-  el.querySelector<HTMLButtonElement>('.locale-hint-close')?.addEventListener('click', dismiss)
+  el.querySelector<HTMLButtonElement>(`.${closeClass}`)?.addEventListener('click', dismiss)
   setTimeout(dismiss, 8000)
 }
 

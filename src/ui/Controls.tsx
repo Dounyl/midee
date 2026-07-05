@@ -84,7 +84,7 @@ export class Controls {
   private midiListHideTimer: ReturnType<typeof setTimeout> | null = null
 
   // Content-driven label collapse (see evaluateCompact + the .ts-compact rules
-  // in main.css). Observers re-run the measurement on strip resize and on
+  // in ControlsView.css). Observers re-run the measurement on strip resize and on
   // title-text changes (a new song doesn't change the strip's size).
   private titleEl: HTMLElement | null = null
   private compactRO: ResizeObserver | null = null

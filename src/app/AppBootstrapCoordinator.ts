@@ -1,20 +1,18 @@
 import type { AppServices } from '../core/services'
-import { getKeyboardHeightProfile } from '../core/keyboardLayout'
-import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
 import { PARTICLE_STYLES, type ParticleStyleInfo } from '../renderer/ParticleSystem'
-import { THEMES, type Theme } from '../renderer/theme'
+import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
+import { THEMES } from '../renderer/theme'
+import type { AppActions } from '../store/AppCtx'
 import { ChordOverlay } from '../ui/ChordOverlay'
 import { ConsolePanel } from '../ui/ConsolePanel'
 import { Controls } from '../ui/Controls'
 import { CustomizeMenu } from '../ui/CustomizeMenu'
 import { DropZone } from '../ui/DropZone'
 import { InstrumentMenu } from '../ui/InstrumentMenu'
-import { KeyboardResizer } from '../ui/KeyboardResizer'
 import { TrackPanel } from '../ui/TrackPanel'
 import { installViewportClassSync } from '../ui/utils'
-import type { AppActions } from '../store/AppCtx'
-import type { RuntimeUiCallbacks } from './types'
 import { RuntimeUiBridge } from './RuntimeUiBridge'
+import type { RuntimeUiCallbacks } from './types'
 
 interface AppBootstrapCoordinatorOptions {
   services: AppServices
@@ -95,14 +93,6 @@ export class AppBootstrapCoordinator {
     const instrumentMenu = new InstrumentMenu(controls.instrumentSlot, overlay)
     instrumentMenu.onSelect = this.opts.callbacks.onSelectInstrument as never
 
-    const keyboardResizer = new KeyboardResizer(
-      overlay,
-      () => this.opts.renderer.currentKeyboardHeight,
-      () => this.opts.renderer.currentKeyboardMode,
-      (px: number) => this.opts.renderer.setKeyboardHeight(px),
-      (mode) => getKeyboardHeightProfile(mode).desktop,
-    )
-
     const chordOverlay = new ChordOverlay(controls.chordSlot)
     const customizeMenu = new CustomizeMenu(
       controls.customizeSlot,
@@ -126,7 +116,6 @@ export class AppBootstrapCoordinator {
         trackPanel,
         consolePanel,
         instrumentMenu,
-        keyboardResizer,
         chordOverlay,
         customizeMenu,
       }),

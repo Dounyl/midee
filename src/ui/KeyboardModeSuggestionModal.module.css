@@ -1,0 +1,154 @@
+@layer components {
+  .keyboardModeModal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(4, 4, 10, 0.58);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s var(--ease-out);
+    z-index: 160;
+  }
+
+  .open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .keyboardModeCard {
+    width: min(420px, calc(100vw - 24px));
+    background: rgba(10, 10, 18, 0.96);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-lg);
+    box-shadow:
+      0 20px 48px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .keyboardModeClose {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    transition:
+      color 0.15s,
+      background 0.15s,
+      border-color 0.15s;
+  }
+
+  .keyboardModeClose:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border);
+  }
+
+  .consoleBody {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .consoleSub {
+    font-family: var(--font);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .consoleSegment {
+    border: 1px solid var(--border);
+    background: rgba(12, 12, 22, 0.84);
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      transform 0.12s var(--ease-spring),
+      border-color 0.15s,
+      background 0.15s,
+      color 0.15s;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+  }
+
+  .consoleSegment:hover,
+  .consoleSegment:focus-visible {
+    color: var(--text);
+    border-color: var(--border-hi);
+  }
+
+  .consoleSegment:active {
+    transform: scale(0.96);
+  }
+
+  .keyboardModeCopy {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .keyboardModeActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .keyboardModeOptions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .keyboardModeOption {
+    min-width: 0;
+  }
+
+  .modalBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    font: 600 12px / 1 var(--font);
+    cursor: pointer;
+    transition:
+      transform 0.16s var(--ease-spring),
+      background 0.16s,
+      border-color 0.16s;
+  }
+
+  .modalBtn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--border-hi);
+  }
+
+  .modalBtnAccent {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 10px 28px var(--accent-glow);
+  }
+
+  .modalBtnAccent:hover {
+    background: var(--accent);
+    filter: brightness(1.08);
+  }
+}

@@ -1,0 +1,130 @@
+.learn-hub {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--text);
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.learn-hub__glow {
+  position: absolute;
+  inset: -20% -20% 40% -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      800px 400px at 70% -10%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(600px 400px at 10% 10%, rgba(120, 140, 255, 0.1), transparent 60%);
+  z-index: 0;
+}
+
+.learn-hub__topbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: calc(80px + env(safe-area-inset-top)) 40px 12px;
+}
+
+.learn-hub__scroll {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  pointer-events: auto;
+}
+
+.learn-hub__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.learn-hub__inner {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 40px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  pointer-events: auto;
+}
+
+.learn-hub__streak {
+  display: flex;
+  align-items: center;
+  margin-left: -18px;
+}
+
+.learn-hub__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.learn-hub__hero-card-badge {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+}
+
+.learn-hub__hero-card-badge svg {
+  display: block;
+  flex: 0 0 auto;
+  width: 28px;
+  max-width: 28px;
+  height: 28px;
+  max-height: 28px;
+}
+
+.learn-hub__grid-section {
+  display: grid;
+  gap: 18px;
+}
+
+.learn-hub__grid-label {
+  font: 600 10.5px / 1 var(--font);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-top: 6px;
+}
+
+.learn-hub__grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  pointer-events: auto;
+}
+
+@media (max-width: 720px) {
+  .learn-hub__topbar {
+    padding: calc(32px + env(safe-area-inset-top)) 20px 10px;
+  }
+
+  .learn-hub__inner {
+    padding: 22px 20px 32px;
+  }
+
+  .learn-hub__hero-card-badge {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .learn-hub__hero-card-badge svg {
+    width: 24px;
+    max-width: 24px;
+    height: 24px;
+    max-height: 24px;
+  }
+}

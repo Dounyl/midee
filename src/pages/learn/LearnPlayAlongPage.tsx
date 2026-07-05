@@ -1,11 +1,11 @@
 import { createMemo, createResource, onCleanup, onMount, Show } from 'solid-js'
 import { t } from '../../i18n'
-import '../../learn/hub/LearnHub.css'
 import { playAlongDescriptor } from '../../learn/exercises/play-along'
 import { useApp } from '../../store/AppCtx'
 import { icons } from '../../ui/icons'
 import { RecentMidiList } from '../../ui/RecentMidiList'
-import { LearnLayout } from './LearnLayout'
+import { LearnLayout, learnLayoutStyles } from './LearnLayout'
+import styles from './LearnPlayAlongPage.module.css'
 
 export function LearnPlayAlongPage() {
   const { actions, ensureLearnController } = useApp()
@@ -13,6 +13,13 @@ export function LearnPlayAlongPage() {
   const currentMidi = () => learnController()?.learnState.state.loadedMidi ?? null
   const isExerciseView = createMemo(() => learnController()?.view.value === 'exercise')
   const showEmptyState = createMemo(() => !isExerciseView())
+  const activateCard = () => {
+    if (currentMidi()) {
+      void learnController()?.startPlayAlong()
+      return
+    }
+    actions.library.open({ kind: 'picker', target: 'learn' })
+  }
 
   onMount(() => {
     const abort = new AbortController()
@@ -25,54 +32,78 @@ export function LearnPlayAlongPage() {
 
   return (
     <LearnLayout backToHub>
-      <div class="learn-route-shell learn-route-shell--playalong">
+      <div
+        class={`${learnLayoutStyles.learnRouteShell} ${learnLayoutStyles.learnRouteShellPlayalong}`}
+      >
         <Show when={showEmptyState()}>
-          <div class="learn-playalong-empty-state">
-            <section class="hero-card play-empty-card" data-category={playAlongDescriptor.category}>
-              <div class="hero-card__badge" innerHTML={icons.upload(24)} />
-              <div class="hero-card__body">
-                <span class="hero-card__kicker">{t('learn.hub.recommended')}</span>
-                <h2 class="hero-card__title">{playAlongDescriptor.title}</h2>
-                <p class="hero-card__blurb">{playAlongDescriptor.blurb}</p>
+          <div class={styles.learnPlayalongEmptyState}>
+            <section
+              class={styles.learnPlayalongCard}
+              data-category={playAlongDescriptor.category}
+              role="button"
+              tabindex={0}
+              onClick={activateCard}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                activateCard()
+              }}
+            >
+              <div class={styles.learnPlayalongCardBadge} innerHTML={icons.upload(24)} />
+              <div class={styles.learnPlayalongCardBody}>
+                <span class={styles.learnPlayalongCardKicker}>{t('learn.hub.recommended')}</span>
+                <h2 class={styles.learnPlayalongCardTitle}>{playAlongDescriptor.title}</h2>
+                <p class={styles.learnPlayalongCardBlurb}>{playAlongDescriptor.blurb}</p>
               </div>
-              <div class="hero-card__actions">
+              <div class={styles.learnPlayalongCardActions}>
                 <Show
                   when={currentMidi()}
                   fallback={
                     <button
-                      class="hero-card__primary"
+                      class={styles.learnPlayalongCardPrimary}
                       type="button"
-                      onClick={() => actions.library.open({ kind: 'picker', target: 'learn' })}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        actions.library.open({ kind: 'picker', target: 'learn' })
+                      }}
                     >
                       <span
-                        class="hero-card__primary-icon"
+                        class={styles.learnPlayalongCardPrimaryIcon}
                         aria-hidden="true"
                         innerHTML={icons.upload(16)}
                       />
-                        <span class="hero-card__primary-label">{t('learn.hub.uploadMidi')}</span>
-                      </button>
+                      <span class={styles.learnPlayalongCardPrimaryLabel}>
+                        {t('learn.hub.uploadMidi')}
+                      </span>
+                    </button>
                   }
                 >
                   {(midi) => (
                     <>
                       <button
-                        class="hero-card__primary"
+                        class={styles.learnPlayalongCardPrimary}
                         type="button"
-                        onClick={() => void learnController()?.startPlayAlong()}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          void learnController()?.startPlayAlong()
+                        }}
                       >
                         <span
-                          class="hero-card__primary-icon"
+                          class={styles.learnPlayalongCardPrimaryIcon}
                           aria-hidden="true"
                           innerHTML={icons.play(14)}
                         />
-                        <span class="hero-card__primary-label">
+                        <span class={styles.learnPlayalongCardPrimaryLabel}>
                           {t('learn.hub.startWith', { name: midi().name })}
                         </span>
                       </button>
                       <button
-                        class="hero-card__secondary"
+                        class={styles.learnPlayalongCardSecondary}
                         type="button"
-                        onClick={() => actions.library.open({ kind: 'picker', target: 'learn' })}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          actions.library.open({ kind: 'picker', target: 'learn' })
+                        }}
                       >
                         <span innerHTML={icons.upload(14)} />
                         <span>{t('learn.hub.uploadMidi')}</span>
@@ -83,10 +114,10 @@ export function LearnPlayAlongPage() {
               </div>
             </section>
             <RecentMidiList
-              class="play-empty-library learn-playalong-library"
               title={t('learn.hub.library')}
               eyebrow={null}
               target="learn"
+              tone="play-empty"
               currentName={currentMidi()?.name ?? null}
               emptyLabel={t('midiLibrary.emptyLearn')}
               variant="inline"

@@ -1,0 +1,185 @@
+.heroCard {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 55%),
+    rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.interactive {
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease-spring),
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.interactive:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, transparent), transparent 55%),
+    rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 16px 34px -12px rgba(0, 0, 0, 0.38);
+}
+
+.interactive:hover .heroCardBadge {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: 0 12px 24px -16px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+
+.interactive:active {
+  transform: translateY(0);
+}
+
+.interactive:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 68%, white);
+  outline-offset: 3px;
+}
+
+.heroCardBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.heroCardBadge svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.heroCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.heroCardKicker {
+  font: 600 10.5px / 1 var(--font);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.heroCardTitle {
+  margin: 0;
+  font: 700 22px / 1.15 var(--font);
+  letter-spacing: -0.01em;
+}
+
+.heroCardBlurb {
+  margin: 0;
+  max-width: 520px;
+  font: 400 13px / 1.5 var(--font);
+  color: var(--text-muted);
+}
+
+.heroCardHint {
+  margin: 4px 0 0;
+  font: 400 12px / 1.4 var(--font);
+  color: color-mix(in srgb, var(--accent) 70%, var(--text-muted));
+}
+
+.heroCardActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.heroCardPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #111018;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  box-shadow:
+    0 10px 24px -8px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 1px 0 rgba(255, 255, 255, 0.3) inset;
+  transition:
+    transform 0.15s var(--ease-spring),
+    filter 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.heroCardPrimary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 34px -8px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.heroCardPrimary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.heroCardPrimaryIcon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.heroCardSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font: 500 11px / 1 var(--font);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.heroCardSecondary:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-hi);
+}
+
+@media (max-width: 720px) {
+  .heroCard {
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .heroCardActions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
+}

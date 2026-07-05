@@ -17,7 +17,7 @@ import type { RenderContext, RenderLayer } from './RenderLayer'
 import { darkTheme, getTrackColor, type Theme } from './theme'
 import { Viewport, visibleNoteRange } from './viewport'
 
-// Must match the `--keyboard-h` value in main.css :root and the reset value
+// Must match the `--keyboard-h` value in the global CSS tokens and the reset value
 // in KeyboardResizer.onDoubleClick — all three describe the same default,
 // and drift between them shows up as a gap under the resize handle on first
 // load (before any saved preference or user drag has synced the CSS var).
@@ -26,11 +26,11 @@ const FIXED_88_KEYBOARD_HEIGHT = 156
 const FIXED_61_KEYBOARD_HEIGHT = 196
 const HUD_GAP_88 = 20
 const HUD_GAP_61 = 12
-export const KEYBOARD_HEIGHT_MIN = 80
+const KEYBOARD_HEIGHT_MIN = 80
+const KEYBOARD_HEIGHT_MAX = 360
 // Raised from 220 so portrait phones can host a substantial keyboard —
 // a 220px cap on an 844px-tall iPhone only gives 26% of the screen to the
 // keys. Desktop users rarely drag above ~200px, so this is purely headroom.
-export const KEYBOARD_HEIGHT_MAX = 360
 
 // Fresh-load keyboard size, viewport-aware. Portrait phones get ~20% of
 // viewport so keys feel playable without dominating; landscape phones get
@@ -38,8 +38,9 @@ export const KEYBOARD_HEIGHT_MAX = 360
 // viewport is short and the HUD + top-strip + falling-notes area all
 // compete for the same vertical space. Desktop keeps the 120px default.
 function computeInitialKeyboardHeight(mode: KeyboardMode): number {
-  if (typeof window === 'undefined' || !window.matchMedia)
+  if (typeof window === 'undefined' || !window.matchMedia) {
     return mode === '61' ? FIXED_61_KEYBOARD_HEIGHT : FIXED_88_KEYBOARD_HEIGHT
+  }
   const profile = getKeyboardHeightProfile(mode)
   const isCoarse = window.matchMedia('(pointer: coarse)').matches
   if (!isCoarse) return mode === '61' ? FIXED_61_KEYBOARD_HEIGHT : FIXED_88_KEYBOARD_HEIGHT
@@ -51,8 +52,6 @@ function computeInitialKeyboardHeight(mode: KeyboardMode): number {
       Math.max(profile.portraitMin, Math.round(vh * profile.portraitRatio)),
     )
   }
-  // Landscape mobile: short viewport (~390px on iPhone). Keep the keyboard
-  // small so the HUD + roll area still have room.
   return Math.min(
     profile.landscapeMax,
     Math.max(profile.landscapeMin, Math.round(vh * profile.landscapeRatio)),
@@ -60,7 +59,10 @@ function computeInitialKeyboardHeight(mode: KeyboardMode): number {
 }
 
 function syncHudGap(mode: KeyboardMode): void {
-  document.documentElement.style.setProperty('--hud-gap', `${mode === '61' ? HUD_GAP_61 : HUD_GAP_88}px`)
+  document.documentElement.style.setProperty(
+    '--hud-gap',
+    `${mode === '61' ? HUD_GAP_61 : HUD_GAP_88}px`,
+  )
 }
 
 // Same formula as KeyboardResizer.viewportBounds — duplicated here so the
@@ -75,6 +77,12 @@ function viewportKeyboardBounds(): { min: number; max: number } {
   if (min >= max) return { min: KEYBOARD_HEIGHT_MIN, max: KEYBOARD_HEIGHT_MAX }
   return { min, max }
 }
+
+function clampKeyboardHeight(px: number): number {
+  const { min, max } = viewportKeyboardBounds()
+  return Math.min(max, Math.max(min, Math.round(px)))
+}
+
 const DEFAULT_PIXELS_PER_SECOND = 200
 
 // Sustained emission cadence for held notes. Initial burst fires on note-on
@@ -164,7 +172,7 @@ export class PianoRollRenderer {
     // Pick a viewport-appropriate initial keyboard height before building the
     // scene — otherwise the first paint uses the desktop 120px default even
     // on portrait phones, and a later resize would cause a flash.
-    this.keyboardHeight = computeInitialKeyboardHeight(this.keyboardMode)
+    this.keyboardHeight = clampKeyboardHeight(computeInitialKeyboardHeight(this.keyboardMode))
 
     this.viewport = new Viewport({
       canvasWidth: this.app.screen.width,
@@ -344,9 +352,7 @@ export class PianoRollRenderer {
       pitchMax: range.max,
       blackKeyHeightRatio: getKeyboardHeightProfile(mode).blackKeyHeightRatio,
     })
-    this.keyboardHeight = mode === '61' ? FIXED_61_KEYBOARD_HEIGHT : FIXED_88_KEYBOARD_HEIGHT
-    this.viewport.update({ keyboardHeight: this.keyboardHeight })
-    document.documentElement.style.setProperty('--keyboard-h', `${this.keyboardHeight}px`)
+    this.setKeyboardHeight(computeInitialKeyboardHeight(mode))
     syncHudGap(mode)
     this.rebuildStaticLayers()
     this.renderStaticFrame(this.lastRenderTime)
@@ -367,18 +373,18 @@ export class PianoRollRenderer {
     return this.pixelsPerSecond
   }
 
+  get currentKeyboardHeight(): number {
+    return this.keyboardHeight
+  }
+
   setKeyboardHeight(px: number): void {
-    const clamped = Math.max(KEYBOARD_HEIGHT_MIN, Math.min(KEYBOARD_HEIGHT_MAX, Math.round(px)))
+    const clamped = clampKeyboardHeight(px)
     if (clamped === this.keyboardHeight) return
     this.keyboardHeight = clamped
     this.viewport.update({ keyboardHeight: clamped })
     document.documentElement.style.setProperty('--keyboard-h', `${clamped}px`)
     this.rebuildStaticLayers()
     this.renderStaticFrame(0)
-  }
-
-  get currentKeyboardHeight(): number {
-    return this.keyboardHeight
   }
 
   setParticleStyle(style: import('./ParticleSystem').ParticleStyle): void {
@@ -776,10 +782,7 @@ export class PianoRollRenderer {
     // until it restores it in its own finally block.
     if (this.exportMode) return
     this.resize(window.innerWidth, window.innerHeight)
-    // Re-clamp keyboard height so a portrait-sized keyboard doesn't
-    // dominate after rotation into landscape.
-    const { min, max } = viewportKeyboardBounds()
-    const clamped = Math.min(max, Math.max(min, this.keyboardHeight))
+    const clamped = clampKeyboardHeight(this.keyboardHeight)
     if (clamped !== this.keyboardHeight) this.setKeyboardHeight(clamped)
   }
 

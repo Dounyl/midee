@@ -1,0 +1,185 @@
+.learn-playalong-empty-state {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 14px;
+  min-height: 0;
+  pointer-events: auto;
+}
+
+.learn-playalong-empty-state > :last-child {
+  min-height: 0;
+}
+
+.learn-playalong-card {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 55%),
+    rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 10px 30px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.18s var(--ease-spring),
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.learn-playalong-card:hover {
+  border-color: var(--border-hi);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, transparent), transparent 55%),
+    rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 18px 38px rgba(0, 0, 0, 0.24);
+  transform: translateY(-1px);
+}
+
+.learn-playalong-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+  outline-offset: 3px;
+}
+
+.learn-playalong-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.learn-playalong-card__badge svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
+
+.learn-playalong-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.learn-playalong-card__kicker {
+  color: var(--accent);
+  font: 600 10.5px / 1 var(--font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.learn-playalong-card__title {
+  margin: 0;
+  font: 700 22px / 1.15 var(--font);
+  letter-spacing: -0.01em;
+}
+
+.learn-playalong-card__blurb {
+  max-width: 520px;
+  margin: 0;
+  color: var(--text-muted);
+  font: 400 13px / 1.5 var(--font);
+}
+
+.learn-playalong-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learn-playalong-card__primary,
+.learn-playalong-card__secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.learn-playalong-card__primary {
+  padding: 11px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #111018;
+  font: inherit;
+  font-weight: 700;
+  box-shadow:
+    0 10px 24px -8px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 1px 0 rgba(255, 255, 255, 0.3) inset;
+  transition:
+    transform 0.15s var(--ease-spring),
+    filter 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.learn-playalong-card__primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 34px -8px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.learn-playalong-card__primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.learn-playalong-card__primary-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.learn-playalong-card__primary-label {
+  white-space: nowrap;
+}
+
+.learn-playalong-card__secondary {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font: 500 11px / 1 var(--font);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.learn-playalong-card__secondary:hover {
+  border-color: var(--border-hi);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .learn-playalong-card {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-playalong-card__actions {
+    align-items: stretch;
+  }
+
+  .learn-playalong-card__primary,
+  .learn-playalong-card__secondary {
+    justify-content: center;
+  }
+}

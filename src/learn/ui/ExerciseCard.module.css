@@ -1,0 +1,72 @@
+.exCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 128px;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease-spring),
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.exCard:hover:not(.exCardComing) {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.35);
+}
+
+.exCard:active:not(.exCardComing) {
+  transform: translateY(0);
+}
+
+.exCardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.exCardIcon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.exCard:hover:not(.exCardComing) .exCardIcon {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.exCardTitle {
+  color: var(--text);
+  font: 600 15px / 1.2 var(--font);
+  letter-spacing: -0.005em;
+}
+
+.exCardBlurb {
+  color: var(--text-muted);
+  font: 400 12.5px / 1.45 var(--font);
+}
+
+.exCardComing {
+  opacity: 0.55;
+  cursor: default;
+}

@@ -3,7 +3,7 @@ import { onCleanup, onMount } from 'solid-js'
 import { t } from '../../i18n'
 import { intervalsDescriptor } from '../../learn/exercises/intervals'
 import { useApp } from '../../store/AppCtx'
-import { LearnLayout } from './LearnLayout'
+import { LearnLayout, learnLayoutStyles } from './LearnLayout'
 import { RoutedExerciseRuntime } from './RoutedExerciseRuntime'
 
 export function LearnIntervalsPage() {
@@ -33,9 +33,9 @@ export function LearnIntervalsPage() {
       blurb={t('learn.exercise.intervals.blurb')}
       backToHub
     >
-      {/* <div class="learn-route-card">
-        <div class="learn-route-card__hint">{t('learn.hub.recommended')}</div>
-        <p class="learn-route-page__blurb">{t('learn.exercise.intervals.blurb')}</p>
+      {/* <div class={learnLayoutStyles.learnRouteCard}>
+        <div class={learnLayoutStyles.learnRouteCardHint}>{t('learn.hub.recommended')}</div>
+        <p class={learnLayoutStyles.learnRoutePageBlurb}>{t('learn.exercise.intervals.blurb')}</p>
       </div> */}
     </LearnLayout>
   )

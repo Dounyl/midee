@@ -1,18 +1,16 @@
-import type { MidiFile } from '../core/midi/types'
 import type { InstrumentId } from '../audio/instruments'
-import type { ChordReading } from '../core/music/ChordDetector'
 import type { KeyboardMode } from '../core/keyboardLayout'
-import type { MidiKeySignature } from '../core/midi/types'
-import type { Theme } from '../renderer/theme'
+import type { MidiFile, MidiKeySignature } from '../core/midi/types'
+import type { ChordReading } from '../core/music/ChordDetector'
 import type { MidiDeviceStatus } from '../midi/MidiInputManager'
-import { ChordOverlay } from '../ui/ChordOverlay'
-import { ConsolePanel } from '../ui/ConsolePanel'
-import { Controls } from '../ui/Controls'
-import { CustomizeMenu } from '../ui/CustomizeMenu'
-import { DropZone } from '../ui/DropZone'
-import { InstrumentMenu } from '../ui/InstrumentMenu'
-import { KeyboardResizer } from '../ui/KeyboardResizer'
-import { TrackPanel } from '../ui/TrackPanel'
+import type { Theme } from '../renderer/theme'
+import type { ChordOverlay } from '../ui/ChordOverlay'
+import type { ConsolePanel } from '../ui/ConsolePanel'
+import type { Controls } from '../ui/Controls'
+import type { CustomizeMenu } from '../ui/CustomizeMenu'
+import type { DropZone } from '../ui/DropZone'
+import type { InstrumentMenu } from '../ui/InstrumentMenu'
+import type { TrackPanel } from '../ui/TrackPanel'
 
 export interface RuntimeUiBridgeParts {
   controls: Controls
@@ -20,7 +18,6 @@ export interface RuntimeUiBridgeParts {
   trackPanel: TrackPanel
   consolePanel: ConsolePanel
   instrumentMenu: InstrumentMenu
-  keyboardResizer: KeyboardResizer
   chordOverlay: ChordOverlay
   customizeMenu: CustomizeMenu
 }
@@ -31,7 +28,6 @@ export class RuntimeUiBridge {
   readonly trackPanel: TrackPanel
   readonly consolePanel: ConsolePanel
   readonly instrumentMenu: InstrumentMenu
-  readonly keyboardResizer: KeyboardResizer
   readonly chordOverlay: ChordOverlay
   readonly customizeMenu: CustomizeMenu
 
@@ -41,7 +37,6 @@ export class RuntimeUiBridge {
     this.trackPanel = parts.trackPanel
     this.consolePanel = parts.consolePanel
     this.instrumentMenu = parts.instrumentMenu
-    this.keyboardResizer = parts.keyboardResizer
     this.chordOverlay = parts.chordOverlay
     this.customizeMenu = parts.customizeMenu
   }
@@ -115,13 +110,7 @@ export class RuntimeUiBridge {
     keyboardMode: KeyboardMode,
     pitchLabelsVisible: boolean,
   ): void {
-    this.consolePanel.updateState(
-      enabled,
-      baseKey,
-      current,
-      keyboardMode,
-      pitchLabelsVisible,
-    )
+    this.consolePanel.updateState(enabled, baseKey, current, keyboardMode, pitchLabelsVisible)
   }
 
   closeConsole(): void {
@@ -154,10 +143,6 @@ export class RuntimeUiBridge {
     return this.chordOverlay.isVisible
   }
 
-  restoreKeyboardHeight(): void {
-    this.keyboardResizer.restoreSaved()
-  }
-
   bindTrackTrigger(): void {
     this.trackPanel.setTrigger(this.controls.tracksButton)
   }
@@ -165,7 +150,6 @@ export class RuntimeUiBridge {
   dispose(): void {
     this.dropzone.dispose()
     this.controls.dispose()
-    this.keyboardResizer.dispose()
     this.chordOverlay.dispose()
     this.customizeMenu.dispose()
     this.consolePanel.dispose()

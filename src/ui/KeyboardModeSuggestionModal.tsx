@@ -2,6 +2,7 @@ import { createSignal } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
 import { t } from '../i18n'
 import { icons } from './icons'
+import styles from './KeyboardModeSuggestionModal.module.css'
 
 interface TransposeOption {
   semitones: number
@@ -28,19 +29,17 @@ function KeyboardModeSuggestionView(props: ViewProps) {
   const hasOptions = () => props.options().length > 0
   return (
     <Portal mount={props.container}>
-      {/* biome-ignore-start lint/a11y/useKeyWithClickEvents: backdrop click dismisses the modal */}
-      {/* biome-ignore-start lint/a11y/noStaticElementInteractions: backdrop dismiss */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop click dismisses the modal */}
       <div
         id="keyboard-mode-modal"
-        classList={{ open: props.isOpen() }}
+        role="presentation"
+        class={`${styles.keyboardModeModal} ${props.isOpen() ? styles.open : ''}`}
         onClick={(e) => {
           if (e.target === e.currentTarget && props.isOpen()) props.onClose()
         }}
       >
-        {/* biome-ignore-end lint/a11y/useKeyWithClickEvents */}
-        {/* biome-ignore-end lint/a11y/noStaticElementInteractions */}
         <div
-          class="keyboard-mode-card modal-scroll"
+          class={`${styles.keyboardModeCard} modal-scroll`}
           role="dialog"
           aria-label={t('keyboardModeSuggestion.title')}
           aria-hidden={!props.isOpen()}
@@ -49,24 +48,24 @@ function KeyboardModeSuggestionView(props: ViewProps) {
             <span class="panel-label">{t('keyboardModeSuggestion.title')}</span>
             <button
               type="button"
-              class="keyboard-mode-close"
+              class={styles.keyboardModeClose}
               aria-label={t('midiPicker.close')}
               onClick={() => props.onClose()}
               innerHTML={icons.close(14)}
             />
           </div>
-          <div class="console-body">
-            <div class="console-sub keyboard-mode-copy">
+          <div class={styles.consoleBody}>
+            <div class={`${styles.consoleSub} ${styles.keyboardModeCopy}`}>
               {hasOptions()
                 ? t('keyboardModeSuggestion.body')
                 : t('keyboardModeSuggestion.bodyNoOptions')}
             </div>
             {hasOptions() ? (
-              <div class="keyboard-mode-options">
+              <div class={styles.keyboardModeOptions}>
                 {props.options().map((opt) => (
                   <button
                     type="button"
-                    class="console-segment keyboard-mode-option"
+                    class={`${styles.consoleSegment} ${styles.keyboardModeOption}`}
                     onClick={() => props.onTranspose(opt.semitones)}
                   >
                     {opt.label}
@@ -74,10 +73,10 @@ function KeyboardModeSuggestionView(props: ViewProps) {
                 ))}
               </div>
             ) : null}
-            <div class="keyboard-mode-actions">
+            <div class={styles.keyboardModeActions}>
               <button
                 type="button"
-                class="modal-btn modal-btn--accent"
+                class={`${styles.modalBtn} ${styles.modalBtnAccent}`}
                 onClick={() => props.onSwitchTo88()}
               >
                 {t('keyboardModeSuggestion.switch88')}

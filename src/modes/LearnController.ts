@@ -6,11 +6,14 @@ import { createLearnProgressStore, type LearnProgressStore } from '../learn/core
 import { playAlongDescriptor } from '../learn/exercises/play-along'
 import { findExercise } from '../learn/hub/catalog'
 import { LearnOverlay } from '../learn/overlays/LearnOverlay'
+import learnHostStyles from '../learn/ui/LearnHost.module.css'
 import { createSessionSummary } from '../learn/ui/SessionSummary'
 import { getCurrentRouteMode } from '../routing/routerBridge'
 import { createEventSignal } from '../store/eventSignal'
 import { watch } from '../store/watch'
 import { track, trackEvent } from '../telemetry'
+import { showError } from '../ui/Toast'
+import { cssModuleClass } from '../ui/utils'
 import { LearnSessionManager } from './LearnSessionManager'
 import type { ModeContext } from './ModeController'
 
@@ -148,7 +151,7 @@ export class LearnController {
     this.view.set('page')
 
     if (result && lastDescriptor && this.summaryHost) {
-      this.summaryHost.classList.remove('learn-host--hidden')
+      this.summaryHost.classList.remove(learnHostStyles.learnHostHidden!)
       const summary = createSessionSummary({
         onAgain: () => {
           summary.dismiss()
@@ -219,9 +222,14 @@ export class LearnController {
   private mountHostElements(overlay: HTMLElement): void {
     if (this.exerciseHost && this.summaryHost) return
     const exercise = document.createElement('div')
-    exercise.className = 'learn-host learn-host--exercise'
+    exercise.className = cssModuleClass(learnHostStyles, 'learnHost', 'learnHostExercise')
     const summary = document.createElement('div')
-    summary.className = 'learn-host learn-host--hub learn-host--hidden'
+    summary.className = cssModuleClass(
+      learnHostStyles,
+      'learnHost',
+      'learnHostHub',
+      'learnHostHidden',
+    )
     overlay.appendChild(summary)
     overlay.appendChild(exercise)
     this.exerciseHost = exercise
@@ -236,14 +244,10 @@ export class LearnController {
   }
 
   private hideSummaryHost(): void {
-    this.summaryHost?.classList.add('learn-host--hidden')
+    this.summaryHost?.classList.add(learnHostStyles.learnHostHidden!)
   }
 
   private showError(msg: string): void {
-    const el = document.createElement('div')
-    el.className = 'toast'
-    el.textContent = msg
-    document.body.appendChild(el)
-    setTimeout(() => el.remove(), 4000)
+    showError(msg)
   }
 }

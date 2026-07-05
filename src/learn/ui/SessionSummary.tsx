@@ -3,7 +3,7 @@ import { t } from '../../i18n'
 import { trackEvent } from '../../telemetry'
 import type { ExerciseResult } from '../core/Result'
 import { createMountHandle } from './mountComponent'
-import './SessionSummary.css'
+import styles from './SessionSummary.module.css'
 
 export interface SessionSummaryOptions {
   onAgain: () => void
@@ -38,24 +38,24 @@ function SessionSummaryView(props: ViewProps) {
     onCleanup(() => clearTimeout(timer))
   }
   return (
-    <div class="session-summary" role="status">
-      <div class="session-summary__row">
-        <div class="session-summary__metric">
-          <span class="session-summary__value">{accuracyPct}%</span>
-          <span class="session-summary__label">{t('learn.summary.accuracy')}</span>
+    <div class={styles.sessionSummary} role="status">
+      <div class={styles.sessionSummaryRow}>
+        <div class={styles.sessionSummaryMetric}>
+          <span class={styles.sessionSummaryValue}>{accuracyPct}%</span>
+          <span class={styles.sessionSummaryLabel}>{t('learn.summary.accuracy')}</span>
         </div>
-        <div class="session-summary__metric">
-          <span class="session-summary__value">+{props.xpGained}</span>
-          <span class="session-summary__label">{t('learn.summary.xp')}</span>
+        <div class={styles.sessionSummaryMetric}>
+          <span class={styles.sessionSummaryValue}>+{props.xpGained}</span>
+          <span class={styles.sessionSummaryLabel}>{t('learn.summary.xp')}</span>
         </div>
         <Show when={props.streakExtended}>
-          <div class="session-summary__metric session-summary__metric--streak">
-            <span class="session-summary__value">{t('learn.summary.streakBump')}</span>
+          <div class={`${styles.sessionSummaryMetric} ${styles.sessionSummaryMetricStreak}`}>
+            <span class={styles.sessionSummaryValue}>{t('learn.summary.streakBump')}</span>
           </div>
         </Show>
-        <div class="session-summary__actions">
+        <div class={styles.sessionSummaryActions}>
           <button
-            class="session-summary__btn"
+            class={styles.sessionSummaryBtn}
             type="button"
             onClick={() => {
               trackEvent('exercise_summary_action', {
@@ -69,7 +69,7 @@ function SessionSummaryView(props: ViewProps) {
             {t('learn.summary.again')}
           </button>
           <button
-            class="session-summary__btn session-summary__btn--primary"
+            class={`${styles.sessionSummaryBtn} ${styles.sessionSummaryBtnPrimary}`}
             type="button"
             onClick={() => {
               trackEvent('exercise_summary_action', {

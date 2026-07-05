@@ -1,0 +1,396 @@
+@layer components {
+  .customizeSwatch {
+    position: relative;
+    z-index: 1;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background: var(--accent);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+      0 0 12px var(--accent-glow);
+    transition:
+      transform 0.2s var(--ease-spring),
+      box-shadow 0.2s ease;
+  }
+
+  .customizePill:hover .customizeSwatch {
+    transform: scale(1.06);
+  }
+
+  .customizeLabel {
+    position: relative;
+    z-index: 1;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .customizeChev {
+    position: relative;
+    z-index: 1;
+    color: var(--text-dim);
+    transition:
+      transform 0.22s var(--ease-out),
+      color 0.18s ease;
+  }
+
+  .customizePill:hover .customizeChev {
+    color: var(--text-muted);
+  }
+
+  .customizePill.ts-pill--open .customizeChev {
+    transform: rotate(180deg);
+    color: var(--accent);
+  }
+
+  .customizeMenu {
+    width: 300px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .customizeBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .customizeSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .customizeSection + .customizeSection {
+    border-top: 1px solid var(--border);
+  }
+
+  .customizeSectionFooter {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .customizeSectionToggle {
+  }
+
+  .customizeSectionHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .customizeSectionLabel {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .customizeThemeGrid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .customizeThemeTile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 4px 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    min-width: 0;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s var(--ease-spring);
+  }
+
+  .customizeThemeTile:hover {
+    background: rgba(255, 255, 255, 0.035);
+    color: var(--text-muted);
+  }
+
+  .customizeThemeTileOn {
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    color: var(--text);
+  }
+
+  .customizeThemeTileDot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    transition: transform 0.18s var(--ease-spring);
+  }
+
+  .customizeThemeTile:hover .customizeThemeTileDot,
+  .customizeThemeTileOn .customizeThemeTileDot {
+    transform: scale(1.06);
+  }
+
+  .customizeThemeTileLabel {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    text-align: center;
+    line-height: 1;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .customizeParticleRow,
+  .customizeLocaleRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .customizeParticleChip,
+  .customizeLocaleChip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.025);
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      color 0.18s ease,
+      border-color 0.18s ease,
+      background 0.18s ease,
+      transform 0.15s var(--ease-spring);
+  }
+
+  .customizeParticleChip {
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 10.5px;
+  }
+
+  .customizeLocaleChip {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  .customizeParticleChip:hover,
+  .customizeLocaleChip:hover {
+    color: var(--text);
+    border-color: var(--border-hi);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .customizeParticleChip:hover {
+    transform: translateY(-1px);
+  }
+
+  .customizeParticleChipOn,
+  .customizeLocaleChipOn {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  .customizeParticleChipGlyph,
+  .customizeParticleChipLabel {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .customizeParticleChipGlyph {
+    width: 14px;
+    height: 14px;
+    justify-content: center;
+    color: var(--text-dim);
+    transition:
+      color 0.18s ease,
+      filter 0.18s ease;
+  }
+
+  .customizeParticleChip:hover .customizeParticleChipGlyph {
+    color: var(--text-muted);
+  }
+
+  .customizeParticleChipOn .customizeParticleChipGlyph {
+    color: var(--accent);
+    filter: drop-shadow(0 0 4px var(--accent-glow));
+  }
+
+  .customizeToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: opacity 0.18s ease;
+  }
+
+  .customizeToggle:hover {
+    opacity: 0.92;
+  }
+
+  .customizeToggleBody {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .customizeToggleName {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.1;
+    letter-spacing: 0.005em;
+  }
+
+  .customizeToggleSub {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.01em;
+  }
+
+  .customizeToggleSwitch {
+    flex-shrink: 0;
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .customizeToggleKnob {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition:
+      transform 0.22s var(--ease-spring),
+      background 0.22s ease;
+  }
+
+  .customizeToggleOn .customizeToggleSwitch {
+    background: color-mix(in srgb, var(--accent) 32%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+    box-shadow: 0 0 12px -3px var(--accent-glow);
+  }
+
+  .customizeToggleOn .customizeToggleKnob {
+    background: var(--accent);
+    transform: translateX(13px);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .customizeFeedbackCard {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: var(--r-md, 10px);
+    border: 1px solid var(--accent-soft);
+    background: var(--accent-soft);
+    color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .customizeFeedbackCard:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-soft);
+  }
+
+  .customizeFeedbackCard:active {
+    transform: translateY(0);
+  }
+
+  .customizeFeedbackIcon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .customizeFeedbackLabel {
+    flex: 1 1 auto;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .customizeFeedbackArrow {
+    flex: 0 0 auto;
+    color: var(--accent);
+    transition: transform 0.18s ease;
+  }
+
+  .customizeFeedbackCard:hover .customizeFeedbackArrow {
+    transform: translate(2px, -2px);
+  }
+
+  @media (max-height: 560px) {
+    .customizeSection {
+      padding: 10px 16px;
+      gap: 8px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .customizeMenu {
+      width: 100%;
+    }
+
+    .customizeSection {
+      padding: 12px 14px;
+    }
+
+    .customizeThemeGrid {
+      gap: 5px;
+    }
+  }
+}

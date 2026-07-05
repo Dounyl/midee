@@ -4,6 +4,7 @@ import { INSTRUMENTS, type InstrumentId } from '../audio/SynthEngine'
 import { t } from '../i18n'
 import { icons } from './icons'
 import { isNarrowViewport } from './utils'
+import styles from './InstrumentMenu.module.css'
 
 // Topbar instrument picker — a pill trigger + dropdown menu. Available in
 // both live and file modes so users can hear any loaded MIDI played back with
@@ -21,11 +22,14 @@ function TriggerView(props: TriggerProps) {
   return (
     <button
       ref={(el) => props.registerEl(el)}
-      class="ts-pill ts-pill--instrument"
-      classList={{
-        'ts-pill--open': props.isOpen(),
-        'ts-pill--loading': props.loading(),
-      }}
+      class={[
+        'ts-pill',
+        styles.instrumentPill,
+        props.isOpen() ? 'ts-pill--open' : '',
+        props.loading() ? styles.instrumentPillLoading : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       id="ts-instrument"
       type="button"
       title={t('instrument.title')}
@@ -33,11 +37,11 @@ function TriggerView(props: TriggerProps) {
       aria-busy={props.loading() ? 'true' : 'false'}
       onClick={() => props.onToggle()}
     >
-      <span class="ts-instrument-icon-slot">
+      <span class={styles.instrumentIconSlot}>
         <span innerHTML={icons.instrument()} />
-        <span class="ts-instrument-spinner" aria-hidden="true"></span>
+        <span class={styles.instrumentSpinner} aria-hidden="true"></span>
       </span>
-      <span class="ts-instrument-label" id="ts-instrument-label">
+      <span class={styles.instrumentLabel} id="ts-instrument-label">
         {props.label()}
       </span>
       <span innerHTML={icons.chevronDown(10)} />
@@ -58,34 +62,39 @@ function MenuView(props: MenuProps) {
   return (
     <div
       ref={(el) => props.registerEl(el)}
-      class="ts-popover ts-instrument-menu"
-      classList={{
-        'ts-popover--open': props.isOpen(),
-        'popover--sheet': props.isSheet(),
-      }}
+      class={[
+        'ts-popover',
+        styles.instrumentMenu,
+        props.isOpen() ? 'ts-popover--open' : '',
+        props.isSheet() ? 'popover--sheet' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       <div class="panel-header">
         <span class="panel-label">{t('instrument.panelLabel')}</span>
       </div>
-      <div class="instrument-items">
+      <div class={`${styles.instrumentItems} scroll-surface`}>
         <For each={INSTRUMENTS}>
           {(inst) => (
             <button
-              class="instrument-item"
-              classList={{
-                'instrument-item--on': props.current() === inst.id,
-                'instrument-item--loading': props.loading() === inst.id,
-              }}
+              class={[
+                styles.instrumentItem,
+                props.current() === inst.id ? styles.instrumentItemOn : '',
+                props.loading() === inst.id ? styles.instrumentItemLoading : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               data-id={inst.id}
               type="button"
               onClick={() => props.onSelect(inst.id)}
             >
-              <span class="instrument-item-dot" aria-hidden="true"></span>
-              <span class="instrument-item-body">
-                <span class="instrument-item-name">{t(inst.nameKey)}</span>
-                <span class="instrument-item-sub">{t(inst.descriptionKey)}</span>
+              <span class={styles.instrumentItemDot} aria-hidden="true"></span>
+              <span class={styles.instrumentItemBody}>
+                <span class={styles.instrumentItemName}>{t(inst.nameKey)}</span>
+                <span class={styles.instrumentItemSub}>{t(inst.descriptionKey)}</span>
               </span>
-              <span class="instrument-item-check" aria-hidden="true" innerHTML={icons.check()} />
+              <span class={styles.instrumentItemCheck} aria-hidden="true" innerHTML={icons.check()} />
             </button>
           )}
         </For>
