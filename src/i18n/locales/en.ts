@@ -239,8 +239,7 @@ export const en = {
   'keyboardModeSuggestion.title': 'This MIDI needs a wider keyboard',
   'keyboardModeSuggestion.body':
     'The current piece extends beyond the 61-key range. Pick a compatible key below, or switch back to the full 88-key keyboard.',
-  'keyboardModeSuggestion.bodyNoOptions':
-    'The current piece extends beyond the 61-key range.',
+  'keyboardModeSuggestion.bodyNoOptions': 'The current piece extends beyond the 61-key range.',
   'keyboardModeSuggestion.switch88': 'Use 88 keys',
 
   // ── Mode error boundary ────────────────────────────────────
@@ -258,6 +257,7 @@ export const en = {
   'learn.hub.library': 'Recent practice',
   'learn.hub.startWith': 'Start · {name}',
   'learn.hub.explore': 'Explore',
+  'learn.hub.back': 'Learn',
   'learn.hub.comingSoon': 'Coming soon',
 
   // Catalog category labels.
@@ -301,6 +301,8 @@ export const en = {
   'learn.sr.rampOffTip': 'Ramp off — steady tempo',
   'learn.sr.rampLabel': 'Ramp',
   'learn.sr.accuracyTip': 'Accuracy',
+  'learn.sr.livesRemaining.one': '{count} life remaining',
+  'learn.sr.livesRemaining.other': '{count} lives remaining',
   'learn.sr.restartAria': 'Restart session',
   'learn.sr.restartTip': 'Restart',
   'learn.sr.closeAria': 'Back to hub',
@@ -416,6 +418,7 @@ export const en = {
   // Streak row (Learn hub topbar).
   'learn.streak.tip': 'Practice streak · last 14 days',
   'learn.streak.label': 'day streak',
+  'learn.streak.flameTitle': 'Streak flame',
 
   // End-of-session summary.
   'learn.summary.accuracy': 'accuracy',

@@ -1,6 +1,7 @@
 import { App } from './app'
+import { navigateToMode } from './routing/routerBridge'
 import { AppCtx as _AppCtx, type AppActions, type AppCtxValue } from './store/AppCtx'
-import { createAppStore, resolveInitialAppMode } from './store/state'
+import { createAppStore } from './store/state'
 
 // Boots the app. Constructs the single `AppStore`, hands it to the `App`
 // orchestrator (which owns the long-lived subsystems — renderer, synth, MIDI,
@@ -18,20 +19,30 @@ import { createAppStore, resolveInitialAppMode } from './store/state'
 // the cheapest container. The module-scope `appState` singleton that motivated
 // T2b has been removed; the store is now constructed here and threaded in.
 export async function createApp(): Promise<{ ctx: AppCtxValue; app: App }> {
-  const store = createAppStore({ initialMode: resolveInitialAppMode() })
+  const store = createAppStore()
   const app = new App(store)
   await app.init()
   const actions: AppActions = {
-    mode: {
-      request: (mode) => app.requestMode(mode),
-      mount: (mode, options) => app.mountMode(mode, options),
+    navigation: {
+      toMode: (mode) => {
+        navigateToMode(mode)
+      },
+    },
+    home: {
+      enter: () => app.enterHomeRoute(),
+    },
+    play: {
+      enter: (options) => app.enterPlayRoute(options),
+    },
+    live: {
+      enter: () => app.enterLiveRoute(),
     },
     library: {
       open: (request) => app.openLibraryRequest(request),
     },
     learn: {
-      mount: (signal) => app.mountLearnMode(signal),
-      exit: () => app.exitLearnMode(),
+      enterRoute: (target, signal) => app.enterLearnRoute(target, signal),
+      exitRoute: () => app.exitLearnRoute(),
       enter: (request) => app.enterLearnRequest(request),
     },
     session: {
@@ -44,6 +55,7 @@ export async function createApp(): Promise<{ ctx: AppCtxValue; app: App }> {
       services: app.services,
       store: app.store,
       actions,
+      ensureLearnController: () => app.ensureLearnController(),
     },
     app,
   }

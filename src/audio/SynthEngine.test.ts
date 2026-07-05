@@ -462,6 +462,26 @@ describe('SynthEngine.play — paused resume fast path', () => {
 
     expect(holder.parts.length).toBe(2)
   })
+
+  it('loading a new midi while paused clears the old Part so play() rebuilds instead of resuming it', async () => {
+    const firstMidi = makeMidi([track('first', [note(60, 0)])], 120)
+    const secondMidi = makeMidi([track('second', [note(65, 0), note(67, 1)])], 120)
+    const engine = await loadedEngine(firstMidi)
+
+    await engine.play(0)
+    const firstPart = holder.parts[0]!
+    holder.transport.state = 'paused'
+    holder.transport.start.mockClear()
+    holder.transport.stop.mockClear()
+
+    await engine.load(secondMidi)
+    await engine.play(0)
+
+    expect(firstPart.dispose).toHaveBeenCalled()
+    expect(holder.transport.stop).toHaveBeenCalled()
+    expect(holder.parts.length).toBe(2)
+    expect(holder.parts[1]!.events.length).toBe(2)
+  })
 })
 
 // ── 5. setSpeed / setVolume basic contracts ──────────────────────────────────

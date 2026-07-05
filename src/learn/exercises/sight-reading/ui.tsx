@@ -3,7 +3,7 @@
 // - EndPanel: result card when phase is 'complete' or 'knockedOut'
 
 import { createMemo, createSignal, For, Show } from 'solid-js'
-import { t } from '../../../i18n'
+import { t, tn } from '../../../i18n'
 import { FloatingHud } from '../../../ui/FloatingHud'
 import { icons } from '../../../ui/icons'
 import { computeXp } from '../../core/scoring'
@@ -129,7 +129,7 @@ function SrControlBar(props: SightReadHudOptions) {
 
       {/* Lives dots */}
       <div class="sr-hud__lives" role="status">
-        <span class="sr-visually-hidden">{livesLeft()} lives remaining</span>
+        <span class="sr-visually-hidden">{tn('learn.sr.livesRemaining', livesLeft())}</span>
         <For each={lifeDots()}>
           {(alive) => (
             <span

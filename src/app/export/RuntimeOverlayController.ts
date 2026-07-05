@@ -9,6 +9,7 @@ import { encodeCapturedEvents, triggerMidiDownload } from '../../midi/MidiEncodi
 import { sessionToMidiFile } from '../../midi/SessionToMidi'
 import { PARTICLE_STYLES } from '../../renderer/ParticleSystem'
 import { THEMES, type Theme } from '../../renderer/theme'
+import { getCurrentRouteMode } from '../../routing/routerBridge'
 import { track, trackEvent } from '../../telemetry'
 import type { SessionAction } from '../../ui/PostSessionModal'
 import type { KeyboardModeCoordinator } from '../KeyboardModeCoordinator'
@@ -46,6 +47,10 @@ export class RuntimeOverlayController {
   private chordLastSig = ''
 
   constructor(private readonly opts: RuntimeOverlayControllerOptions) {}
+
+  private currentPageMode() {
+    return getCurrentRouteMode() ?? 'home'
+  }
 
   getState(): ExportOverlayState {
     return this.opts.state
@@ -125,7 +130,7 @@ export class RuntimeOverlayController {
   }
 
   handleTransposeChange(semitones: number): void {
-    if (this.opts.store.state.mode === 'learn') {
+    if (this.currentPageMode() === 'learn') {
       void this.opts
         .ensureLearnController()
         .then((controller) => controller.setTranspose(semitones))
@@ -151,7 +156,7 @@ export class RuntimeOverlayController {
   }
 
   syncConsolePanel(): void {
-    if (this.opts.store.state.mode === 'learn') {
+    if (this.currentPageMode() === 'learn') {
       const state = this.opts.getLearnConsoleState() ?? {
         enabled: false,
         baseKey: null,
@@ -168,9 +173,7 @@ export class RuntimeOverlayController {
     }
 
     const baseKey =
-      this.opts.store.state.mode === 'play'
-        ? (this.opts.state.baseMidi?.keySignature ?? null)
-        : null
+      this.currentPageMode() === 'play' ? (this.opts.state.baseMidi?.keySignature ?? null) : null
     this.opts.ui.updateConsoleState(
       this.opts.isTransposeEnabled(),
       baseKey,
@@ -202,7 +205,7 @@ export class RuntimeOverlayController {
   }
 
   applyChordOverlayVisibility(): void {
-    const allowedHere = this.opts.store.state.mode !== 'play'
+    const allowedHere = this.currentPageMode() !== 'play'
     this.opts.ui.setChordVisible(this.opts.state.chordOverlayOn && allowedHere)
   }
 
@@ -296,7 +299,7 @@ export class RuntimeOverlayController {
 
   private collectActivePitches(currentTime: number): Set<number> {
     const pitches = new Set<number>()
-    const mode = this.opts.store.state.mode
+    const mode = this.currentPageMode()
 
     if (mode === 'live' || mode === 'home') {
       for (const [pitch] of this.opts.liveNotes.heldNotes) pitches.add(pitch)

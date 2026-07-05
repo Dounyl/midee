@@ -7,16 +7,14 @@ const runnerState = {
   activeId: null as string | null,
   launchCalls: [] as Array<{ id: string }>,
   closeCalls: [] as Array<'completed' | 'abandoned'>,
-  closeResult: null as
-    | {
-        exerciseId: string
-        duration_s: number
-        accuracy: number
-        xp: number
-        weakSpots: string[]
-        completed: boolean
-      }
-    | null,
+  closeResult: null as {
+    exerciseId: string
+    duration_s: number
+    accuracy: number
+    xp: number
+    weakSpots: string[]
+    completed: boolean
+  } | null,
 }
 
 const sessionSummaryShow = vi.fn()
@@ -66,12 +64,6 @@ vi.mock('../learn/core/ExerciseRunner', () => ({
       return runnerState.closeResult
     }
   },
-}))
-
-// LearnHub.mount calls Solid render. Mocking it keeps the test hermetic and
-// avoids bringing in the full catalog surface.
-vi.mock('../learn/hub/LearnHub', () => ({
-  createLearnHub: () => ({ mount: () => {}, unmount: () => {} }),
 }))
 
 // SessionSummary renders HTML into the hub host after an exercise closes.
@@ -167,6 +159,7 @@ function makeFakeCtx() {
     resetInteractionState: vi.fn(),
     openFilePicker: vi.fn(),
     openLocalMidi: vi.fn(),
+    openSample: vi.fn(),
     primeInteractiveAudio: vi.fn(),
     setLearnFileName: vi.fn(),
     updateConsolePanel: vi.fn(),
@@ -252,7 +245,7 @@ describe('LearnController.queueMidi', () => {
     expect(runnerState.closeCalls).toEqual(['abandoned'])
   })
 
-  it('closing the active exercise returns Learn to a clean hub state', async () => {
+  it('closing the active exercise returns Learn to a clean routed state', async () => {
     runnerState.closeResult = {
       exerciseId: 'play-along',
       duration_s: 12,
@@ -268,9 +261,9 @@ describe('LearnController.queueMidi', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    ;(ctrl as unknown as { closeActiveExercise(reason: 'completed' | 'abandoned'): void }).closeActiveExercise(
-      'completed',
-    )
+    ;(
+      ctrl as unknown as { closeActiveExercise(reason: 'completed' | 'abandoned'): void }
+    ).closeActiveExercise('completed')
 
     expect(runnerState.closeCalls).toEqual(['completed'])
     expect(ctrl.learnState.state.loadedMidi).toBeNull()

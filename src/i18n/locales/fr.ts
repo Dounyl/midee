@@ -21,7 +21,7 @@ const fr: Messages = {
   'home.midi.blocked': 'Activez MIDI depuis la barre du haut',
   'home.midi.unavailable': 'Web MIDI indisponible dans ce navigateur',
   'home.midi.disconnected': 'Aucun périphérique MIDI — clavier et souris fonctionnent aussi',
-  'home.skipIntro': "Ne plus afficher cet accueil ; ouvrir Lecture par défaut.",
+  'home.skipIntro': 'Ne plus afficher cet accueil ; ouvrir Lecture par défaut.',
   'home.metaLink.blog': 'Lire le blog',
   'home.metaLink.github': 'Code source sur GitHub',
   'home.metaLink.discord': 'Rejoindre la communauté Discord',
@@ -100,7 +100,8 @@ const fr: Messages = {
   'console.keyboard': 'Clavier',
   'console.keyboard.61': '61 touches',
   'console.keyboard.88': '88 touches',
-  'console.keyboard.tip.61': 'Plage centrée sur 61 touches pour claviers compacts, avec un clavier plus haut',
+  'console.keyboard.tip.61':
+    'Plage centrée sur 61 touches pour claviers compacts, avec un clavier plus haut',
   'console.keyboard.tip.88': 'Étendue complète du piano',
   'console.labels': 'Repères',
   'console.labels.on': 'Affichés',
@@ -218,8 +219,7 @@ const fr: Messages = {
   'keyboardModeSuggestion.title': 'Ce MIDI a besoin d’un clavier plus large',
   'keyboardModeSuggestion.body':
     'Le morceau actuel dépasse la plage de 61 touches. Choisissez ci-dessous une tonalité compatible ou revenez au clavier complet de 88 touches.',
-  'keyboardModeSuggestion.bodyNoOptions':
-    'Le morceau actuel dépasse la plage de 61 touches.',
+  'keyboardModeSuggestion.bodyNoOptions': 'Le morceau actuel dépasse la plage de 61 touches.',
   'keyboardModeSuggestion.switch88': 'Utiliser 88 touches',
 
   // ── Mode error boundary ────────────────────────────────────
@@ -237,6 +237,7 @@ const fr: Messages = {
   'learn.hub.library': 'Pratique récente',
   'learn.hub.startWith': 'Démarrer · {name}',
   'learn.hub.explore': 'Explorer',
+  'learn.hub.back': 'Apprendre',
   'learn.hub.comingSoon': 'Bientôt',
 
   'learn.category.playAlong': 'Jouer ensemble',
@@ -278,6 +279,8 @@ const fr: Messages = {
   'learn.sr.rampOffTip': 'Ramp off — steady tempo',
   'learn.sr.rampLabel': 'Ramp',
   'learn.sr.accuracyTip': 'Accuracy',
+  'learn.sr.livesRemaining.one': 'Il reste {count} vie',
+  'learn.sr.livesRemaining.other': 'Il reste {count} vies',
   'learn.sr.restartAria': 'Restart session',
   'learn.sr.restartTip': 'Restart',
   'learn.sr.closeAria': 'Back to hub',
@@ -389,6 +392,7 @@ const fr: Messages = {
 
   'learn.streak.tip': 'Série de pratique · 14 derniers jours',
   'learn.streak.label': 'jours de série',
+  'learn.streak.flameTitle': 'Flamme de série',
 
   'learn.summary.accuracy': 'précision',
   'learn.summary.xp': 'xp',

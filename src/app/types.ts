@@ -4,15 +4,13 @@ import type { AppServices } from '../core/services'
 import type { LearnController } from '../modes/LearnController'
 import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
 import type { Theme } from '../renderer/theme'
-import type { AppMode, AppStore } from '../store/state'
+import type { AppStore } from '../store/state'
 import type { ExportSettings } from '../ui/ExportModal'
 import type { SessionAction } from '../ui/PostSessionModal'
 import type { KeyboardModeCoordinator } from './KeyboardModeCoordinator'
 
 export type MidiOpenTarget = 'play' | 'learn'
 export type MidiOpenSource = 'drag' | 'picker' | 'sample'
-export type ModeRequest = Exclude<AppMode, 'home'>
-
 export interface AppPersistence {
   themeIndex: { load(): number; save(value: number): void }
   instrumentIndex: { load(): number; save(value: number): void }

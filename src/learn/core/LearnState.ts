@@ -22,6 +22,7 @@ export interface LearnStateShape {
   currentTime: number
   duration: number
   status: LearnStatus
+  transportWanted: boolean
 }
 
 export function createLearnState() {
@@ -30,6 +31,7 @@ export function createLearnState() {
     currentTime: 0,
     duration: 0,
     status: 'idle',
+    transportWanted: false,
   })
   return {
     state,
@@ -49,12 +51,19 @@ export function createLearnState() {
           duration: midi.duration,
           currentTime: 0,
           status: 'ready',
+          transportWanted: false,
         })
       })
     },
     clearMidi() {
       batch(() => {
-        setState({ loadedMidi: null, duration: 0, currentTime: 0, status: 'idle' })
+        setState({
+          loadedMidi: null,
+          duration: 0,
+          currentTime: 0,
+          status: 'idle',
+          transportWanted: false,
+        })
       })
     },
   }

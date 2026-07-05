@@ -8,6 +8,7 @@ import {
 } from '../../export/exportMath'
 import { t } from '../../i18n'
 import { midiFileToBytes, triggerMidiDownload } from '../../midi/MidiEncoding'
+import { getCurrentRouteMode } from '../../routing/routerBridge'
 import { track, trackActivation, trackEvent } from '../../telemetry'
 import type { ExportSettings } from '../../ui/ExportModal'
 import type { AppRuntimeDeps, ExportOverlayState } from '../types'
@@ -22,13 +23,17 @@ interface ExportFlowServiceOptions extends AppRuntimeDeps {
 export class ExportFlowService {
   constructor(private readonly opts: ExportFlowServiceOptions) {}
 
+  private currentPageMode() {
+    return getCurrentRouteMode() ?? 'home'
+  }
+
   openModal(): void {
     void this.opts.modals.exportHandle.get().then((modal) => modal.open())
   }
 
   async startExport(settings: ExportSettings): Promise<void> {
     const midi = this.opts.store.state.loadedMidi
-    if (!midi || this.opts.store.state.mode !== 'play') return
+    if (!midi || this.currentPageMode() !== 'play') return
     const exportModal = this.opts.modals.exportHandle.peek()
     if (!exportModal) return
 

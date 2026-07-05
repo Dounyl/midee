@@ -136,7 +136,10 @@ export class PlayAlongEngine {
     // Start from a known-still transport: pause clock + flip status so the
     // synth listener releases audio, then seek.
     services.clock.pause()
-    learnState.setState('status', 'paused')
+    batch(() => {
+      learnState.setState('status', 'paused')
+      learnState.setState('transportWanted', false)
+    })
 
     // One-shot seek seed from the live clock (we do not mirror playhead time
     // into `learnState` / engine store at 60 Hz — HUD uses `clock.subscribe`).
@@ -174,7 +177,10 @@ export class PlayAlongEngine {
     for (const off of this.unsubs) off()
     this.unsubs = []
     this.opts.services.clock.pause()
-    this.opts.learnState.setState('status', 'paused')
+    batch(() => {
+      this.opts.learnState.setState('status', 'paused')
+      this.opts.learnState.setState('transportWanted', false)
+    })
     this.practice.setEnabled(false)
     this.practice.dispose()
     this.opts.services.renderer.setPracticeTrackFocus(null)
@@ -193,14 +199,20 @@ export class PlayAlongEngine {
     // wait-mode, which flips status back to paused. Set playing first so
     // synth.play is already in flight; SynthEngine's generation guard
     // aborts cleanly on the flip.
-    learnState.setState('status', 'playing')
+    batch(() => {
+      learnState.setState('transportWanted', true)
+      learnState.setState('status', 'playing')
+    })
     services.clock.play()
   }
 
   pause(): void {
     this.setState('userWantsToPlay', false)
     this.opts.services.clock.pause()
-    this.opts.learnState.setState('status', 'paused')
+    batch(() => {
+      this.opts.learnState.setState('transportWanted', false)
+      this.opts.learnState.setState('status', 'paused')
+    })
   }
 
   togglePlay(): void {

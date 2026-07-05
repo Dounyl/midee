@@ -65,6 +65,14 @@ export class SynthEngine implements AudioEngine {
   private disabledTrackIds = new Set<string>()
 
   async load(source: MidiFile | AudioBuffer): Promise<void> {
+    // Loading a different file must invalidate any paused transport snapshot
+    // from the previous one; otherwise play() can hit the paused-resume fast
+    // path and revive the old Part instead of building the new song.
+    this.playGeneration++
+    this.clearScheduled()
+    getTransport().stop()
+    this.releaseAllInstruments()
+    this.scheduledFromTime = 0
     if (!(source instanceof AudioBuffer)) {
       this.midi = source as MidiFile
     }

@@ -1,12 +1,19 @@
 import { Show } from 'solid-js'
 import { t } from '../../i18n'
-import type { ExerciseDescriptor } from '../core/Exercise'
+import type { ExerciseCategory, ExerciseDifficulty } from '../core/Exercise'
 import './ExerciseCard.css'
 
+export interface ExerciseCardDescriptorLike {
+  category: ExerciseCategory
+  difficulty: ExerciseDifficulty
+  title: string
+  blurb: string
+}
+
 export interface CardOptions {
-  descriptor: ExerciseDescriptor
+  descriptor: ExerciseCardDescriptorLike
   icon?: string
-  onLaunch: (descriptor: ExerciseDescriptor) => void
+  onLaunch: (descriptor: ExerciseCardDescriptorLike) => void
 }
 
 export function ExerciseCardView(props: CardOptions) {

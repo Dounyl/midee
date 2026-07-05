@@ -97,7 +97,8 @@ const es: Messages = {
   'console.keyboard': 'Teclado',
   'console.keyboard.61': '61 teclas',
   'console.keyboard.88': '88 teclas',
-  'console.keyboard.tip.61': 'Rango centrado de 61 teclas para teclados compactos, con teclado más alto',
+  'console.keyboard.tip.61':
+    'Rango centrado de 61 teclas para teclados compactos, con teclado más alto',
   'console.keyboard.tip.88': 'Rango completo de piano',
   'console.labels': 'Etiquetas',
   'console.labels.on': 'Visibles',
@@ -214,8 +215,7 @@ const es: Messages = {
   'keyboardModeSuggestion.title': 'Este MIDI necesita un teclado más amplio',
   'keyboardModeSuggestion.body':
     'La pieza actual supera el rango de 61 teclas. Elige abajo una tonalidad compatible o vuelve al teclado completo de 88 teclas.',
-  'keyboardModeSuggestion.bodyNoOptions':
-    'La pieza actual supera el rango de 61 teclas.',
+  'keyboardModeSuggestion.bodyNoOptions': 'La pieza actual supera el rango de 61 teclas.',
   'keyboardModeSuggestion.switch88': 'Usar 88 teclas',
 
   // ── Mode error boundary ────────────────────────────────────
@@ -233,6 +233,7 @@ const es: Messages = {
   'learn.hub.library': 'Práctica reciente',
   'learn.hub.startWith': 'Empezar · {name}',
   'learn.hub.explore': 'Explorar',
+  'learn.hub.back': 'Aprender',
   'learn.hub.comingSoon': 'Próximamente',
 
   'learn.category.playAlong': 'Tocar junto',
@@ -274,6 +275,8 @@ const es: Messages = {
   'learn.sr.rampOffTip': 'Ramp off — steady tempo',
   'learn.sr.rampLabel': 'Ramp',
   'learn.sr.accuracyTip': 'Accuracy',
+  'learn.sr.livesRemaining.one': 'Queda {count} vida',
+  'learn.sr.livesRemaining.other': 'Quedan {count} vidas',
   'learn.sr.restartAria': 'Restart session',
   'learn.sr.restartTip': 'Restart',
   'learn.sr.closeAria': 'Back to hub',
@@ -385,6 +388,7 @@ const es: Messages = {
 
   'learn.streak.tip': 'Racha de práctica · últimos 14 días',
   'learn.streak.label': 'días de racha',
+  'learn.streak.flameTitle': 'Llama de racha',
 
   'learn.summary.accuracy': 'precisión',
   'learn.summary.xp': 'xp',

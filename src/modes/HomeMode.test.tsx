@@ -14,14 +14,14 @@ describe('HomeMode', () => {
 
   it('resets interaction state and clears the renderer on mount', () => {
     const { ctx } = renderWithApp(() => <HomeMode />)
-    expect(ctx.actions.mode.mount).toHaveBeenCalledWith('home')
+    expect(ctx.actions.home.enter).toHaveBeenCalledOnce()
   })
 
   it('moves the store into the home state on mount', () => {
     const { ctx } = renderWithApp(() => <HomeMode />)
-    // enterHome() is a no-op when already home, but it must leave the store in
-    // the canonical home shape regardless of how the caller flipped mode.
-    expect(ctx.store.state.mode).toBe('home')
+    // enterHome() is a no-op when already home, but it must leave the runtime
+    // store in the canonical empty-home shape.
+    expect(ctx.store.state.status).toBe('idle')
     expect(ctx.store.state.loadedMidi).toBeNull()
     expect(ctx.store.state.duration).toBe(0)
   })

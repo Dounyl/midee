@@ -19,6 +19,7 @@ export interface ModeContext {
   resetInteractionState: () => void
   openFilePicker: (target?: 'play' | 'learn') => void
   openLocalMidi: (id: string, target: 'play' | 'learn') => void
+  openSample: (id: string, target: 'play' | 'learn') => void
   primeInteractiveAudio: () => void
   // Push the currently-loaded Learn song into the global topbar. Pass `null`
   // to clear it (e.g., on `exit`). Implemented as a callback rather than a

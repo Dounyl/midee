@@ -22,10 +22,12 @@ interface RecentMidiEntry {
 export interface RecentMidiListProps {
   title: string
   target: 'play' | 'learn'
+  eyebrow?: string | null
   currentName?: string | null
   emptyLabel?: string
   class?: string
   variant?: 'floating' | 'inline'
+  defaultOpen?: boolean
   onOpen: (request: LibraryOpenRequest) => void | Promise<void>
 }
 
@@ -40,13 +42,13 @@ export function RecentMidiList(props: RecentMidiListProps) {
   const toggleEmoji = (): string => (props.target === 'learn' ? '🎼' : '🎵')
   const primaryLabel = (): string =>
     props.target === 'learn' ? t('midiLibrary.practice') : t('midiLibrary.play')
-  const primaryIcon = (): string =>
-    props.target === 'learn' ? icons.practice(10) : icons.play(10)
+  const primaryIcon = (): string => (props.target === 'learn' ? icons.practice(10) : icons.play(10))
   const [entries, setEntries] = createSignal<RecentMidiEntry[]>([])
-  const [open, setOpen] = createSignal(inline())
+  const [open, setOpen] = createSignal(inline() || Boolean(props.defaultOpen))
   const [launching, setLaunching] = createSignal(false)
   let hideTimer: ReturnType<typeof setTimeout> | null = null
   let launchTimer: ReturnType<typeof setTimeout> | null = null
+  let initialized = false
 
   const panelOpen = (): boolean => (inline() ? true : open())
 
@@ -99,16 +101,19 @@ export function RecentMidiList(props: RecentMidiListProps) {
       setEntries(next)
       if (inline()) {
         setOpen(true)
-      } else if (next.length > 0) {
-        setOpen(true)
-        armAutoHide()
-      } else {
+      } else if (next.length === 0) {
         setOpen(false)
+      } else if (!initialized) {
+        const shouldOpen = Boolean(props.defaultOpen)
+        setOpen(shouldOpen)
+        if (shouldOpen) armAutoHide()
       }
+      initialized = true
     } catch (err) {
       console.warn('[RecentMidiList] refresh failed', err)
       setEntries([])
       setOpen(inline())
+      initialized = true
     }
   }
 
@@ -167,9 +172,11 @@ export function RecentMidiList(props: RecentMidiListProps) {
       >
         <div class="recent-midi-fab__panel-head">
           <div class="recent-midi-fab__copy">
-            <span class="recent-midi-fab__eyebrow">
-              {props.target === 'learn' ? t('midiLibrary.practice') : t('midiLibrary.play')}
-            </span>
+            <Show when={props.eyebrow !== null}>
+              <span class="recent-midi-fab__eyebrow">
+                {props.eyebrow ?? (props.target === 'learn' ? t('midiLibrary.practice') : t('midiLibrary.play'))}
+              </span>
+            </Show>
             <span class="recent-midi-fab__title">{props.title}</span>
           </div>
           <Show when={!inline()}>

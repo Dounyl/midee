@@ -39,7 +39,7 @@ export function StreakRowView(props: { progress: LearnProgressStore }) {
     <div class="streak-row" data-tip={t('learn.streak.tip')}>
       <span class="streak-row__flame" aria-hidden="true">
         <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-          <title>Streak flame</title>
+          <title>{t('learn.streak.flameTitle')}</title>
           <path d="M8 1c1 2 3 3 3 6 0 2-1.3 3.5-3 3.5-2 0-3-1.5-3-3.5 0-1 .5-1.5 1-2 .5 1 1 1.5 2-.5-1-1.5 0-2.5 0-3.5z" />
         </svg>
       </span>

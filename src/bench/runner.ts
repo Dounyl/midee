@@ -75,7 +75,7 @@ export async function runBench(fixture: string, ctx: AppCtxValue): Promise<Bench
   await synth.load(midi)
   store.completePlayLoad(midi)
   renderer.loadMidi(midi)
-  ctx.actions.mode.mount('play', { skipAnalytics: true })
+  ctx.actions.play.enter({ skipAnalytics: true })
 
   ctx.actions.session.primeInteractiveAudio()
   clock.play()

@@ -35,13 +35,9 @@ describe('createEventSignal', () => {
   })
 })
 
-// createAppStore is the single source of truth for mode transitions, playback
-// status, and the loaded MIDI. Invariants below are load-bearing — downstream
-// surfaces (HUD visibility, analytics, renderer state) rely on them.
 describe('createAppStore', () => {
-  it('starts idle on the home mode with no MIDI loaded', () => {
+  it('starts idle with no MIDI loaded', () => {
     const store = createAppStore()
-    expect(store.state.mode).toBe('home')
     expect(store.state.status).toBe('idle')
     expect(store.state.loadedMidi).toBeNull()
     expect(store.hasLoadedFile).toBe(false)
@@ -54,7 +50,6 @@ describe('createAppStore', () => {
     store.setState('currentTime', 4.2)
     store.setState('status', 'playing')
     store.enterHome()
-    expect(store.state.mode).toBe('home')
     expect(store.state.loadedMidi).toBeNull()
     expect(store.state.duration).toBe(0)
     expect(store.state.currentTime).toBe(0)
@@ -64,29 +59,18 @@ describe('createAppStore', () => {
   it('enterPlayLanding opens the play surface without requiring a MIDI', () => {
     const store = createAppStore()
     store.enterPlayLanding()
-    expect(store.state.mode).toBe('play')
     expect(store.state.status).toBe('idle')
     expect(store.state.loadedMidi).toBeNull()
     expect(store.state.duration).toBe(0)
     expect(store.state.currentTime).toBe(0)
   })
 
-  it('can start directly on the play landing', () => {
-    const store = createAppStore({ initialMode: 'play' })
-    expect(store.state.mode).toBe('play')
-    expect(store.state.status).toBe('idle')
-    expect(store.state.loadedMidi).toBeNull()
-  })
-
-  it('completePlayLoad stores the MIDI and flips to play/ready', () => {
+  it('completePlayLoad stores the MIDI and flips to ready', () => {
     const store = createAppStore()
     const midi = fakeMidi('song.mid', 20)
     store.beginPlayLoad()
-    expect(store.state.mode).toBe('play')
     expect(store.state.status).toBe('loading')
     store.completePlayLoad(midi)
-    // solid-js/store wraps stored objects in a proxy — compare by name
-    // instead of reference equality.
     expect(store.state.loadedMidi?.name).toBe(midi.name)
     expect(store.state.duration).toBe(20)
     expect(store.state.status).toBe('ready')
@@ -96,19 +80,17 @@ describe('createAppStore', () => {
   it('enterPlay no-ops when no MIDI is loaded', () => {
     const store = createAppStore()
     expect(store.enterPlay()).toBe(false)
-    expect(store.state.mode).toBe('home')
+    expect(store.state.status).toBe('idle')
   })
 
-  it('enterPlay restores play mode from any other mode when a MIDI is loaded', () => {
+  it('enterPlay restores ready runtime state when a MIDI is loaded', () => {
     const store = createAppStore()
     const midi = fakeMidi()
     store.completePlayLoad(midi)
     store.enterLive()
-    expect(store.state.mode).toBe('live')
+    expect(store.state.status).toBe('ready')
     expect(store.enterPlay()).toBe(true)
-    expect(store.state.mode).toBe('play')
-    // solid-js/store wraps the stored value in a proxy, so reference
-    // equality against the raw input fails. Compare by identifying field.
+    expect(store.state.status).toBe('ready')
     expect(store.state.loadedMidi?.name).toBe(midi.name)
   })
 
@@ -121,24 +103,16 @@ describe('createAppStore', () => {
     expect(store.state.currentTime).toBe(7.5)
   })
 
-  it('Play-mode loads do not touch Learn-mode state', () => {
-    // Learn owns its own LearnState (see `src/learn/core/LearnState`).
-    // AppStore.mode still carries the router value because mode itself is
-    // cross-cutting — Learn's MIDI pipeline never goes through AppStore.
+  it('play-mode loads only manipulate runtime playback state', () => {
     const store = createAppStore()
-    store.setState('mode', 'learn')
     store.beginPlayLoad()
-    expect(store.state.mode).toBe('play')
     expect(store.state.status).toBe('loading')
     store.completePlayLoad(fakeMidi('play-import.mid', 10))
-    expect(store.state.mode).toBe('play')
+    expect(store.state.status).toBe('ready')
     expect(store.state.loadedMidi?.name).toBe('play-import.mid')
   })
 
   it('status transitions notify tracked effects in order', () => {
-    // The HUD, chord overlay, and renderer all gate on status transitions.
-    // Using watch() gives us a createRoot/createEffect pair that survives
-    // long enough for the scheduled re-runs to flush.
     const store = createAppStore()
     const seen: string[] = []
     const stop = watch(
@@ -151,38 +125,44 @@ describe('createAppStore', () => {
     store.setState('status', 'paused')
     store.setState('status', 'ready')
     stop()
-    // watch() defers the initial read — only transitions are reported.
     expect(seen).toEqual(['loading', 'ready', 'playing', 'paused', 'ready'])
   })
 
   it('batch intent methods flip multiple fields in one reactive pass', () => {
-    // A mode transition must not let subscribers observe a half-updated
-    // store (e.g. mode='play' with status still 'idle'). `enterHome` batches
-    // so a tracked effect sees exactly one consistent snapshot after.
     const store = createAppStore()
     store.completePlayLoad(fakeMidi())
-    const snapshots: Array<{ mode: string; status: string }> = []
+    const snapshots: Array<{ hasFile: boolean; status: string }> = []
     const stop = watch(
-      () => [store.state.mode, store.state.status] as const,
-      ([mode, status]) => snapshots.push({ mode, status }),
+      () => [store.state.loadedMidi !== null, store.state.status] as const,
+      ([hasFile, status]) => snapshots.push({ hasFile, status }),
     )
     store.enterHome()
     stop()
-    // watch() defers the initial read — only the post-batch snapshot fires.
     expect(snapshots.length).toBe(1)
-    expect(snapshots[0]).toEqual({ mode: 'home', status: 'idle' })
+    expect(snapshots[0]).toEqual({ hasFile: false, status: 'idle' })
   })
 })
 
 describe('resolveInitialAppMode', () => {
+  it('prefers the current route over saved skip-home preference', () => {
+    window.history.pushState({}, '', '/learn')
+    localStorage.setItem(SKIP_HOME_INTRO_STORAGE_KEY, 'true')
+    expect(resolveInitialAppMode()).toBe('learn')
+    window.history.pushState({}, '', '/')
+  })
+
   it('starts on play when skip-home-intro is enabled', () => {
+    window.history.pushState({}, '', '/welcome')
     localStorage.setItem(SKIP_HOME_INTRO_STORAGE_KEY, 'true')
     expect(resolveInitialAppMode()).toBe('play')
+    window.history.pushState({}, '', '/')
   })
 
   it('falls back to home when the preference is absent', () => {
+    window.history.pushState({}, '', '/welcome')
     localStorage.removeItem(SKIP_HOME_INTRO_STORAGE_KEY)
     expect(resolveInitialAppMode()).toBe('home')
+    window.history.pushState({}, '', '/')
   })
 })
 
@@ -191,14 +171,13 @@ describe('watch()', () => {
     const store = createAppStore()
     const seen: string[] = []
     const stop = watch(
-      () => store.state.mode,
-      (m) => seen.push(m),
+      () => store.state.status,
+      (status) => seen.push(status),
     )
-    store.setState('mode', 'play')
-    store.setState('mode', 'live')
+    store.setState('status', 'loading')
+    store.setState('status', 'ready')
     stop()
-    store.setState('mode', 'learn')
-    // watch() defers the initial read — only the two transitions fire.
-    expect(seen).toEqual(['play', 'live'])
+    store.setState('status', 'playing')
+    expect(seen).toEqual(['loading', 'ready'])
   })
 })

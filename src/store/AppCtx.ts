@@ -1,12 +1,11 @@
 import { createContext, useContext } from 'solid-js'
 import type { AppServices } from '../core/services'
+import type { LearnController } from '../modes/LearnController'
 import type { AppMode, AppStore } from './state'
 
-export interface ModeMountOptions {
+export interface PlayRouteEnterOptions {
   skipAnalytics?: boolean
 }
-
-export type ShellMode = Exclude<AppMode, 'learn'>
 
 export interface LibraryOpenRequest {
   kind: 'picker' | 'recent'
@@ -20,17 +19,27 @@ export type LearnEnterRequest =
   | { kind: 'sample'; sampleId: string }
   | { kind: 'local'; id: string }
 
+export type LearnMountTarget = 'hub' | 'play-along' | 'intervals' | 'sight-reading'
+
 export interface AppActions {
-  mode: {
-    request(mode: AppMode): void
-    mount(mode: ShellMode, options?: ModeMountOptions): void
+  navigation: {
+    toMode(mode: AppMode): void
+  }
+  home: {
+    enter(): void
+  }
+  play: {
+    enter(options?: PlayRouteEnterOptions): void
+  }
+  live: {
+    enter(): void
   }
   library: {
     open(request: LibraryOpenRequest): Promise<void> | void
   }
   learn: {
-    mount(signal?: AbortSignal): Promise<void>
-    exit(): void
+    enterRoute(target: LearnMountTarget, signal?: AbortSignal): Promise<void>
+    exitRoute(): void
     enter(request: LearnEnterRequest): Promise<void> | void
   }
   session: {
@@ -48,6 +57,7 @@ export interface AppCtxValue {
   services: AppServices
   store: AppStore
   actions: AppActions
+  ensureLearnController: () => Promise<LearnController>
 }
 
 export const AppCtx = createContext<AppCtxValue>()

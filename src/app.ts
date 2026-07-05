@@ -1,4 +1,3 @@
-import { applyModeRequest } from './app/applyModeRequest'
 import { ExportAndOverlayCoordinator } from './app/ExportAndOverlayCoordinator'
 import { KeyboardModeCoordinator } from './app/KeyboardModeCoordinator'
 import { MidiFlowCoordinator } from './app/MidiFlowCoordinator'
@@ -32,18 +31,24 @@ import type { CapturedEvent } from './midi/MidiEncoding'
 import { MidiInputManager } from './midi/MidiInputManager'
 import { SessionRecorder } from './midi/SessionRecorder'
 import type { LearnController } from './modes/LearnController'
-import { setNextLiveOpts } from './modes/LiveMode'
 import { MODE_CAPTURES_LIVE, type ModeContext } from './modes/ModeController'
+import { setNextLiveOpts } from './pages/live/liveEnterOptions'
 import { PARTICLE_STYLES } from './renderer/ParticleSystem'
 import { PianoRollRenderer } from './renderer/PianoRollRenderer'
 import { THEMES, type Theme } from './renderer/theme'
+import { getCurrentRouteMode, navigateToMode, subscribeCurrentRoute } from './routing/routerBridge'
 import type {
   LearnEnterRequest,
+  LearnMountTarget,
   LibraryOpenRequest,
-  ModeMountOptions,
-  ShellMode,
+  PlayRouteEnterOptions,
 } from './store/AppCtx'
-import { type AppMode, type AppStore, SKIP_HOME_INTRO_STORAGE_KEY } from './store/state'
+import {
+  type AppMode,
+  type AppStore,
+  resolveInitialAppMode,
+  SKIP_HOME_INTRO_STORAGE_KEY,
+} from './store/state'
 import { watch } from './store/watch'
 import {
   categorizeMidiDevice,
@@ -225,6 +230,15 @@ export class App {
   private firstPlayLogged = false
   private firstPedalLogged = false
   private playbackMilestones = new Set<number>()
+
+  private currentPageMode(): AppMode {
+    return getCurrentRouteMode() ?? 'home'
+  }
+
+  private currentOpenTarget(explicit?: 'play' | 'learn'): 'play' | 'learn' {
+    if (explicit) return explicit
+    return this.currentPageMode() === 'learn' ? 'learn' : 'play'
+  }
   // Loop station one-shots, scoped to the page session. We want to know
   // whether users ever reach each step in the loop funnel, not count every
   // state flip 鈥?the state machine toggles rapidly during overdub.
@@ -337,7 +351,7 @@ export class App {
       this.performanceBus.subscribeNotes(
         () => {},
         (evt) => {
-          if (!MODE_CAPTURES_LIVE[this.store.state.mode]) return
+          if (!MODE_CAPTURES_LIVE[this.currentPageMode()]) return
           // Synthetic pedal-up uses clockTime -1; SessionRecorder needs wall times.
           const t = evt.clockTime >= 0 ? evt.clockTime : this.clock.currentTime
           this.capture.captureNoteOff(evt.pitch, t)
@@ -350,34 +364,45 @@ export class App {
     this.dropzone = new DropZone(
       overlay,
       (file, source) => {
-        const target = this.store.state.mode === 'learn' ? 'learn' : 'play'
+        const target = this.currentOpenTarget()
         void this.midiFlow.openFile(file, source, target)
       },
-      () => this.enterLiveMode(),
+      () => {
+        setNextLiveOpts({ primeAudio: true })
+        navigateToMode('live')
+      },
       (sampleId) => {
-        void this.openSample(sampleId, this.store.state.mode === 'learn' ? 'learn' : 'play')
+        void this.openSample(sampleId, this.currentOpenTarget())
       },
       (sampleId) => void this.enterLearnRequest({ kind: 'sample', sampleId }),
-      () => this.requestMode('learn'),
+      () => navigateToMode('learn'),
       skipHomeIntroStore.load(),
       (next) => skipHomeIntroStore.save(next),
-      this.store.state.mode !== 'home',
+      this.currentPageMode() !== 'home',
     )
 
     this.controls = new Controls({
       container: overlay,
       services: this.services,
       actions: {
-        mode: {
-          request: (mode) => this.requestMode(mode),
-          mount: (mode, options) => this.mountMode(mode, options),
+        navigation: {
+          toMode: (mode) => navigateToMode(mode),
+        },
+        home: {
+          enter: () => this.enterHomeRoute(),
+        },
+        play: {
+          enter: (options) => this.enterPlayRoute(options),
+        },
+        live: {
+          enter: () => this.enterLiveRoute(),
         },
         library: {
           open: (request) => this.openLibraryRequest(request),
         },
         learn: {
-          mount: (signal) => this.mountLearnMode(signal),
-          exit: () => this.exitLearnMode(),
+          enterRoute: (target, signal) => this.enterLearnRoute(target, signal),
+          exitRoute: () => this.exitLearnRoute(),
           enter: (request) => this.enterLearnRequest(request),
         },
         session: {
@@ -493,9 +518,15 @@ export class App {
     // player is sounding.
     this.unsubs.push(
       watch(
-        () => this.store.state.mode,
+        () => this.store.state.status,
         () => this.exportOverlay?.applyChordOverlayVisibility(),
       ),
+    )
+    this.unsubs.push(
+      subscribeCurrentRoute(() => {
+        this.exportOverlay?.applyChordOverlayVisibility()
+        this.exportOverlay?.syncConsolePanel()
+      }),
     )
 
     // Customization popover bundles theme / particles / chord toggle 鈥?
@@ -577,7 +608,10 @@ export class App {
       metronome: this.metronome,
       capture: this.capture,
       performanceBus: this.performanceBus,
-      enterLiveMode: (primeAudio = true) => this.enterLiveMode(primeAudio),
+      enterLiveMode: (primeAudio = true) => {
+        setNextLiveOpts({ primeAudio })
+        navigateToMode('live')
+      },
       closeTransientOverlays: () => this.closeTransientOverlays(),
     })
 
@@ -671,7 +705,7 @@ export class App {
         for (const m of [30, 60, 120]) {
           if (t >= m && !this.playbackMilestones.has(m)) {
             this.playbackMilestones.add(m)
-            track('playback_milestone', { seconds: m, mode: this.store.state.mode })
+            track('playback_milestone', { seconds: m, mode: this.currentPageMode() })
             if (m === 30) trackActivation('playback_30s')
           }
         }
@@ -686,7 +720,7 @@ export class App {
           // Drives the synth for Play/Live only. Learn runs its own status
           // signal on `LearnState` and drives the synth from `LearnController`
           // so the two modes never race for control of the scheduler.
-          const mode = this.store.state.mode
+          const mode = this.currentPageMode()
           if (mode === 'play' && status === 'playing') {
             void this.synth.play(this.clock.currentTime)
             if (!this.firstPlayLogged) {
@@ -708,12 +742,6 @@ export class App {
       ),
       watch(
         () => this.store.state.loadedMidi,
-        () => {
-          this.exportOverlay.syncConsolePanel()
-        },
-      ),
-      watch(
-        () => this.store.state.mode,
         () => {
           this.exportOverlay.syncConsolePanel()
         },
@@ -824,13 +852,16 @@ export class App {
       resetInteractionState: () => this.resetInteractionState(),
       openFilePicker: (target) => this.openFilePicker(target),
       openLocalMidi: (id, target) => void this.openLocalMidi(id, target),
+      openSample: (id, target) => void this.openSample(id, target),
       primeInteractiveAudio: () => this.primeInteractiveAudio(),
       setLearnFileName: (name) => this.controls.updateLearnFileName(name),
       updateConsolePanel: () => this.exportOverlay.syncConsolePanel(),
       keyboardMode: this.keyboardModeCoordinator,
     }
 
-    if (skipHomeIntroStore.load()) this.services.store.enterPlayLanding()
+    const initialMode = resolveInitialAppMode()
+    if (initialMode === 'play') this.services.store.enterPlayLanding()
+    else if (initialMode === 'live') this.services.store.enterLive()
     else this.services.store.enterHome()
     void this.autoConnectMidi()
   }
@@ -869,7 +900,10 @@ export class App {
     if (pitch === null) return
 
     this.primeInteractiveAudio()
-    if (this.store.state.mode === 'home') this.enterLiveMode(false)
+    if (this.currentPageMode() === 'home') {
+      setNextLiveOpts({ primeAudio: false })
+      navigateToMode('live')
+    }
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
     e.preventDefault()
 
@@ -934,8 +968,7 @@ export class App {
   // Entry point for every "open MIDI" action. `target` is resolved at click
   // time so Play-vs-Learn routing stays stable during async picker flows.
   openFilePicker(target?: 'play' | 'learn'): void {
-    const resolveTarget = (): 'play' | 'learn' =>
-      target ?? (this.store.state.mode === 'learn' ? 'learn' : 'play')
+    const resolveTarget = (): 'play' | 'learn' => this.currentOpenTarget(target)
     void this.midiPickerHandle.get().then((modal) => {
       modal.open({
         onFile: (file) => void this.midiFlow.openFile(file, 'picker', resolveTarget()),
@@ -957,81 +990,69 @@ export class App {
     await this.midiFlow.openLocal(id, target)
   }
 
-  requestMode(mode: AppMode): void {
-    if (mode === 'home') {
-      this.enterHomeMode()
-      return
-    }
-    if (this.midiFlow) {
-      this.midiFlow.requestMode(mode)
-      return
-    }
-    applyModeRequest(this.store, mode, {
-      ensureLearnController: () => this.ensureLearnController(),
-      enterLiveMode: () => this.enterLiveMode(),
-      enterPlayMode: () => this.enterPlayMode(),
-    })
-  }
-
   enterLearnRequest(request: LearnEnterRequest): Promise<void> | void {
     return this.midiFlow.enterLearn(request)
   }
 
-  async mountLearnMode(signal?: AbortSignal): Promise<void> {
-    const controller = await this.ensureLearnController()
-    if (signal?.aborted) return
-    controller.enter()
-  }
-
-  exitLearnMode(): void {
+  async enterLearnRoute(target: LearnMountTarget, signal?: AbortSignal): Promise<void> {
     this.learnControllerHandle.peek()?.exit()
+    if (signal?.aborted) return
+    this.enterLearnShell(target)
+    if (target === 'play-along') {
+      const controller = await this.ensureLearnController()
+      if (signal?.aborted) return
+      controller.enter()
+    }
   }
 
-  mountMode(mode: ShellMode, options: ModeMountOptions = {}): void {
+  exitLearnRoute(): void {
+    this.learnControllerHandle.peek()?.exit()
+    this.exitLearnShell()
+  }
+
+  enterHomeRoute(): void {
+    this.resetInteractionState()
+    this.store.enterHome()
+    this.renderer.clearMidi()
+    this.trackPanel.close()
+    this.dropzone.show()
+    this.keyboardInput.enable()
+    document.title = t('doc.title.home')
+  }
+
+  enterPlayRoute(options: PlayRouteEnterOptions = {}): void {
     const { skipAnalytics = false } = options
-    if (mode === 'home') {
-      this.resetInteractionState()
-      this.store.enterHome()
-      this.renderer.clearMidi()
-      this.trackPanel.close()
-      this.dropzone.show()
-      this.keyboardInput.enable()
-      document.title = t('doc.title.home')
-      return
-    }
-    if (mode === 'play') {
-      const midi = this.store.state.loadedMidi
-      const status = this.store.state.status
-      if (!midi) {
-        if (status === 'loading') return
-        this.renderer.clearMidi()
-        this.trackPanel.close()
-        this.dropzone.hide()
-        this.keyboardInput.enable()
-        document.title = `midee - ${t('topStrip.mode.play.label')}`
-        return
-      }
-      this.renderer.loadMidi(midi)
-      this.trackPanel.render(midi)
-      this.dropzone.hide()
-      this.keyboardInput.enable()
-      document.title = `${midi.name} - midee`
-      if (!skipAnalytics) {
-        const props = { duration_s: Math.round(midi.duration) }
-        trackEvent('play_mode_entered', props)
-        track('file_mode_entered', props)
-      }
-      return
-    }
-    if (mode === 'live') {
-      this.resetInteractionState()
+    const midi = this.store.state.loadedMidi
+    const status = this.store.state.status
+    if (!midi) {
+      if (status === 'loading') return
       this.renderer.clearMidi()
       this.trackPanel.close()
       this.dropzone.hide()
       this.keyboardInput.enable()
-      document.title = t('doc.title.live')
+      document.title = `midee - ${t('topStrip.mode.play.label')}`
       return
     }
+
+    this.renderer.loadMidi(midi)
+    this.trackPanel.render(midi)
+    this.dropzone.hide()
+    this.keyboardInput.enable()
+    document.title = `${midi.name} - midee`
+    if (!skipAnalytics) {
+      const props = { duration_s: Math.round(midi.duration) }
+      trackEvent('play_mode_entered', props)
+      track('file_mode_entered', props)
+    }
+  }
+
+  enterLiveRoute(): void {
+    this.resetInteractionState()
+    this.renderer.clearMidi()
+    this.trackPanel.close()
+    this.dropzone.hide()
+    this.keyboardInput.enable()
+    document.title = t('doc.title.live')
   }
 
   openLibraryRequest(request: LibraryOpenRequest): Promise<void> | void {
@@ -1052,19 +1073,28 @@ export class App {
     return this.openSample(request.entry.id, request.target ?? 'play')
   }
 
-  // Thin delegators: each flips the store and lets Solid's mode shell run
-  // the side effects (onMount in HomeMode/PlayMode/LiveMode/LearnMode).
-  private enterHomeMode(): void {
-    this.store.enterHome()
+  private enterLearnShell(target: LearnMountTarget): void {
+    this.resetInteractionState()
+    this.closeTransientOverlays()
+    this.consolePanel.close()
+    this.keyboardModeModal.close()
+    this.services.clock.pause()
+    this.services.clock.seek(0)
+    this.renderer.clearMidi()
+    this.renderer.setLiveNotesVisible(false)
+    this.trackPanel.close()
+    this.dropzone.hide()
+    this.keyboardInput.enable()
+    this.controls.updateLearnFileName(null)
+    this.renderer.setVisible(target !== 'hub' && target !== 'play-along')
+    document.title = t('doc.title.learn')
+    this.syncConsolePanel()
   }
 
-  private enterLiveMode(primeAudio = true): void {
-    setNextLiveOpts({ primeAudio })
-    this.store.enterLive()
-  }
-
-  private enterPlayMode(): void {
-    this.store.enterPlay()
+  private exitLearnShell(): void {
+    this.renderer.setVisible(true)
+    this.renderer.setLiveNotesVisible(true)
+    this.syncConsolePanel()
   }
 
   // Schedules a UI side-effect to run at (roughly) the AudioContext time
@@ -1084,7 +1114,7 @@ export class App {
 
   private isTransposeEnabled(): boolean {
     return (
-      this.store.state.mode === 'play' &&
+      this.currentPageMode() === 'play' &&
       this.baseMidi !== null &&
       this.store.state.status !== 'playing' &&
       this.store.state.status !== 'loading' &&
@@ -1094,7 +1124,7 @@ export class App {
 
   private handleKeyboardModeChange(mode: KeyboardMode): void {
     const activeMidi =
-      this.store.state.mode === 'learn'
+      this.currentPageMode() === 'learn'
         ? (this.learnControllerHandle.peek()?.learnState.state.loadedMidi ?? null)
         : this.store.state.loadedMidi
     this.keyboardModeCoordinator.requestModeChange(mode, activeMidi, {
@@ -1104,7 +1134,7 @@ export class App {
 
   private resolveResetToC(): number {
     const key =
-      this.store.state.mode === 'learn'
+      this.currentPageMode() === 'learn'
         ? (this.learnControllerHandle.peek()?.getConsoleState().baseKey ?? null)
         : (this.baseMidi?.keySignature ?? null)
     return transposeDeltaToTonic(key, 'C')

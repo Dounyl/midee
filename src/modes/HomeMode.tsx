@@ -1,6 +1,4 @@
-import { onMount } from 'solid-js'
-import { t } from '../i18n'
-import { useApp } from '../store/AppCtx'
+import { HomePage } from '../pages/home/HomePage'
 
 // Landing surface — no loaded MIDI, no live session yet. Typing keyboard is
 // kept live so the first key-press dissolves into live mode without an extra
@@ -12,10 +10,5 @@ import { useApp } from '../store/AppCtx'
 // but keeps the shape resilient to callers that flipped `mode` without the
 // other fields.
 export function HomeMode() {
-  const { services, actions } = useApp()
-  onMount(() => {
-    services.store.enterHome()
-    actions.mode.mount('home')
-  })
-  return null
+  return <HomePage />
 }

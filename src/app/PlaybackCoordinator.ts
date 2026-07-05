@@ -1,18 +1,21 @@
 import type { BusNoteEvent } from '../core/input/InputBus'
 import type { LivePerformanceBus } from '../core/performance/LivePerformanceBus'
-import { MODE_CAPTURES_LIVE } from '../modes/ModeController'
 import type { LiveLooper, LiveLooperState } from '../midi/LiveLooper'
 import type { LiveNoteStore } from '../midi/LiveNoteStore'
 import type { SessionRecorder } from '../midi/SessionRecorder'
+import { MODE_CAPTURES_LIVE } from '../modes/ModeController'
+import { getCurrentRouteMode } from '../routing/routerBridge'
 import { track, trackActivation } from '../telemetry'
 
 interface PlaybackCoordinatorOptions {
   store: {
     state: {
-      mode: 'home' | 'play' | 'live' | 'learn'
       status: 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting'
     }
-    setState: (key: 'status', value: 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting') => void
+    setState: (
+      key: 'status',
+      value: 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting',
+    ) => void
   }
   clock: {
     currentTime: number
@@ -57,6 +60,10 @@ export class PlaybackCoordinator {
 
   constructor(private readonly opts: PlaybackCoordinatorOptions) {}
 
+  private currentPageMode(): 'home' | 'play' | 'live' | 'learn' {
+    return getCurrentRouteMode() ?? 'home'
+  }
+
   releaseAllLiveNotes(): void {
     const now = this.opts.clock.currentTime
     this.opts.liveNotes.releaseAll(now)
@@ -96,7 +103,7 @@ export class PlaybackCoordinator {
 
   handleLiveNoteOn(evt: BusNoteEvent): void {
     if (this.opts.store.state.status === 'exporting') return
-    const mode = this.opts.store.state.mode
+    const mode = this.currentPageMode()
     const captures = MODE_CAPTURES_LIVE[mode]
     if (mode === 'home') this.opts.enterLiveMode(false)
 
@@ -123,7 +130,7 @@ export class PlaybackCoordinator {
   }
 
   handleLiveNoteOff(evt: BusNoteEvent): void {
-    const mode = this.opts.store.state.mode
+    const mode = this.currentPageMode()
     if (mode === 'home') return
     this.opts.liveNotes.release(evt.pitch, evt.clockTime)
     this.opts.performanceBus.routeNoteOff(evt)

@@ -26,7 +26,7 @@ describe('RuntimeOverlayController', () => {
         synth: { setInstrument: vi.fn() },
       } as never,
       store: {
-        state: { mode: 'live', loadedMidi: null },
+        state: { loadedMidi: null },
         replaceLoadedMidi: vi.fn(),
       } as never,
       renderer: {

@@ -1,13 +1,13 @@
 import { createSignal } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
 import { render } from 'solid-js/web'
-import { listLocalMidiEntries, MIDI_LIBRARY_CHANGED } from '../core/midiLibrary'
 import type { AppServices } from '../core/services'
 import { t } from '../i18n'
 import type { LiveLooperState } from '../midi/LiveLooper'
 import type { MidiDeviceStatus } from '../midi/MidiInputManager'
-import type { AppMode } from '../store/state'
+import { getCurrentRouteMode, subscribeCurrentRoute } from '../routing/routerBridge'
 import type { AppActions } from '../store/AppCtx'
+import type { AppMode } from '../store/state'
 import { watch } from '../store/watch'
 import { trackEvent, trackEventSettled } from '../telemetry'
 import {
@@ -115,10 +115,13 @@ export class Controls {
   private readonly setSpeed: (v: number) => void
   private readonly setZoom: (v: number) => void
 
+  private currentPageMode(): AppMode {
+    return getCurrentRouteMode() ?? 'home'
+  }
+
   // Document-level listeners bound at construction.
   private onMouseMoveDoc = (): void => {
-    const { store } = this.opts.services
-    const m = store.state.mode
+    const m = this.currentPageMode()
     if (m === 'play' || m === 'live') this.wakeUp()
   }
   private onKeyDownDoc = (e: KeyboardEvent): void => this.handleKey(e)
@@ -126,7 +129,7 @@ export class Controls {
   constructor(private opts: ControlsOptions) {
     const { store } = opts.services
 
-    const [mode, setMode] = createSignal<AppMode>(store.state.mode)
+    const [mode, setMode] = createSignal<AppMode>(this.currentPageMode())
     const [status, setStatus] = createSignal<string>(store.state.status)
     const [hasFile, setHasFile] = createSignal<boolean>(store.state.loadedMidi !== null)
     const [dimTopStrip, setDimTopStrip] = createSignal(false)
@@ -188,8 +191,8 @@ export class Controls {
             midiPillLabel={() => getMidiPillLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             midiMenuLabel={() => getMidiMenuLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             dim={dimTopStrip}
-            onHome={() => opts.actions.mode.request('home')}
-            onMode={(m) => opts.actions.mode.request(m)}
+            onHome={() => opts.actions.navigation.toMode('home')}
+            onMode={(m) => opts.actions.navigation.toMode(m)}
             onOpenFile={() => void opts.actions.library.open({ kind: 'picker' })}
             onTracks={() => opts.onOpenTracks?.()}
             onMidi={() => opts.onMidiConnect?.()}
@@ -367,13 +370,10 @@ export class Controls {
 
     // Sync store → reactive signals.
     this.unsubs.push(
-      watch(
-        () => store.state.mode,
-        (m) => {
-          setMode(m)
-          this.refreshUi()
-        },
-      ),
+      subscribeCurrentRoute((mode) => {
+        setMode(mode ?? 'home')
+        this.refreshUi()
+      }),
       watch(
         () => store.state.status,
         (s) => {
@@ -400,7 +400,7 @@ export class Controls {
     // 60Hz clock tick — imperative per §2 rule 4.
     this.unsubs.push(
       opts.services.clock.subscribe((t) => {
-        if (store.state.mode !== 'play' || this.isScrubbing) return
+        if (this.currentPageMode() !== 'play' || this.isScrubbing) return
         // Skip UI updates during export — frame-by-frame seeks would thrash the
         // scrubber behind the export modal and compete with the encoder.
         if (store.state.status === 'exporting') return
@@ -571,7 +571,7 @@ export class Controls {
 
   private handlePlayClick(): void {
     const { store, clock } = this.opts.services
-    if (store.state.mode !== 'play') return
+    if (this.currentPageMode() !== 'play') return
     const s = store.state.status
     if (s === 'playing') {
       clock.pause()
@@ -589,7 +589,7 @@ export class Controls {
 
   private handleSkip(delta: number): void {
     const { store, clock } = this.opts.services
-    if (store.state.mode !== 'play') return
+    if (this.currentPageMode() !== 'play') return
     const from = clock.currentTime
     const next =
       delta < 0
@@ -604,7 +604,7 @@ export class Controls {
   private handleKey(e: KeyboardEvent): void {
     const target = e.target as HTMLElement
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
-    const mode = this.opts.services.store.state.mode
+    const mode = this.currentPageMode()
 
     if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.code === 'KeyP') {
       e.preventDefault()
@@ -682,57 +682,8 @@ export class Controls {
 
   private refreshUi(): void {
     const { store } = this.opts.services
-    const mode = store.state.mode
+    const mode = this.currentPageMode()
     this.renderContext(mode, store.state.loadedMidi?.name ?? null)
-  }
-
-  private async syncMidiLibraryEntries(): Promise<void> {
-    try {
-      const entries = await listLocalMidiEntries(6)
-      const activeName =
-        this.opts.services.store.state.mode === 'learn'
-          ? this.learnFileName
-          : this.opts.services.store.state.loadedMidi?.name ?? null
-      this.setUi('midiLibrary', 'entries', entries.map((entry) => ({
-        id: entry.id,
-        name: entry.name,
-        sub: `${formatTime(entry.duration)} 路 ${t('midiLibrary.metaNotes', { count: entry.noteCount })}`,
-        active: activeName === entry.name,
-      })))
-      this.maybeFlashMidiList()
-    } catch (err) {
-      console.warn('[Controls] syncMidiLibraryEntries failed', err)
-      this.setUi('midiLibrary', 'entries', [])
-    }
-  }
-
-  private maybeFlashMidiList(): void {
-    const mode = this.opts.services.store.state.mode
-    if (mode !== 'play' && mode !== 'learn') {
-      this.setUi('midiLibrary', 'open', false)
-      return
-    }
-    if (this.uiStore.midiLibrary.entries.length === 0) return
-    this.setUi('midiLibrary', 'open', true)
-    this.armMidiListAutoHide()
-  }
-
-  private armMidiListAutoHide(): void {
-    if (this.midiListHideTimer) clearTimeout(this.midiListHideTimer)
-    this.midiListHideTimer = setTimeout(() => {
-      this.setUi('midiLibrary', 'open', false)
-      this.midiListHideTimer = null
-    }, 3000)
-  }
-
-  private openLocalMidiFromStrip(id: string): void {
-    const target = this.opts.services.store.state.mode === 'learn' ? 'learn' : 'play'
-    void this.opts.actions.library.open({ kind: 'recent', target, entry: { kind: 'local', id } })
-    this.setUi('midiLibrary', 'open', false)
-    if (this.midiListHideTimer) {
-      clearTimeout(this.midiListHideTimer)
-      this.midiListHideTimer = null
-    }
   }
 
   private renderContext(mode: AppMode, fileName: string | null): void {

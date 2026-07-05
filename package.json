@@ -28,6 +28,7 @@
     "@fontsource/instrument-serif": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
+    "@solidjs/router": "^0.16.1",
     "@t3-oss/env-core": "^0.13.11",
     "@tonaljs/chord": "^6.1.2",
     "@tonaljs/midi": "^4.10.2",

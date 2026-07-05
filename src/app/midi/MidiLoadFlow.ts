@@ -3,18 +3,17 @@ import type { MidiFile } from '../../core/midi/types'
 import { loadLocalMidi, recordSamplePlayback, saveLocalMidi } from '../../core/midiLibrary'
 import { fetchSampleMidi, getSample } from '../../core/samples'
 import { t } from '../../i18n'
-import { setNextLiveOpts } from '../../modes/LiveMode'
+import { setNextLiveOpts } from '../../pages/live/liveEnterOptions'
+import {
+  getCurrentLearnRoute,
+  getCurrentRouteMode,
+  navigateToLearnRoute,
+  navigateToMode,
+} from '../../routing/routerBridge'
 import type { LearnEnterRequest } from '../../store/AppCtx'
 import { midiLoadErrorType, track, trackEvent, trackMidiLoadFailed } from '../../telemetry'
-import { applyModeRequest } from '../applyModeRequest'
 import type { RuntimeUiBridge } from '../RuntimeUiBridge'
-import type {
-  AppRuntimeDeps,
-  ExportOverlayState,
-  MidiOpenSource,
-  MidiOpenTarget,
-  ModeRequest,
-} from '../types'
+import type { AppRuntimeDeps, ExportOverlayState, MidiOpenSource, MidiOpenTarget } from '../types'
 import { MidiModeResolution } from './MidiModeResolution'
 
 interface MidiLoadFlowOptions extends AppRuntimeDeps {
@@ -37,12 +36,17 @@ export class MidiLoadFlow {
     })
   }
 
+  private currentPageMode(): 'home' | 'play' | 'live' | 'learn' {
+    return getCurrentRouteMode() ?? 'home'
+  }
+
   async openFile(
     file: File,
     source: Extract<MidiOpenSource, 'drag' | 'picker'>,
     target: MidiOpenTarget,
   ): Promise<void> {
     if (target === 'learn') {
+      if (getCurrentLearnRoute() !== 'play-along') navigateToLearnRoute('play-along')
       const controller = await this.opts.ensureLearnController()
       await controller.loadMidiFromFile(file, source)
       return
@@ -93,17 +97,9 @@ export class MidiLoadFlow {
     }
   }
 
-  requestMode(mode: ModeRequest): void {
-    applyModeRequest(this.opts.store, mode, {
-      ensureLearnController: this.opts.ensureLearnController,
-      enterLiveMode: () => this.enterLiveMode(),
-      enterPlayMode: () => this.enterPlayMode(),
-    })
-  }
-
   async enterLearn(request: LearnEnterRequest): Promise<void> {
     if (request.kind === 'empty') {
-      this.requestMode('learn')
+      navigateToLearnRoute('play-along')
       return
     }
 
@@ -130,17 +126,9 @@ export class MidiLoadFlow {
     }
   }
 
-  enterHomeMode(): void {
-    this.opts.store.enterHome()
-  }
-
-  enterLiveMode(primeAudio = true): void {
+  navigateLive(primeAudio = true): void {
     setNextLiveOpts({ primeAudio })
-    this.opts.store.enterLive()
-  }
-
-  enterPlayMode(): void {
-    this.opts.store.enterPlay()
+    navigateToMode('live')
   }
 
   loadSessionMidi(midi: MidiFile): void {
@@ -158,10 +146,11 @@ export class MidiLoadFlow {
     this.opts.ui.renderTrackPanel(midi)
     this.opts.ui.hideDropzone()
     document.title = `${midi.name} - midee`
+    navigateToMode('play')
   }
 
   private async loadPlayFile(file: File, source: 'drag' | 'picker'): Promise<void> {
-    const previousMode = this.opts.store.state.mode
+    const previousMode = this.currentPageMode()
     const previousMidi = this.opts.store.state.loadedMidi
     this.opts.onResetInteractionState()
     this.opts.store.beginPlayLoad()
@@ -197,9 +186,9 @@ export class MidiLoadFlow {
       } else if (previousMode === 'play') {
         this.opts.store.enterPlayLanding()
       } else if (previousMode === 'live') {
-        this.enterLiveMode(false)
+        this.navigateLive(false)
       } else if (previousMode === 'home') {
-        this.enterHomeMode()
+        navigateToMode('home')
       } else {
         this.opts.store.setState('status', 'ready')
       }
@@ -215,7 +204,7 @@ export class MidiLoadFlow {
 
   private resumePlaybackSoon(delayMs: number): void {
     setTimeout(() => {
-      if (this.opts.store.state.mode === 'play' && this.opts.store.state.status !== 'playing') {
+      if (this.currentPageMode() === 'play' && this.opts.store.state.status !== 'playing') {
         this.opts.services.clock.play()
         this.opts.store.setState('status', 'playing')
       }
@@ -224,11 +213,11 @@ export class MidiLoadFlow {
 
   private async handoffMidiToLearn(midi: MidiFile): Promise<void> {
     const controller = await this.opts.ensureLearnController()
-    if (this.opts.store.state.mode === 'learn') {
+    if (getCurrentLearnRoute() === 'play-along') {
       await controller.loadPreparedMidi(midi)
       return
     }
     controller.queueMidi(midi)
-    this.opts.store.setState('mode', 'learn')
+    navigateToLearnRoute('play-along')
   }
 }

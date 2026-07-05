@@ -199,7 +199,8 @@ const zhCN: Messages = {
   'error.audio.renderFailed': '音频渲染失败 · 导出的 MP4 将没有声音。',
   'error.export.generic': '导出失败 · 请查看控制台了解详情。',
   'keyboardModeSuggestion.title': '这个 MIDI 需要更宽的键盘范围',
-  'keyboardModeSuggestion.body': '当前曲目的音域超出了 61 键范围。你可以直接选择下面可用的调性，或者切回完整的 88 键键盘。',
+  'keyboardModeSuggestion.body':
+    '当前曲目的音域超出了 61 键范围。你可以直接选择下面可用的调性，或者切回完整的 88 键键盘。',
   'keyboardModeSuggestion.bodyNoOptions': '当前曲目的音域超出了 61 键范围。',
   'keyboardModeSuggestion.switch88': '切换到 88 键',
 
@@ -215,6 +216,7 @@ const zhCN: Messages = {
   'learn.hub.library': '最近练习',
   'learn.hub.startWith': '开始 · {name}',
   'learn.hub.explore': '探索',
+  'learn.hub.back': '学习',
   'learn.hub.comingSoon': '即将推出',
 
   'learn.category.playAlong': '跟弹',
@@ -253,6 +255,8 @@ const zhCN: Messages = {
   'learn.sr.rampOffTip': '渐进关闭 · 保持恒定速度',
   'learn.sr.rampLabel': '渐进',
   'learn.sr.accuracyTip': '准确率',
+  'learn.sr.livesRemaining.one': '还剩 {count} 条命',
+  'learn.sr.livesRemaining.other': '还剩 {count} 条命',
   'learn.sr.restartAria': '重新开始',
   'learn.sr.restartTip': '重新开始',
   'learn.sr.closeAria': '返回学习中心',
@@ -362,6 +366,7 @@ const zhCN: Messages = {
 
   'learn.streak.tip': '练习连续天数 · 最近 14 天',
   'learn.streak.label': '连续天数',
+  'learn.streak.flameTitle': '连续练习火焰',
 
   'learn.summary.accuracy': '准确率',
   'learn.summary.xp': 'XP',

@@ -97,7 +97,8 @@ const ptBR: Messages = {
   'console.keyboard': 'Teclado',
   'console.keyboard.61': '61 teclas',
   'console.keyboard.88': '88 teclas',
-  'console.keyboard.tip.61': 'Faixa central de 61 teclas para teclados compactos, com teclado mais alto',
+  'console.keyboard.tip.61':
+    'Faixa central de 61 teclas para teclados compactos, com teclado mais alto',
   'console.keyboard.tip.88': 'Extensão completa do piano',
   'console.labels': 'Rótulos',
   'console.labels.on': 'Visíveis',
@@ -214,8 +215,7 @@ const ptBR: Messages = {
   'keyboardModeSuggestion.title': 'Este MIDI precisa de um teclado mais amplo',
   'keyboardModeSuggestion.body':
     'A peça atual ultrapassa a faixa de 61 teclas. Escolha abaixo uma tonalidade compatível ou volte para o teclado completo de 88 teclas.',
-  'keyboardModeSuggestion.bodyNoOptions':
-    'A peça atual ultrapassa a faixa de 61 teclas.',
+  'keyboardModeSuggestion.bodyNoOptions': 'A peça atual ultrapassa a faixa de 61 teclas.',
   'keyboardModeSuggestion.switch88': 'Usar 88 teclas',
 
   // ── Mode error boundary ────────────────────────────────────
@@ -233,6 +233,7 @@ const ptBR: Messages = {
   'learn.hub.library': 'Prática recente',
   'learn.hub.startWith': 'Começar · {name}',
   'learn.hub.explore': 'Explorar',
+  'learn.hub.back': 'Aprender',
   'learn.hub.comingSoon': 'Em breve',
 
   'learn.category.playAlong': 'Tocar junto',
@@ -274,6 +275,8 @@ const ptBR: Messages = {
   'learn.sr.rampOffTip': 'Ramp off — steady tempo',
   'learn.sr.rampLabel': 'Ramp',
   'learn.sr.accuracyTip': 'Accuracy',
+  'learn.sr.livesRemaining.one': 'Resta {count} vida',
+  'learn.sr.livesRemaining.other': 'Restam {count} vidas',
   'learn.sr.restartAria': 'Restart session',
   'learn.sr.restartTip': 'Restart',
   'learn.sr.closeAria': 'Back to hub',
@@ -385,6 +388,7 @@ const ptBR: Messages = {
 
   'learn.streak.tip': 'Sequência de prática · últimos 14 dias',
   'learn.streak.label': 'dias seguidos',
+  'learn.streak.flameTitle': 'Chama da sequência',
 
   'learn.summary.accuracy': 'precisão',
   'learn.summary.xp': 'xp',

@@ -1,6 +1,7 @@
 import { batch } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import type { MidiFile } from '../core/midi/types'
+import { pathToMode, resolveInitialRoutePath } from '../routing/modeRoutes'
 
 export type AppMode = 'home' | 'play' | 'live' | 'learn'
 export type PlaybackStatus = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting'
@@ -8,7 +9,6 @@ export type PlaybackStatus = 'idle' | 'loading' | 'ready' | 'playing' | 'paused'
 export const SKIP_HOME_INTRO_STORAGE_KEY = 'midee.skipHomeIntro'
 
 export interface AppStoreState {
-  mode: AppMode
   status: PlaybackStatus
   loadedMidi: MidiFile | null
   currentTime: number
@@ -17,13 +17,13 @@ export interface AppStoreState {
   speed: number
 }
 
-interface CreateAppStoreOptions {
-  initialMode?: AppMode
-}
-
 export function resolveInitialAppMode(): AppMode {
   try {
-    return localStorage.getItem(SKIP_HOME_INTRO_STORAGE_KEY) === 'true' ? 'play' : 'home'
+    const initialPath = resolveInitialRoutePath(
+      window.location.pathname,
+      localStorage.getItem(SKIP_HOME_INTRO_STORAGE_KEY) === 'true',
+    )
+    return pathToMode(initialPath) ?? 'home'
   } catch {
     return 'home'
   }
@@ -33,10 +33,8 @@ export function resolveInitialAppMode(): AppMode {
 // status, and the loaded MIDI. Consumers read `store.state.foo` (reactive
 // inside a tracking scope, raw value outside) and write either through an
 // intent method (multi-field, batched) or directly via `store.setState`.
-export function createAppStore(options: CreateAppStoreOptions = {}) {
-  const initialMode = options.initialMode ?? 'home'
+export function createAppStore() {
   const [state, setState] = createStore<AppStoreState>({
-    mode: initialMode,
     status: 'idle',
     loadedMidi: null,
     currentTime: 0,
@@ -52,7 +50,6 @@ export function createAppStore(options: CreateAppStoreOptions = {}) {
     enterHome() {
       batch(() => {
         setState({
-          mode: 'home',
           status: 'idle',
           loadedMidi: null,
           duration: 0,
@@ -63,7 +60,6 @@ export function createAppStore(options: CreateAppStoreOptions = {}) {
     enterPlayLanding() {
       batch(() => {
         setState({
-          mode: 'play',
           status: 'idle',
           loadedMidi: null,
           duration: 0,
@@ -73,7 +69,7 @@ export function createAppStore(options: CreateAppStoreOptions = {}) {
     },
     beginPlayLoad() {
       batch(() => {
-        setState({ mode: 'play', status: 'loading', currentTime: 0 })
+        setState({ status: 'loading', currentTime: 0 })
       })
     },
     completePlayLoad(m: MidiFile) {
@@ -82,7 +78,6 @@ export function createAppStore(options: CreateAppStoreOptions = {}) {
           loadedMidi: m,
           duration: m.duration,
           currentTime: 0,
-          mode: 'play',
           status: 'ready',
         })
       })
@@ -102,7 +97,6 @@ export function createAppStore(options: CreateAppStoreOptions = {}) {
       if (state.loadedMidi === null) return false
       batch(() => {
         setState({
-          mode: 'play',
           status: 'ready',
           duration: state.loadedMidi!.duration,
           ...(resetTime ? { currentTime: 0 } : {}),
@@ -113,7 +107,6 @@ export function createAppStore(options: CreateAppStoreOptions = {}) {
     enterLive(resetTime = true) {
       batch(() => {
         setState({
-          mode: 'live',
           status: 'ready',
           ...(resetTime ? { currentTime: 0 } : {}),
         })
