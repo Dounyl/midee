@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { watch } from '../store/watch'
+import { watch } from '@/stores/app/watch'
 import { formatNumber, initI18n, locale, setLocale, t, tn } from './index'
 import { en } from './locales/en'
 import zhCN from './locales/zh-CN'

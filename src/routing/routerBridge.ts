@@ -1,4 +1,4 @@
-import type { AppMode } from '../store/state'
+import type { AppMode } from '@/stores/app/state'
 import { type LearnRouteId, learnRouteToPath, pathToLearnRoute } from './learnRoutes'
 import { modeToPath, pathToMode } from './modeRoutes'
 

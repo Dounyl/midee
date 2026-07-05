@@ -1,16 +1,16 @@
+import type { LearnEnterRequest } from '@/stores/app/AppCtx'
 import { parseMidiFile } from '../../core/midi/parser'
 import type { MidiFile } from '../../core/midi/types'
 import { loadLocalMidi, recordSamplePlayback, saveLocalMidi } from '../../core/midiLibrary'
 import { fetchSampleMidi, getSample } from '../../core/samples'
 import { t } from '../../i18n'
-import { setNextLiveOpts } from '../../pages/live/liveEnterOptions'
+import { setNextLiveOpts } from '@/pages/LivePage/liveEnterOptions'
 import {
   getCurrentLearnRoute,
   getCurrentRouteMode,
   navigateToLearnRoute,
   navigateToMode,
 } from '../../routing/routerBridge'
-import type { LearnEnterRequest } from '../../store/AppCtx'
 import { midiLoadErrorType, track, trackEvent, trackMidiLoadFailed } from '../../telemetry'
 import type { RuntimeUiBridge } from '../RuntimeUiBridge'
 import type { AppRuntimeDeps, ExportOverlayState, MidiOpenSource, MidiOpenTarget } from '../types'

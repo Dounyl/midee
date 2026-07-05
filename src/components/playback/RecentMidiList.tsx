@@ -1,4 +1,5 @@
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js'
+import type { LibraryOpenRequest } from '@/stores/app/AppCtx'
 import {
   listLocalMidiEntries,
   loadSamplePlaybackHistory,
@@ -6,7 +7,6 @@ import {
 } from '../core/midiLibrary'
 import { SAMPLES } from '../core/samples'
 import { t } from '../i18n'
-import type { LibraryOpenRequest } from '../store/AppCtx'
 import { icons } from './icons'
 import styles from './RecentMidiList.module.css'
 

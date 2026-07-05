@@ -1,6 +1,6 @@
 import { getContext } from 'tone'
+import { createEventSignal } from '@/stores/app/eventSignal'
 import type { MasterClock } from '../core/clock/MasterClock'
-import { createEventSignal } from '../store/eventSignal'
 import type { CapturedEvent } from './MidiEncoding'
 
 export type LiveLooperState = 'idle' | 'armed' | 'recording' | 'playing' | 'overdubbing'

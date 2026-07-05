@@ -16,12 +16,11 @@ import '@fontsource/jetbrains-mono/latin-400.css'
 import '@fontsource/jetbrains-mono/latin-500.css'
 import '@fontsource/jetbrains-mono/latin-600.css'
 import { render } from 'solid-js/web'
-import { AppRoot } from '@/app/App'
-import { createApp } from '@/app/createApp'
+import { AppShell } from '@/app/AppShell'
 import { env } from '@/env'
 import { currentLocaleNativeName, initI18n, shouldShowLocaleHint, t } from '@/i18n'
 import localeHintStyles from '@/main/LocaleHint.module.css'
-import { AppCtx } from '@/stores/app/AppCtx'
+import type { AppCtxValue } from '@/stores/app/AppCtx'
 import { loadPostHog, registerAnalyticsContext } from '@/telemetry'
 import { whenIdle } from '@/whenIdle'
 
@@ -51,44 +50,40 @@ whenIdle(() => {
 // dynamic import on non-English; English is bundled and resolves instantly.
 async function boot(): Promise<void> {
   await initI18n()
-  const { ctx } = await createApp()
-  // Solid owns a dedicated child of #ui-overlay so its render() call doesn't
-  // wipe the legacy UI (Controls, DropZone, TrackPanel, modals) that the
-  // wrapped App class has already mounted into #ui-overlay directly.
-  // Ported tasks (T4+) progressively move those surfaces into the Solid tree.
-  const overlay = document.querySelector<HTMLElement>('#ui-overlay')!
-  const solidRoot = document.createElement('div')
-  solidRoot.id = 'solid-root'
-  overlay.appendChild(solidRoot)
+  const mount = document.querySelector<HTMLElement>('#app')
+  if (!mount) throw new Error('App failed to initialize: missing #app mount root')
   render(
     () => (
-      <AppCtx.Provider value={ctx}>
-        <AppRoot />
-      </AppCtx.Provider>
+      <AppShell
+        onReady={(ctx) => {
+          if (shouldShowLocaleHint()) showLocaleHint()
+          void runBenchIfEnabled(ctx)
+        }}
+        onError={(err) => {
+          console.error('App failed to initialize:', err)
+        }}
+      />
     ),
-    solidRoot,
+    mount,
   )
-  // Subtle one-time onboarding for users whose browser language was
-  // auto-detected to a non-English locale.
-  if (shouldShowLocaleHint()) showLocaleHint()
+}
 
+async function runBenchIfEnabled(ctx: AppCtxValue): Promise<void> {
   // Bench runner is a build-time opt-in. `npm run bench` sets
   // VITE_ENABLE_BENCH=1; public prod builds don't, so Vite constant-folds the
   // condition to `false` and tree-shakes both the dynamic import and the
   // branch - `bench/runner.ts` never reaches the public bundle, and
   // `?bench=...` URLs are inert in prod. Read `import.meta.env` directly (not
   // through env.ts) so the value is statically inlined for the dead-code pass.
-  if (import.meta.env.VITE_ENABLE_BENCH) {
-    const { benchFixtureFromUrl, runBench } = await import('@/bench/runner')
-    const fixture = benchFixtureFromUrl()
-    if (fixture) {
-      try {
-        window.__BENCH_RESULT = await runBench(fixture, ctx)
-      } catch (err) {
-        window.__BENCH_ERROR = err instanceof Error ? err.message : String(err)
-        console.error('[bench]', err)
-      }
-    }
+  if (!import.meta.env.VITE_ENABLE_BENCH) return
+  const { benchFixtureFromUrl, runBench } = await import('@/bench/runner')
+  const fixture = benchFixtureFromUrl()
+  if (!fixture) return
+  try {
+    window.__BENCH_RESULT = await runBench(fixture, ctx)
+  } catch (err) {
+    window.__BENCH_ERROR = err instanceof Error ? err.message : String(err)
+    console.error('[bench]', err)
   }
 }
 

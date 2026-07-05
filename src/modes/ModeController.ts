@@ -1,8 +1,8 @@
+import type { AppMode } from '@/stores/app/state'
 import type { KeyboardModeCoordinator } from '../app/KeyboardModeCoordinator'
 import type { AppServices } from '../core/services'
 import type { ComputerKeyboardInput } from '../midi/ComputerKeyboardInput'
 import type { MidiInputManager } from '../midi/MidiInputManager'
-import type { AppMode } from '../store/state'
 import type { DropZone } from '../ui/DropZone'
 import type { TrackPanel } from '../ui/TrackPanel'
 

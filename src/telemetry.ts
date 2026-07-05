@@ -1,5 +1,5 @@
 import type { PostHog, PostHogConfig } from 'posthog-js'
-import type { AppMode } from './store/state'
+import type { AppMode } from '@/stores/app/state'
 
 // Thin wrapper around posthog-js + a typed event registry. Kept as a single
 // flat file (not `src/analytics/*`) because common ad blockers treat

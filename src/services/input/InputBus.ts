@@ -1,5 +1,5 @@
+import { createEventSignal } from '@/stores/app/eventSignal'
 import type { MidiNoteEvent } from '../../midi/MidiInputManager'
-import { createEventSignal } from '../../store/eventSignal'
 
 // Where a note/pedal event entered the app. Subscribers use this for telemetry
 // (per-source first-note counting) and occasionally to gate behavior — but the

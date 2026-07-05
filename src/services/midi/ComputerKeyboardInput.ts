@@ -1,5 +1,5 @@
+import { createEventSignal } from '@/stores/app/eventSignal'
 import type { MasterClock } from '../core/clock/MasterClock'
-import { createEventSignal } from '../store/eventSignal'
 import type { MidiNoteEvent } from './MidiInputManager'
 
 // FL Studio / DAW-style typing-keyboard layout.

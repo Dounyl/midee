@@ -1,6 +1,8 @@
 import { App } from '@/app/AppRuntime'
-import { navigateToMode } from '@/routing/routerBridge'
-import { AppCtx as _AppCtx, type AppActions, type AppCtxValue } from '@/stores/app/AppCtx'
+import { createAppActions } from '@/app/runtime/actions'
+import { assertDefined } from '@/app/runtime/assert'
+import type { AppRuntimeInstance, AppShellHandles } from '@/app/runtime/types'
+import type { AppCtxValue } from '@/stores/app/AppCtx'
 import { createAppStore } from '@/stores/app/state'
 
 // Boots the app. Constructs the single `AppStore`, hands it to the `App`
@@ -18,47 +20,34 @@ import { createAppStore } from '@/stores/app/state'
 // set, chord-detect throttling) has to live *somewhere* and a class field is
 // the cheapest container. The module-scope `appState` singleton that motivated
 // T2b has been removed; the store is now constructed here and threaded in.
-export async function createApp(): Promise<{ ctx: AppCtxValue; app: App }> {
+export async function createApp(handles: AppShellHandles): Promise<AppRuntimeInstance> {
   const store = createAppStore()
   const app = new App(store)
-  await app.init()
-  const actions: AppActions = {
-    navigation: {
-      toMode: (mode) => {
-        navigateToMode(mode)
+  const actions = createAppActions(app)
+  try {
+    await app.init(
+      {
+        canvas: assertDefined(handles.canvas, 'createApp() called without a canvas handle'),
+        overlay: assertDefined(handles.overlay, 'createApp() called without an overlay handle'),
       },
-    },
-    home: {
-      enter: () => app.enterHomeRoute(),
-    },
-    play: {
-      enter: (options) => app.enterPlayRoute(options),
-    },
-    live: {
-      enter: () => app.enterLiveRoute(),
-    },
-    library: {
-      open: (request) => app.openLibraryRequest(request),
-    },
-    learn: {
-      enterRoute: (target, signal) => app.enterLearnRoute(target, signal),
-      exitRoute: () => app.exitLearnRoute(),
-      enter: (request) => app.enterLearnRequest(request),
-    },
-    session: {
-      resetInteractionState: () => app.resetInteractionState(),
-      primeInteractiveAudio: () => app.primeInteractiveAudio(),
-    },
+      actions,
+    )
+  } catch (error) {
+    try {
+      app.dispose()
+    } catch {
+      // A failed boot can leave the runtime only partially initialized.
+    }
+    throw error
+  }
+  const ctx: AppCtxValue = {
+    services: app.services,
+    store: app.store,
+    actions,
+    ensureLearnController: () => app.ensureLearnController(),
   }
   return {
-    ctx: {
-      services: app.services,
-      store: app.store,
-      actions,
-      ensureLearnController: () => app.ensureLearnController(),
-    },
-    app,
+    ctx,
+    dispose: () => app.dispose(),
   }
 }
-
-export { _AppCtx as AppCtx }

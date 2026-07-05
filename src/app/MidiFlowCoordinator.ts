@@ -1,5 +1,5 @@
+import type { LearnEnterRequest } from '@/stores/app/AppCtx'
 import type { MidiFile } from '../core/midi/types'
-import type { LearnEnterRequest } from '../store/AppCtx'
 import { MidiLoadFlow } from './midi/MidiLoadFlow'
 import type { RuntimeUiBridge } from './RuntimeUiBridge'
 import type { AppRuntimeDeps, ExportOverlayState, MidiOpenSource, MidiOpenTarget } from './types'

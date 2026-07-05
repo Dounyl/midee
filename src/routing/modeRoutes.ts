@@ -1,4 +1,4 @@
-import type { AppMode } from '../store/state'
+import type { AppMode } from '@/stores/app/state'
 import { pathToLearnRoute } from './learnRoutes'
 
 export const MODE_PATHS: Record<AppMode, string> = {

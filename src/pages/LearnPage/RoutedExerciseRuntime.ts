@@ -1,10 +1,11 @@
+import { assertDefined } from '@/app/runtime/assert'
+import learnHostStyles from '@/features/learn/ui/LearnHost.module.css'
 import type { AppServices } from '../../core/services'
 import type { ExerciseDescriptor } from '../../learn/core/Exercise'
 import { ExerciseRunner } from '../../learn/core/ExerciseRunner'
 import { createLearnState } from '../../learn/core/LearnState'
 import { createLearnProgressStore } from '../../learn/core/progress'
 import { LearnOverlay } from '../../learn/overlays/LearnOverlay'
-import learnHostStyles from '@/features/learn/ui/LearnHost.module.css'
 import { createSessionSummary } from '../../learn/ui/SessionSummary'
 import { cssModuleClass } from '../../ui/utils'
 
@@ -19,13 +20,16 @@ export class RoutedExerciseRuntime {
 
   constructor(
     private readonly services: AppServices,
+    private readonly overlayRoot: HTMLElement,
     private readonly descriptor: ExerciseDescriptor,
     private readonly onNext: () => void,
   ) {}
 
   async enter(): Promise<void> {
-    const overlayRoot = document.querySelector<HTMLElement>('#ui-overlay')
-    if (!overlayRoot) return
+    const overlayRoot = assertDefined(
+      this.overlayRoot,
+      'RoutedExerciseRuntime requires an overlay host before enter()',
+    )
     this.host = document.createElement('div')
     this.host.className = cssModuleClass(learnHostStyles, 'learnHost', 'learnHostExercise')
     overlayRoot.appendChild(this.host)

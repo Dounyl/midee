@@ -1,5 +1,5 @@
+import { createEventSignal } from '@/stores/app/eventSignal'
 import type { MasterClock } from '../core/clock/MasterClock'
-import { createEventSignal } from '../store/eventSignal'
 
 export interface MidiNoteEvent {
   pitch: number

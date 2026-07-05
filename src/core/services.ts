@@ -1,7 +1,7 @@
+import type { AppStore } from '@/stores/app/state'
 import type { Metronome } from '../audio/Metronome'
 import type { SynthEngine } from '../audio/SynthEngine'
 import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
-import type { AppStore } from '../store/state'
 import type { MasterClock } from './clock/MasterClock'
 import type { InputBus } from './input/InputBus'
 

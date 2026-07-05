@@ -7,8 +7,8 @@ import {
   Part,
   start as toneStart,
 } from 'tone'
+import { createEventSignal } from '@/stores/app/eventSignal'
 import type { MidiFile } from '../core/midi/types'
-import { createEventSignal } from '../store/eventSignal'
 import type { AudioEngine } from './AudioEngine'
 import {
   createInstrument,
@@ -46,7 +46,7 @@ export class SynthEngine implements AudioEngine {
   // Part is ~10× faster than N individual schedules on dense MIDIs (tested
   // 10k+ notes), and seek reuses the same Part via `part.start(0, offset)`.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private scheduledPart: any | null = null
+  private scheduledPart: Part<[number, NoteEvent]> | null = null
   private _speed = 1
   private scheduledFromTime = 0
   private readyPromise: Promise<void> = Promise.resolve()
@@ -202,11 +202,9 @@ export class SynthEngine implements AudioEngine {
       }
     }
 
-    // Tone's Part type wants events with a `time` field, but the runtime also
-    // accepts `[time, payload]` tuples — cheaper for our 2-key payload. Cast
-    // at the boundary; the named import still tree-shakes unused synths.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const part = new (Part as any)((time: number, ev: NoteEvent) => {
+    // Tone's Part type also accepts `[time, payload]` tuples, which lets us
+    // keep the playback payload compact without dropping type information.
+    const part = new Part<[number, NoteEvent]>((time: number, ev: NoteEvent) => {
       // Re-resolve the instrument each tick so mid-playback switches take
       // effect without rebuilding the Part. setInstrument() releases the old
       // voice so overlapping notes from the previous instrument don't linger.

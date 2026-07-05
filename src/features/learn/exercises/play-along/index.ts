@@ -1,7 +1,7 @@
 import { getContext } from 'tone'
+import { watch } from '@/stores/app/watch'
 import type { BusNoteEvent } from '../../../core/input/InputBus'
 import type { MidiFile } from '../../../core/midi/types'
-import { watch } from '../../../store/watch'
 import type { Exercise } from '../../core/Exercise'
 import type { ExerciseContext } from '../../core/ExerciseContext'
 import { defineExerciseDescriptor } from '../../core/exerciseDescriptor'

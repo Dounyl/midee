@@ -1,12 +1,19 @@
-import { ExportAndOverlayCoordinator } from './app/ExportAndOverlayCoordinator'
-import { KeyboardModeCoordinator } from './app/KeyboardModeCoordinator'
-import { MidiFlowCoordinator } from './app/MidiFlowCoordinator'
-import { PlaybackCoordinator } from './app/PlaybackCoordinator'
-import { RuntimeUiBridge } from './app/RuntimeUiBridge'
-import type { ExportOverlayState } from './app/types'
+import { assertDefined, assertOnce, invariant } from '@/app/runtime/assert'
+import { createAppPreferences } from '@/app/runtime/preferences'
+import type { AppShellHandles } from '@/app/runtime/types'
 import loadingStyles from '@/app.module.css'
+import { setNextLiveOpts } from '@/pages/LivePage/liveEnterOptions'
+import type {
+  AppActions,
+  LearnEnterRequest,
+  LearnMountTarget,
+  LibraryOpenRequest,
+  PlayRouteEnterOptions,
+} from '@/stores/app/AppCtx'
+import { type AppMode, type AppStore, resolveInitialAppMode } from '@/stores/app/state'
+import { watch } from '@/stores/app/watch'
 import { Metronome } from './audio/Metronome'
-import { INSTRUMENTS, SynthEngine } from './audio/SynthEngine'
+import { SynthEngine } from './audio/SynthEngine'
 import { MasterClock } from './core/clock/MasterClock'
 import { type BusNoteEvent, InputBus } from './core/input/InputBus'
 import type { KeyboardMode } from './core/keyboardLayout'
@@ -16,14 +23,16 @@ import {
   createLivePerformanceBus,
   type LivePerformanceBus,
 } from './core/performance/LivePerformanceBus'
-import { booleanPersisted, indexPersisted, numberPersisted } from './core/persistence'
 import type { AppServices } from './core/services'
+import { ExportAndOverlayCoordinator } from './ExportAndOverlayCoordinator'
 // VideoExporter pulls Mediabunny; OfflineAudioRenderer pulls Tone + instruments.
 // Both are dynamic-imported from startExport(). Import order matters: load the
-// offline-audio module first when audio is needed 鈥?do not block Tone on the
+// offline-audio module first when audio is needed �?do not block Tone on the
 // heavy VideoExporter chunk (see Promise.all removal below).
 import type { VideoExporter } from './export/VideoExporter'
 import { setLocale, t } from './i18n'
+import { KeyboardModeCoordinator } from './KeyboardModeCoordinator'
+import { MidiFlowCoordinator } from './MidiFlowCoordinator'
 import { CaptureFanout } from './midi/CaptureFanout'
 import { ComputerKeyboardInput } from './midi/ComputerKeyboardInput'
 import { LiveLooper, type LiveLooperState } from './midi/LiveLooper'
@@ -33,24 +42,12 @@ import { MidiInputManager } from './midi/MidiInputManager'
 import { SessionRecorder } from './midi/SessionRecorder'
 import type { LearnController } from './modes/LearnController'
 import { MODE_CAPTURES_LIVE, type ModeContext } from './modes/ModeController'
-import { setNextLiveOpts } from './pages/live/liveEnterOptions'
+import { PlaybackCoordinator } from './PlaybackCoordinator'
+import { RuntimeUiBridge } from './RuntimeUiBridge'
 import { PARTICLE_STYLES } from './renderer/ParticleSystem'
 import { PianoRollRenderer } from './renderer/PianoRollRenderer'
 import { THEMES, type Theme } from './renderer/theme'
 import { getCurrentRouteMode, navigateToMode, subscribeCurrentRoute } from './routing/routerBridge'
-import type {
-  LearnEnterRequest,
-  LearnMountTarget,
-  LibraryOpenRequest,
-  PlayRouteEnterOptions,
-} from './store/AppCtx'
-import {
-  type AppMode,
-  type AppStore,
-  resolveInitialAppMode,
-  SKIP_HOME_INTRO_STORAGE_KEY,
-} from './store/state'
-import { watch } from './store/watch'
 import {
   categorizeMidiDevice,
   track,
@@ -58,6 +55,7 @@ import {
   trackEvent,
   trackEventSettled,
 } from './telemetry'
+import type { ExportOverlayState } from './types'
 import { ChordOverlay } from './ui/ChordOverlay'
 import { ConsolePanel } from './ui/ConsolePanel'
 import { Controls } from './ui/Controls'
@@ -70,10 +68,12 @@ import { TrackPanel } from './ui/TrackPanel'
 import { installViewportClassSync } from './ui/utils'
 import { whenIdle } from './whenIdle'
 
-// Total note count across all tracks 鈥?the content-size signal attached to
+// Total note count across all tracks �?the content-size signal attached to
 // midi_loaded so we can tie which pieces drive retention. Structurally typed
 // to avoid coupling this helper to the MidiFile import.
 export class App {
+  private readonly preferences = createAppPreferences()
+  private readonly hydratedPreferences = this.preferences.hydrate()
   private clock = new MasterClock()
   private renderer = new PianoRollRenderer()
   private synth = new SynthEngine()
@@ -94,7 +94,7 @@ export class App {
   private exporterRef!: { current: VideoExporter | null }
   private pendingSessionRef!: { current: { events: CapturedEvent[]; duration: number } | null }
   private keyboardModeCoordinator!: KeyboardModeCoordinator
-  // Lazy modals: race-safe lazy initialisation via lazyHandle 鈥?each is
+  // Lazy modals: race-safe lazy initialisation via lazyHandle �?each is
   // constructed at most once, even under concurrent get() calls.
   private postSessionHandle = lazyHandle(() =>
     import('./ui/PostSessionModal').then(({ PostSessionModal }) => {
@@ -203,7 +203,7 @@ export class App {
   }
   // Learn owns enough lifecycle state (hub, runner, overlay layer) that a
   // long-lived instance is cheapest. But constructing it pulls the entire
-  // Learn module graph (LearnHub, ExerciseRunner, IntervalsEngine, 鈥? into
+  // Learn module graph (LearnHub, ExerciseRunner, IntervalsEngine, �? into
   // the bundle, so we defer construction to first use. The mode context is
   // captured at boot so the lazy constructor doesn't need to re-derive it.
   private learnControllerHandle = lazyHandle(() =>
@@ -217,12 +217,11 @@ export class App {
   private currentExporter: VideoExporter | null = null
   private baseMidi: import('./core/midi/types').MidiFile | null = null
   private transposeSemitones = 0
-  private chordOverlayOn = false
-  private pitchLabelsVisible = pitchLabelsStore.load()
-
-  private themeIndex = themeIndexStore.load()
-  private instrumentIndex = instrumentIndexStore.load()
-  private particleIndex = particleIndexStore.load()
+  private chordOverlayOn = this.hydratedPreferences.chordOverlay
+  private pitchLabelsVisible = this.hydratedPreferences.pitchLabels
+  private themeIndex = this.hydratedPreferences.themeIndex
+  private instrumentIndex = this.hydratedPreferences.instrumentIndex
+  private particleIndex = this.hydratedPreferences.particleIndex
   private audioPrimed = false
   // Analytics one-shot flags. Reset when a new file is loaded so a user
   // who opens MIDI A then MIDI B gets `first_play` events for both.
@@ -240,8 +239,8 @@ export class App {
   }
   // Loop station one-shots, scoped to the page session. We want to know
   // whether users ever reach each step in the loop funnel, not count every
-  // state flip 鈥?the state machine toggles rapidly during overdub.
-  // Sustain pedal state managed by LivePerformanceBus 鈥?keyboard OR MIDI
+  // state flip �?the state machine toggles rapidly during overdub.
+  // Sustain pedal state managed by LivePerformanceBus �?keyboard OR MIDI
   // sources merged with an OR. The bus owns sustained-pitches bookkeeping,
   // repress-release logic, and subscriber fan-out.
   private performanceBus!: LivePerformanceBus
@@ -252,18 +251,27 @@ export class App {
   private onFirstPointerDown = (): void => this.primeInteractiveAudio()
   private onFirstKeyDown = (): void => this.primeInteractiveAudio()
   // Unsubscribe closures from every Signal.subscribe() in init(). Invoked from
-  // dispose() so each Signal's listener set is cleared 鈥?otherwise the
+  // dispose() so each Signal's listener set is cleared �?otherwise the
   // captured `this` leaks for the lifetime of the surrounding signals.
   private unsubs: Array<() => void> = []
+  private readonly subscriptionLabels = new Set<string>()
+  private initialized = false
+  private disposed = false
 
   private get keyboardMode(): KeyboardMode {
-    return this.keyboardModeCoordinator?.getMode() ?? (keyboardModeStore.load() ? '61' : '88')
+    return (
+      this.keyboardModeCoordinator?.getMode() ??
+      (this.preferences.stores.keyboardMode61.load() ? '61' : '88')
+    )
   }
 
-  async init(): Promise<void> {
-    const canvas = document.querySelector<HTMLCanvasElement>('#pianoroll')!
-    const overlay = document.querySelector<HTMLElement>('#ui-overlay')!
+  async init(handles: AppShellHandles, actions: AppActions): Promise<void> {
+    assertOnce(this.initialized, 'App runtime cannot boot more than once')
+    invariant(!this.disposed, 'App runtime cannot boot after dispose()')
+    const canvas = assertDefined(handles.canvas, 'App runtime init requires a canvas handle')
+    const overlay = assertDefined(handles.overlay, 'App runtime init requires an overlay handle')
     this.overlay = overlay
+    this.initialized = true
 
     // Flip `body.is-touch` / `body.is-narrow` so CSS can adapt (bottom-sheet
     // popovers, touch-friendly hit targets, etc.).
@@ -285,7 +293,7 @@ export class App {
           // Audio is sample-accurately scheduled via the AudioContext clock.
           this.synth.scheduleNoteOn(pitch, velocity, ctxTime)
           // Visuals and session capture fire at ~wall time by deferring the
-          // work until ctxTime arrives. setTimeout jitter (~1鈥? ms) is
+          // work until ctxTime arrives. setTimeout jitter (~1�? ms) is
           // imperceptible vs. audio, whereas drawing now (up to 150 ms early)
           // would visibly desync the falling notes.
           this.deferToCtxTime(ctxTime, () => {
@@ -301,8 +309,8 @@ export class App {
           })
         },
       },
-      // Bar-snap when the metronome is running 鈥?rounds loop length to the
-      // nearest whole bar at current BPM (4/4). Off 鈫?freeform length.
+      // Bar-snap when the metronome is running �?rounds loop length to the
+      // nearest whole bar at current BPM (4/4). Off �?freeform length.
       (raw) => {
         if (!this.metronome.running.value) return raw
         const secPerBar = (60 / this.metronome.bpm.value) * 4
@@ -333,7 +341,8 @@ export class App {
     // Wire the LivePerformanceBus fan-out sinks. Audio and visual-key
     // feedback fire unconditionally (every mode). Capture-mode sinks
     // (looper + session + particles) gate on MODE_CAPTURES_LIVE.
-    this.unsubs.push(
+    this.registerUnsubs(
+      'performance-bus',
       this.performanceBus.subscribeNotes(
         // Audio + visual: always fire so every key-press is heard and seen.
         (evt) => {
@@ -375,40 +384,15 @@ export class App {
       },
       (sampleId) => void this.enterLearnRequest({ kind: 'sample', sampleId }),
       () => navigateToMode('learn'),
-      skipHomeIntroStore.load(),
-      (next) => skipHomeIntroStore.save(next),
+      this.preferences.stores.skipHomeIntro.load(),
+      (next) => this.preferences.stores.skipHomeIntro.save(next),
       this.currentPageMode() !== 'home',
     )
 
     this.controls = new Controls({
       container: overlay,
       services: this.services,
-      actions: {
-        navigation: {
-          toMode: (mode) => navigateToMode(mode),
-        },
-        home: {
-          enter: () => this.enterHomeRoute(),
-        },
-        play: {
-          enter: (options) => this.enterPlayRoute(options),
-        },
-        live: {
-          enter: () => this.enterLiveRoute(),
-        },
-        library: {
-          open: (request) => this.openLibraryRequest(request),
-        },
-        learn: {
-          enterRoute: (target, signal) => this.enterLearnRoute(target, signal),
-          exitRoute: () => this.exitLearnRoute(),
-          enter: (request) => this.enterLearnRequest(request),
-        },
-        session: {
-          resetInteractionState: () => this.resetInteractionState(),
-          primeInteractiveAudio: () => this.primeInteractiveAudio(),
-        },
-      },
+      actions,
       onSeek: (t) => {
         this.synth.seek(t)
         this.liveNotes.reset()
@@ -419,7 +403,7 @@ export class App {
       onOpenTracks: () => this.trackPanel.toggle(),
       onRecord: () => {
         // First-time vs repeat opens are derivable in PostHog funnels via
-        // "first occurrence per user" 鈥?no need for a duplicate event.
+        // "first occurrence per user" �?no need for a duplicate event.
         track('export_opened', { has_midi: this.store.state.loadedMidi !== null })
         this.exportOverlay.openExportModal()
       },
@@ -444,7 +428,7 @@ export class App {
       },
       onMetronomeBpmChange: (bpm) => {
         this.metronome.setBpm(bpm)
-        metronomeBpmStore.save(this.metronome.bpm.value)
+        this.preferences.stores.metronomeBpm.save(this.metronome.bpm.value)
         trackEventSettled('tempo_changed', { bpm: this.metronome.bpm.value })
       },
       onSessionToggle: () => this.exportOverlay.toggleSessionRecord(),
@@ -455,7 +439,7 @@ export class App {
       },
     })
 
-    this.metronome.setBpm(metronomeBpmStore.load())
+    this.metronome.setBpm(this.preferences.stores.metronomeBpm.load())
     this.trackPanel = new TrackPanel(
       overlay,
       this.renderer,
@@ -475,9 +459,9 @@ export class App {
     )
     this.keyboardModeModal = new KeyboardModeSuggestionModal(overlay)
     this.keyboardModeCoordinator = new KeyboardModeCoordinator({
-      initialMode: keyboardModeStore.load() ? '61' : '88',
+      initialMode: this.preferences.stores.keyboardMode61.load() ? '61' : '88',
       modal: this.keyboardModeModal,
-      persistMode: (mode) => keyboardModeStore.save(mode === '61'),
+      persistMode: (mode) => this.preferences.stores.keyboardMode61.save(mode === '61'),
       applyMode: (mode) => this.renderer.setKeyboardMode(mode),
       syncConsolePanel: () => this.exportOverlay?.syncConsolePanel(),
     })
@@ -486,7 +470,8 @@ export class App {
 
     this.instrumentMenu = new InstrumentMenu(this.controls.instrumentSlot, overlay)
     this.instrumentMenu.onSelect = (id) => this.exportOverlay.setInstrumentById(id)
-    this.unsubs.push(
+    this.registerUnsubs(
+      'instrument-loading',
       this.synth.loadingInstrument.subscribe((id) => {
         this.instrumentMenu.setLoading(id)
         this.controls.setInstrumentLoading(id !== null)
@@ -496,30 +481,32 @@ export class App {
     this.controls.setInstrumentLoading(this.synth.loadingInstrument.value !== null)
 
     // ExportModal / PostSessionModal / MidiPickerModal are constructed lazily
-    // (see ensureXModal helpers further down) 鈥?none of them are visible at
+    // (see ensureXModal helpers further down) �?none of them are visible at
     // boot, and keeping them out of the initial chunk shaves ~835 LOC of JSX
     // off the first-paint bundle.
 
     this.chordOverlay = new ChordOverlay(this.controls.chordSlot)
-    this.chordOverlayOn = chordOverlayStore.load()
-    // File mode actively plays a MIDI 鈥?the chord chip would just narrate
+    this.chordOverlayOn = this.preferences.stores.chordOverlay.load()
+    // File mode actively plays a MIDI �?the chord chip would just narrate
     // what the user is already hearing without contributing to "play along"
     // affordances. Keep it scoped to live/home where it confirms what the
     // player is sounding.
-    this.unsubs.push(
+    this.registerUnsubs(
+      'chord-visibility-watch',
       watch(
         () => this.store.state.status,
         () => this.exportOverlay?.applyChordOverlayVisibility(),
       ),
     )
-    this.unsubs.push(
+    this.registerUnsubs(
+      'route-sync-effects',
       subscribeCurrentRoute(() => {
         this.exportOverlay?.applyChordOverlayVisibility()
         this.exportOverlay?.syncConsolePanel()
       }),
     )
 
-    // Customization popover bundles theme / particles / chord toggle 鈥?
+    // Customization popover bundles theme / particles / chord toggle �?
     // collapses three topbar pills into a single trigger.
     this.customizeMenu = new CustomizeMenu(
       this.controls.customizeSlot,
@@ -554,7 +541,8 @@ export class App {
 
     const pushLoop = (): void =>
       this.ui.syncLoopState(this.liveLooper.state.value, this.liveLooper.layerCount.value)
-    this.unsubs.push(
+    this.registerUnsubs(
+      'loop-ui-sync',
       this.liveLooper.state.subscribe((s) => {
         this.trackLoopTransition(s)
         pushLoop()
@@ -565,7 +553,8 @@ export class App {
 
     const pushMetronome = (): void =>
       this.ui.syncMetronome(this.metronome.running.value, this.metronome.bpm.value)
-    this.unsubs.push(
+    this.registerUnsubs(
+      'metronome-ui-sync',
       this.metronome.running.subscribe(pushMetronome),
       this.metronome.bpm.subscribe(pushMetronome),
       this.metronome.beatCount.subscribe((count) => {
@@ -578,7 +567,8 @@ export class App {
 
     const pushSession = (): void =>
       this.ui.syncSessionRecording(this.sessionRec.recording.value, this.sessionRec.elapsed.value)
-    this.unsubs.push(
+    this.registerUnsubs(
+      'session-ui-sync',
       this.sessionRec.recording.subscribe(pushSession),
       this.sessionRec.elapsed.subscribe(pushSession),
       this.liveLooper.progress.subscribe((p) => this.ui.syncLoopProgress(p)),
@@ -609,13 +599,13 @@ export class App {
       store: this.store,
       renderer: this.renderer,
       persistence: {
-        themeIndex: themeIndexStore,
-        instrumentIndex: instrumentIndexStore,
-        particleIndex: particleIndexStore,
-        metronomeBpm: metronomeBpmStore,
-        chordOverlay: chordOverlayStore,
-        pitchLabels: pitchLabelsStore,
-        skipHomeIntro: skipHomeIntroStore,
+        themeIndex: this.preferences.stores.themeIndex,
+        instrumentIndex: this.preferences.stores.instrumentIndex,
+        particleIndex: this.preferences.stores.particleIndex,
+        metronomeBpm: this.preferences.stores.metronomeBpm,
+        chordOverlay: this.preferences.stores.chordOverlay,
+        pitchLabels: this.preferences.stores.pitchLabels,
+        skipHomeIntro: this.preferences.stores.skipHomeIntro,
       },
       ensureLearnController: () => this.ensureLearnController(),
       keyboardMode: this.keyboardModeCoordinator,
@@ -667,15 +657,15 @@ export class App {
     this.exportOverlay.applyInstrument()
     this.exportOverlay.applyParticleStyle()
 
-    // Idle-time warmups. None of these affect first paint 鈥?they trade
+    // Idle-time warmups. None of these affect first paint �?they trade
     // background bandwidth for "feels instant" on first-click flows. All
     // share the default deadline; on a typical browser they fire in the
     // same idle frame ~150-300 ms after boot, kicking off network fetches
     // in parallel.
-    //   鈥?synth piano samples 鈫?first-note latency
-    //   鈥?@tonejs/midi 鈫?sample-card click + record-export
-    //   鈥?modal chunks 鈫?first export / file-picker / post-session click
-    //   鈥?LearnController (only when Learn is enabled) 鈫?first Learn entry
+    //   �?synth piano samples �?first-note latency
+    //   �?@tonejs/midi �?sample-card click + record-export
+    //   �?modal chunks �?first export / file-picker / post-session click
+    //   �?LearnController (only when Learn is enabled) �?first Learn entry
     whenIdle(() => this.synth.preloadDefault())
     whenIdle(() => void import('@tonejs/midi'))
     whenIdle(() => {
@@ -687,9 +677,10 @@ export class App {
 
     this.ui.syncMidiStatus(this.midiInput.status.value, '')
 
-    this.unsubs.push(
+    this.registerUnsubs(
+      'clock-effects',
       this.clock.subscribe((t) => {
-        // Engagement milestones are mode-agnostic (watched 鈮?0s counts as
+        // Engagement milestones are mode-agnostic (watched �?0s counts as
         // a real user regardless of where the clock was ticking).
         for (const m of [30, 60, 120]) {
           if (t >= m && !this.playbackMilestones.has(m)) {
@@ -701,7 +692,8 @@ export class App {
         this.exportOverlay.maybeUpdateChordOverlay(t)
       }),
     )
-    this.unsubs.push(
+    this.registerUnsubs(
+      'store-watchers',
       watch(
         () => this.store.state.status,
         (status) => {
@@ -753,7 +745,8 @@ export class App {
     // consumers (the live-note handler here, and later exercise runners)
     // see one fan-out point instead of three. Pedal sources are kept
     // per-source because the bus merges them with an OR.
-    this.unsubs.push(
+    this.registerUnsubs(
+      'live-input-sources',
       this.midiInput.noteOn.subscribe((evt) => {
         if (evt) this.inputBus.emitNoteOn(evt, 'midi')
       }),
@@ -799,7 +792,7 @@ export class App {
       }),
     )
 
-    // Mouse/touch on the on-screen keyboard 鈥?down to press, move to slide
+    // Mouse/touch on the on-screen keyboard �?down to press, move to slide
     // between keys (glissando), up/cancel/leave to release.
     canvas.addEventListener('pointerdown', this.onCanvasPointerDown)
     canvas.addEventListener('pointermove', this.onCanvasPointerMove)
@@ -809,11 +802,12 @@ export class App {
 
     // Update MIDI button whenever either status or device name changes.
     // Reading the *other* signal's current value avoids a stale-name flash.
-    this.unsubs.push(
+    this.registerUnsubs(
+      'midi-status-watchers',
       this.midiInput.status.subscribe((status) => {
         this.ui.syncMidiStatus(status, this.midiInput.deviceName.value)
         if (status === 'connected') {
-          // Vendor enum instead of raw device name 鈥?cardinality-friendly and
+          // Vendor enum instead of raw device name �?cardinality-friendly and
           // avoids leaking user-customised device labels.
           track('midi_device_connected', {
             vendor: categorizeMidiDevice(this.midiInput.deviceName.value),
@@ -855,6 +849,23 @@ export class App {
     void this.autoConnectMidi()
   }
 
+  private registerUnsubs(label: string, ...unsubs: Array<() => void>): void {
+    assertOnce(
+      this.subscriptionLabels.has(label),
+      `Duplicate runtime subscription registration: ${label}`,
+    )
+    this.subscriptionLabels.add(label)
+    this.unsubs.push(() => {
+      this.subscriptionLabels.delete(label)
+      for (const unsub of unsubs) unsub()
+    })
+  }
+
+  private assertActionReady(action: string): void {
+    invariant(this.initialized, `${action}() called before app runtime finished booting`)
+    invariant(!this.disposed, `${action}() called after app runtime was disposed`)
+  }
+
   private releaseAllLiveNotes(): void {
     this.playback.releaseAllLiveNotes()
   }
@@ -869,7 +880,7 @@ export class App {
 
   // Loop funnel: fire once-per-session on `armed` and first `playing`, and
   // fire `loop_layer_added` every time an overdub passes commits as a new
-  // layer (overdubbing 鈫?playing). Skipping transitions that just return to
+  // layer (overdubbing �?playing). Skipping transitions that just return to
   // `idle` keeps the event stream tied to user intent, not UI housekeeping.
   private trackLoopTransition(next: LiveLooperState): void {
     this.playback.trackLoopTransition(next)
@@ -907,7 +918,7 @@ export class App {
   }
 
   private onCanvasPointerMove = (e: PointerEvent): void => {
-    // Only react while the user is actively pressing 鈥?this is the glissando
+    // Only react while the user is actively pressing �?this is the glissando
     // path, not a hover state.
     if (this.activeMouseNote === null) return
     if (this.store.state.status === 'exporting') return
@@ -932,10 +943,10 @@ export class App {
   private async connectMidi(): Promise<void> {
     this.primeInteractiveAudio()
     // Once a user denies the prompt, browsers remember the choice and
-    // `requestMIDIAccess()` resolves silently 鈥?clicking the button again
+    // `requestMIDIAccess()` resolves silently �?clicking the button again
     // does nothing visible. Detect that case and surface a help message
     // so the user knows they need to reset the permission via the browser
-    // (lock icon 鈫?Site settings 鈫?MIDI devices 鈫?Allow).
+    // (lock icon �?Site settings �?MIDI devices �?Allow).
     const wasBlocked = this.midiInput.status.value === 'blocked'
     track('midi_permission_requested', { was_blocked: wasBlocked })
     const ok = await this.midiInput.requestAccess()
@@ -968,6 +979,7 @@ export class App {
   }
 
   ensureLearnController(): Promise<LearnController> {
+    this.assertActionReady('ensureLearnController')
     return this.learnControllerHandle.get()
   }
 
@@ -980,10 +992,12 @@ export class App {
   }
 
   enterLearnRequest(request: LearnEnterRequest): Promise<void> | void {
+    this.assertActionReady('enterLearnRequest')
     return this.midiFlow.enterLearn(request)
   }
 
   async enterLearnRoute(target: LearnMountTarget, signal?: AbortSignal): Promise<void> {
+    this.assertActionReady('enterLearnRoute')
     this.learnControllerHandle.peek()?.exit()
     if (signal?.aborted) return
     this.enterLearnShell(target)
@@ -995,11 +1009,13 @@ export class App {
   }
 
   exitLearnRoute(): void {
+    this.assertActionReady('exitLearnRoute')
     this.learnControllerHandle.peek()?.exit()
     this.exitLearnShell()
   }
 
   enterHomeRoute(): void {
+    this.assertActionReady('enterHomeRoute')
     this.resetInteractionState()
     this.store.enterHome()
     this.renderer.clearMidi()
@@ -1010,6 +1026,7 @@ export class App {
   }
 
   enterPlayRoute(options: PlayRouteEnterOptions = {}): void {
+    this.assertActionReady('enterPlayRoute')
     const { skipAnalytics = false } = options
     const midi = this.store.state.loadedMidi
     const status = this.store.state.status
@@ -1036,6 +1053,7 @@ export class App {
   }
 
   enterLiveRoute(): void {
+    this.assertActionReady('enterLiveRoute')
     this.resetInteractionState()
     this.renderer.clearMidi()
     this.trackPanel.close()
@@ -1045,6 +1063,7 @@ export class App {
   }
 
   openLibraryRequest(request: LibraryOpenRequest): Promise<void> | void {
+    this.assertActionReady('openLibraryRequest')
     if (request.kind === 'picker') {
       this.openFilePicker(request.target)
       return
@@ -1131,7 +1150,7 @@ export class App {
 
   // 鈹€鈹€ Chord overlay 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   // Effective visibility = user's saved preference AND current mode supports it.
-  // Play mode is excluded 鈥?the chord readout is a "what am I playing?" cue,
+  // Play mode is excluded �?the chord readout is a "what am I playing?" cue,
   // not a passive playback annotation.
   private applyChordOverlayVisibility(): void {
     if (!this.exportOverlay) return
@@ -1139,12 +1158,13 @@ export class App {
   }
 
   resetInteractionState(): void {
+    this.assertActionReady('resetInteractionState')
     this.playback.resetInteractionState()
   }
 
   // Dismiss every modal-style overlay so mode switches and fresh-load flows
   // don't leave a stale picker / export / post-session card floating over the
-  // new surface. Idempotent 鈥?`.close()` is a no-op when the modal is already
+  // new surface. Idempotent �?`.close()` is a no-op when the modal is already
   // hidden. Popovers (instrument menu, customize) close themselves on the
   // outside click that triggered the transition.
   private closeTransientOverlays(): void {
@@ -1154,6 +1174,7 @@ export class App {
   }
 
   primeInteractiveAudio(): void {
+    this.assertActionReady('primeInteractiveAudio')
     if (this.audioPrimed) return
     this.audioPrimed = true
     this.clock.prime()
@@ -1167,6 +1188,7 @@ export class App {
   }
 
   private showLoading(): void {
+    invariant(this.initialized, 'showLoading() called before app runtime booted')
     this.loadingEl = document.createElement('div')
     this.loadingEl.id = 'loading-overlay'
     this.loadingEl.className = loadingStyles.loadingOverlay!
@@ -1176,7 +1198,7 @@ export class App {
         <div class="${loadingStyles.loadingText!}">Loading...</div>
       </div>
     `
-    document.querySelector('#ui-overlay')!.appendChild(this.loadingEl)
+    this.overlay.appendChild(this.loadingEl)
   }
 
   private hideLoading(): void {
@@ -1193,6 +1215,9 @@ export class App {
   }
 
   dispose(): void {
+    assertOnce(this.disposed, 'App runtime dispose() cannot run more than once')
+    invariant(this.initialized, 'App runtime dispose() called before boot completed')
+    this.disposed = true
     for (const unsub of this.unsubs) unsub()
     this.unsubs = []
     this.releaseAllLiveNotes()
@@ -1217,41 +1242,3 @@ export class App {
     this.synth.dispose()
   }
 }
-
-// User-preference persistence. Each entry exposes load()/save() backed by
-// localStorage. Defined here (not in persistence.ts) because the defaults
-// depend on runtime values 鈥?current theme list, instrument list, etc.
-const themeIndexStore = indexPersisted(
-  'midee.themeIndex',
-  Math.max(
-    0,
-    THEMES.findIndex((t) => t.name === 'Sunset'),
-  ),
-  THEMES.length,
-)
-// New visitors default to Upright (1.2 MB of self-hosted samples) so first-load
-// is fast. Returning users keep whatever they had, including Salamander Grand.
-const instrumentIndexStore = indexPersisted(
-  'midee.instrumentIndex',
-  Math.max(
-    0,
-    INSTRUMENTS.findIndex((i) => i.id === 'upright'),
-  ),
-  INSTRUMENTS.length,
-)
-const particleIndexStore = indexPersisted(
-  'midee.particleIndex',
-  Math.max(
-    0,
-    PARTICLE_STYLES.findIndex((s) => s.id === 'embers'),
-  ),
-  PARTICLE_STYLES.length,
-)
-const metronomeBpmStore = numberPersisted('midee.metronomeBpm', 120, 40, 240)
-// Chord readout defaults *on*: it's the headline live-mode cue. The
-// boolean store treats "no preference" as the fallback (true), and only
-// an explicit "false" turns it off.
-const chordOverlayStore = booleanPersisted('midee.chordOverlay', true)
-const pitchLabelsStore = booleanPersisted('midee.pitchLabels', false)
-const keyboardModeStore = booleanPersisted('midee.keyboardMode61', false)
-const skipHomeIntroStore = booleanPersisted(SKIP_HOME_INTRO_STORAGE_KEY, false)

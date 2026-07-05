@@ -1,9 +1,9 @@
 import { batch } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
+import { watch } from '@/stores/app/watch'
 import type { BusNoteEvent } from '../../../core/input/InputBus'
 import type { MidiFile } from '../../../core/midi/types'
 import type { AppServices } from '../../../core/services'
-import { watch } from '../../../store/watch'
 import type { LearnState } from '../../core/LearnState'
 import {
   applyHeldTickBonus,

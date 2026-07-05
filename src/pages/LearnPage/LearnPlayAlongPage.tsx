@@ -1,7 +1,7 @@
 import { createMemo, createResource, onCleanup, onMount, Show } from 'solid-js'
-import { t } from '../../i18n'
 import { playAlongMeta } from '@/features/learn/exercises/play-along/meta'
-import { useApp } from '../../store/AppCtx'
+import { useApp } from '@/stores/app/AppCtx'
+import { t } from '../../i18n'
 import { icons } from '../../ui/icons'
 import { RecentMidiList } from '../../ui/RecentMidiList'
 import { LearnLayout, learnLayoutStyles } from './LearnLayout'
@@ -37,11 +37,12 @@ export function LearnPlayAlongPage() {
       >
         <Show when={showEmptyState()}>
           <div class={styles.learnPlayalongEmptyState}>
-            <section
+            {/* biome-ignore lint/a11y/useSemanticElements: the card keeps nested action buttons, so a semantic <button> wrapper would be invalid here */}
+            <div
               class={styles.learnPlayalongCard}
               data-category={playAlongMeta.category}
               role="button"
-              tabindex={0}
+              tabIndex={0}
               onClick={activateCard}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return
@@ -112,7 +113,7 @@ export function LearnPlayAlongPage() {
                   )}
                 </Show>
               </div>
-            </section>
+            </div>
             <RecentMidiList
               title={t('learn.hub.library')}
               eyebrow={null}

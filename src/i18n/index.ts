@@ -15,7 +15,7 @@
 //     never break the UI, they just show the key).
 
 import { batch, createSignal } from 'solid-js'
-import { createEventSignal } from '../store/eventSignal'
+import { createEventSignal } from '@/stores/app/eventSignal'
 import { en, type MessageKey, type Messages } from './locales/en'
 
 export type { MessageKey, Messages } from './locales/en'

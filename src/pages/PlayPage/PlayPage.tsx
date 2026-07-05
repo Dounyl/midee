@@ -1,6 +1,6 @@
 import { createEffect, createRenderEffect, onMount, Show } from 'solid-js'
+import { useApp } from '@/stores/app/AppCtx'
 import { t } from '../../i18n'
-import { useApp } from '../../store/AppCtx'
 import { track, trackEvent } from '../../telemetry'
 import { icons } from '../../ui/icons'
 import { RecentMidiList } from '../../ui/RecentMidiList'

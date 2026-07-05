@@ -1,6 +1,6 @@
 import { createEffect, createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js'
+import { watch } from '@/stores/app/watch'
 import { t } from '../../../i18n'
-import { watch } from '../../../store/watch'
 import { FloatingHud } from '../../../ui/FloatingHud'
 import { icons } from '../../../ui/icons'
 import { createMountHandle } from '../../ui/mountComponent'

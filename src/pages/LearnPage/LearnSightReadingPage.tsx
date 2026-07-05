@@ -1,19 +1,21 @@
 import { useNavigate } from '@solidjs/router'
 import { onCleanup, onMount } from 'solid-js'
+import { useAppShell } from '@/app/AppShellContext'
 import { sightReadingMeta } from '@/features/learn/exercises/sight-reading/meta'
+import { useApp } from '@/stores/app/AppCtx'
 import { t } from '../../i18n'
 import { sightReadingDescriptor } from '../../learn/exercises/sight-reading'
-import { useApp } from '../../store/AppCtx'
 import { LearnLayout, learnLayoutStyles } from './LearnLayout'
 import { RoutedExerciseRuntime } from './RoutedExerciseRuntime'
 
 export function LearnSightReadingPage() {
   const { actions, services } = useApp()
+  const { overlay } = useAppShell()
   const navigate = useNavigate()
 
   onMount(() => {
     const abort = new AbortController()
-    const runtime = new RoutedExerciseRuntime(services, sightReadingDescriptor, () =>
+    const runtime = new RoutedExerciseRuntime(services, overlay, sightReadingDescriptor, () =>
       navigate('/learn'),
     )
     void (async () => {
@@ -29,14 +31,12 @@ export function LearnSightReadingPage() {
   })
 
   return (
-    <LearnLayout
-      title={sightReadingMeta.title}
-      blurb={sightReadingMeta.blurb}
-      backToHub
-    >
+    <LearnLayout title={sightReadingMeta.title} blurb={sightReadingMeta.blurb} backToHub>
       <div class={learnLayoutStyles.learnRouteCard}>
         <div class={learnLayoutStyles.learnRouteCardHint}>{t('learn.hub.recommended')}</div>
-        <p class={learnLayoutStyles.learnRoutePageBlurb}>{t('learn.exercise.sightReading.blurb')}</p>
+        <p class={learnLayoutStyles.learnRoutePageBlurb}>
+          {t('learn.exercise.sightReading.blurb')}
+        </p>
       </div>
     </LearnLayout>
   )

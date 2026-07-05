@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { watch } from '../../store/watch'
+import { watch } from '@/stores/app/watch'
 import { createLearnProgressStore } from './progress'
 import type { ExerciseResult } from './Result'
 

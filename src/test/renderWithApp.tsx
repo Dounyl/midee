@@ -1,10 +1,10 @@
 import { render } from '@solidjs/testing-library'
 import type { JSX } from 'solid-js'
 import { vi } from 'vitest'
+import { AppCtx, type AppCtxValue } from '@/stores/app/AppCtx'
+import { createAppStore } from '@/stores/app/state'
 import type { AppServices } from '../core/services'
 import type { LearnController } from '../modes/LearnController'
-import { AppCtx, type AppCtxValue } from '../store/AppCtx'
-import { createAppStore } from '../store/state'
 
 function fakeRenderer(): AppServices['renderer'] {
   return {

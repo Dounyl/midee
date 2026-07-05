@@ -1,18 +1,20 @@
 import { useNavigate } from '@solidjs/router'
 import { onCleanup, onMount } from 'solid-js'
+import { useAppShell } from '@/app/AppShellContext'
 import { intervalsMeta } from '@/features/learn/exercises/intervals/meta'
+import { useApp } from '@/stores/app/AppCtx'
 import { intervalsDescriptor } from '../../learn/exercises/intervals'
-import { useApp } from '../../store/AppCtx'
 import { LearnLayout } from './LearnLayout'
 import { RoutedExerciseRuntime } from './RoutedExerciseRuntime'
 
 export function LearnIntervalsPage() {
   const { actions, services } = useApp()
+  const { overlay } = useAppShell()
   const navigate = useNavigate()
 
   onMount(() => {
     const abort = new AbortController()
-    const runtime = new RoutedExerciseRuntime(services, intervalsDescriptor, () =>
+    const runtime = new RoutedExerciseRuntime(services, overlay, intervalsDescriptor, () =>
       navigate('/learn'),
     )
     void (async () => {

@@ -1,5 +1,5 @@
 import { getContext, Synth, start as toneStart } from 'tone'
-import { createEventSignal } from '../store/eventSignal'
+import { createEventSignal } from '@/stores/app/eventSignal'
 
 // Simple click-track metronome. Look-ahead scheduling keeps timing tight
 // (< ~5ms jitter) regardless of page repaints or garbage collection.

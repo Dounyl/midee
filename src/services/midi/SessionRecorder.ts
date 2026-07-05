@@ -1,5 +1,5 @@
+import { createEventSignal } from '@/stores/app/eventSignal'
 import type { MasterClock } from '../core/clock/MasterClock'
-import { createEventSignal } from '../store/eventSignal'
 import type { CapturedEvent } from './MidiEncoding'
 
 // Captures every live note played during a session, independently of the

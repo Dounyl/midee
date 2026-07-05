@@ -1,30 +1,34 @@
 import { Route, Router, useLocation, useNavigate } from '@solidjs/router'
-import { createEffect, lazy, onCleanup, Suspense, type ParentProps } from 'solid-js'
-import { HomePage } from '../pages/home/HomePage'
-import { resolveInitialRoutePath } from '../routing/modeRoutes'
-import { bindAppNavigator, syncCurrentRoute } from '../routing/routerBridge'
-import { SKIP_HOME_INTRO_STORAGE_KEY } from '../store/state'
+import { createEffect, lazy, onCleanup, type ParentProps, Suspense } from 'solid-js'
+import { HomePage } from '@/pages/HomePage/HomePage'
+import { resolveInitialRoutePath } from '@/routing/modeRoutes'
+import { bindAppNavigator, syncCurrentRoute } from '@/routing/routerBridge'
+import { SKIP_HOME_INTRO_STORAGE_KEY } from '@/stores/app/state'
 
-const PlayPage = lazy(() => import('../pages/play/PlayPage').then((mod) => ({ default: mod.PlayPage })))
+const PlayPage = lazy(() =>
+  import('@/pages/PlayPage/PlayPage').then((mod) => ({ default: mod.PlayPage })),
+)
 const LearnHubPage = lazy(() =>
-  import('../pages/learn/LearnHubPage').then((mod) => ({ default: mod.LearnHubPage })),
+  import('@/pages/LearnPage/LearnHubPage').then((mod) => ({ default: mod.LearnHubPage })),
 )
 const LearnPlayAlongPage = lazy(() =>
-  import('../pages/learn/LearnPlayAlongPage').then((mod) => ({
+  import('@/pages/LearnPage/LearnPlayAlongPage').then((mod) => ({
     default: mod.LearnPlayAlongPage,
   })),
 )
 const LearnIntervalsPage = lazy(() =>
-  import('../pages/learn/LearnIntervalsPage').then((mod) => ({
+  import('@/pages/LearnPage/LearnIntervalsPage').then((mod) => ({
     default: mod.LearnIntervalsPage,
   })),
 )
 const LearnSightReadingPage = lazy(() =>
-  import('../pages/learn/LearnSightReadingPage').then((mod) => ({
+  import('@/pages/LearnPage/LearnSightReadingPage').then((mod) => ({
     default: mod.LearnSightReadingPage,
   })),
 )
-const LivePage = lazy(() => import('../pages/live/LivePage').then((mod) => ({ default: mod.LivePage })))
+const LivePage = lazy(() =>
+  import('@/pages/LivePage/LivePage').then((mod) => ({ default: mod.LivePage })),
+)
 
 function resolveBootPath(pathname: string): string {
   return resolveInitialRoutePath(

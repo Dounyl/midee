@@ -1,5 +1,5 @@
+import type { AppCtxValue } from '@/stores/app/AppCtx'
 import { fetchSampleMidi, getSample } from '../core/samples'
-import type { AppCtxValue } from '../store/AppCtx'
 
 /** Must match `FIXTURES` in `scripts/bench.mjs`. */
 export const BENCH_FIXTURE_IDS = [

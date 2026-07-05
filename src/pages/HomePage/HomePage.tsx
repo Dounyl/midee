@@ -1,5 +1,5 @@
 import { onMount } from 'solid-js'
-import { useApp } from '../../store/AppCtx'
+import { useApp } from '@/stores/app/AppCtx'
 
 export function HomePage() {
   const { services, actions } = useApp()
