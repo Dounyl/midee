@@ -10,11 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
 
       # Each verification step runs independently so a single failure
       # doesn't mask the others — when a PR breaks both lint and tests we
@@ -31,19 +33,19 @@ jobs:
       #     a merge; their value is the inline annotation on the PR.
 
       - id: typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
         continue-on-error: true
 
       - id: lint
-        run: npm run lint
+        run: pnpm run lint
         continue-on-error: true
 
       - id: test
-        run: npm run test
+        run: pnpm run test
         continue-on-error: true
 
       - id: build
-        run: npm run build
+        run: pnpm run build
         continue-on-error: true
 
       # Hard gate — fail the job if any of the *blocking* checks failed.
@@ -76,17 +78,19 @@ jobs:
   # audio-only export, real-encode/H.264/AAC asserts) or simultaneous multi-key
   # timing (chord) is gated behind E2E_HEAVY, because GitHub's Linux Chromium ships
   # no H.264/AAC encoders. Run the full suite locally/nightly with
-  # `npm run test:e2e:heavy` (macOS Chromium has the codecs). Lean `vite build`
+  # `pnpm run test:e2e:heavy` (macOS Chromium has the codecs). Lean `vite build`
   # webServer + `retries: 1`; this subset is reliable enough to be BLOCKING.
   e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
       # Cache the downloaded Chromium build across runs (keyed on the Playwright
       # version in the lockfile) so we don't re-download ~150MB every run.
       - name: Resolve Playwright version
@@ -100,11 +104,11 @@ jobs:
       # Install the full Chromium build (NOT headless-shell) — the export path
       # needs real WebCodecs encoders. On a cache hit, restore the binary and
       # install only the OS deps; otherwise download the browser + deps.
-      - run: npx playwright install --with-deps chromium
+      - run: pnpm exec playwright install --with-deps chromium
         if: steps.pw-cache.outputs.cache-hit != 'true'
-      - run: npx playwright install-deps chromium
+      - run: pnpm exec playwright install-deps chromium
         if: steps.pw-cache.outputs.cache-hit == 'true'
-      - run: npm run test:e2e
+      - run: pnpm run test:e2e
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
