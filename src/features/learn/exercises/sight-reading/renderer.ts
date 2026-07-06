@@ -7,8 +7,8 @@
 
 import { Container, Graphics, Text } from 'pixi.js'
 import { GlowFilter } from 'pixi-filters'
-import type { RenderContext, RenderLayer } from '../../../renderer/RenderLayer'
-import type { Theme } from '../../../renderer/theme'
+import type { RenderContext, RenderLayer } from '@/services/renderer/RenderLayer'
+import type { Theme } from '@/services/renderer/theme'
 import type { SightReadingEngine } from './engine'
 import { bassStaffStep, isAccidental, staffForNote, staffStep, yFromStep } from './music'
 import type { ClefMode, StreamNote } from './types'

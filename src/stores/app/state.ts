@@ -1,7 +1,7 @@
 import { batch } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
-import type { MidiFile } from '../core/midi/types'
-import { pathToMode, resolveInitialRoutePath } from '../routing/modeRoutes'
+import { pathToMode, resolveInitialRoutePath } from '@/stores/routing/modeRoutes'
+import type { MidiFile } from '@/types/midi/types'
 
 export type AppMode = 'home' | 'play' | 'live' | 'learn'
 export type PlaybackStatus = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting'

@@ -1,4 +1,4 @@
-import type { MidiKeySignature } from '../midi/types'
+import type { MidiKeySignature } from '@/types/midi/types'
 
 // Key-signature-aware jianpu labels used by the piano-roll overlays.
 // The tonic of the current key becomes "1"; accidentals are rendered

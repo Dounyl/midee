@@ -1,7 +1,7 @@
-import type { BusNoteEvent } from '../../core/input/InputBus'
-import type { MidiFile } from '../../core/midi/types'
-import type { ExerciseContext } from './ExerciseContext'
-import type { ExerciseResult } from './Result'
+import type { ExerciseContext } from '@/features/learn/core/ExerciseContext'
+import type { ExerciseResult } from '@/features/learn/core/Result'
+import type { BusNoteEvent } from '@/services/input/InputBus'
+import type { MidiFile } from '@/types/midi/types'
 
 export type ExerciseCategory =
   | 'play-along'

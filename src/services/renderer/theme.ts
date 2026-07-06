@@ -1,4 +1,4 @@
-import type { MidiTrack } from '../core/midi/types'
+import type { MidiTrack } from '@/types/midi/types'
 
 export interface Theme {
   name: string
@@ -23,7 +23,7 @@ export interface Theme {
 
   uiAccentCSS: string
 
-  // Per-track note/particle colors — indexed by MidiTrack.colorIndex
+  // Per-track note/particle colors 鈥?indexed by MidiTrack.colorIndex
   trackColors: number[]
 }
 

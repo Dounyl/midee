@@ -1,13 +1,13 @@
 // Pure math/resolution helpers for the export pipeline.
 //
 // Extracted verbatim from `app.ts` (the orchestrator) so this risk-bearing
-// logic — pitch-range fitting, audio-tail trimming, and dimension/bitrate
-// resolution — can be unit-tested without spinning up the full `App` class or a
+// logic 鈥?pitch-range fitting, audio-tail trimming, and dimension/bitrate
+// resolution 鈥?can be unit-tested without spinning up the full `App` class or a
 // browser AudioContext. `app.ts` re-imports these; there is intentionally no
 // behavioral change.
 
-import type { MidiFile } from '../core/midi/types'
-import type { ExportResolution, ExportSpeed } from '../ui/ExportModal'
+import type { ExportResolution, ExportSpeed } from '@/components/export/ExportModal'
+import type { MidiFile } from '@/types/midi/types'
 
 // Scans the MIDI's notes for min/max pitch and pads outward by a few keys so
 // the visible range feels natural rather than clipping right at the extremes.
@@ -44,7 +44,7 @@ export function speedToPps(speed: ExportSpeed): number {
 
 // Pure sample-count math behind `trimAudioBuffer`. Returns the frame count the
 // trimmed buffer should have for `durationSec`, or `null` when the source is
-// already at/under that length (caller returns the source untouched — no copy).
+// already at/under that length (caller returns the source untouched 鈥?no copy).
 //
 // Floors at 1 frame so a zero/negative duration never yields an empty buffer.
 // Uses `Math.ceil` so the trimmed audio is never SHORTER than the requested
@@ -111,7 +111,7 @@ export function resolveExportDims(
 
 // H.264 bitrate per preset. Lower than YouTube's recommendations but tuned
 // for visual fidelity of a piano-roll (mostly dark background, few gradients)
-// — the encoder doesn't need YouTube's overhead for live-action footage.
+// 鈥?the encoder doesn't need YouTube's overhead for live-action footage.
 export function resolveExportBitrate(preset: ExportResolution): number {
   switch (preset) {
     case '720p':

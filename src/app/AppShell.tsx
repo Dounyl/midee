@@ -1,11 +1,10 @@
 import { createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { AppRoot } from '@/app/AppRoot'
-import { AppShellProvider } from '@/app/AppShellContext'
 import { createApp } from '@/app/createApp'
-import { assertDefined } from '@/app/runtime/assert'
 import type { AppRuntimeInstance } from '@/app/runtime/types'
 import { FpsOverlay } from '@/components/common/FpsOverlay'
 import { SHOW_FPS } from '@/env'
+import { assertDefined } from '@/lib/assert'
 import { AppCtx, type AppCtxValue } from '@/stores/app/AppCtx'
 
 interface AppShellProps {
@@ -56,14 +55,12 @@ export function AppShell(props: AppShellProps) {
         <div id="solid-root">
           <Show when={ctx()}>
             {(value) => (
-              <AppShellProvider handles={shellHandles()}>
-                <AppCtx.Provider value={value()}>
-                  <AppRoot />
-                  <Show when={SHOW_FPS}>
-                    <FpsOverlay />
-                  </Show>
-                </AppCtx.Provider>
-              </AppShellProvider>
+              <AppCtx.Provider value={value()}>
+                <AppRoot />
+                <Show when={SHOW_FPS}>
+                  <FpsOverlay />
+                </Show>
+              </AppCtx.Provider>
             )}
           </Show>
         </div>

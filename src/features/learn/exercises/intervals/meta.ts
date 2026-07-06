@@ -1,5 +1,5 @@
-import { t } from '../../../i18n'
-import type { ExerciseMetadata } from '../../core/Exercise'
+import type { ExerciseMetadata } from '@/features/learn/core/Exercise'
+import { t } from '@/i18n'
 
 export const intervalsMeta = {
   id: 'intervals',

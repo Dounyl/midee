@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseMidiFile } from '../core/midi/parser'
+import { parseMidiFile } from '@/types/midi/parser'
 import { loadFixtureMidi, loadFixtureMidiBytes } from './loadFixtureMidi'
 
 // Sanity: every fixture must parse cleanly so downstream tasks can rely on them.

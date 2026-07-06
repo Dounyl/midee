@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LATE_HIT_WINDOW_SEC } from '../../core/scoring'
+import { LATE_HIT_WINDOW_SEC } from '@/features/learn/core/scoring'
 import { KNOCKOUT_THRESHOLD, SightReadingEngine } from './engine'
 import type { EngineConfig, NoteSource } from './types'
 

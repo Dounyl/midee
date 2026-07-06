@@ -1,51 +1,55 @@
-import { navigateToMode } from '@/routing/routerBridge'
-import type {
-  AppActions,
-  LearnEnterRequest,
-  LearnMountTarget,
-  LibraryOpenRequest,
-  PlayRouteEnterOptions,
-} from '@/stores/app/AppCtx'
+import { AppIntentDispatcher, type AppIntentDriver } from '@/app/runtime/AppIntentDispatcher'
+import type { AppActions } from '@/stores/app/AppCtx'
+import { modeToRouteTarget } from '@/stores/routing/routeTarget'
 
-export interface AppActionDriver {
-  enterHomeRoute(): void
-  enterPlayRoute(options?: PlayRouteEnterOptions): void
-  enterLiveRoute(): void
-  openLibraryRequest(request: LibraryOpenRequest): Promise<void> | void
-  enterLearnRoute(target: LearnMountTarget, signal?: AbortSignal): Promise<void>
-  exitLearnRoute(): void
-  enterLearnRequest(request: LearnEnterRequest): Promise<void> | void
-  resetInteractionState(): void
-  primeInteractiveAudio(): void
-}
-
-export function createAppActions(driver: AppActionDriver): AppActions {
+export function createAppActions(driver: AppIntentDriver): AppActions {
+  const dispatcher = new AppIntentDispatcher(driver)
   return {
     navigation: {
       toMode: (mode) => {
-        navigateToMode(mode)
+        dispatcher.dispatch({
+          kind: 'navigation.navigate',
+          target: modeToRouteTarget(mode),
+        })
       },
     },
     home: {
-      enter: () => driver.enterHomeRoute(),
+      enter: () => dispatcher.dispatch({ kind: 'route.home.enter' }),
     },
     play: {
-      enter: (options) => driver.enterPlayRoute(options),
+      enter: (options) =>
+        dispatcher.dispatch(
+          options ? { kind: 'route.play.enter', options } : { kind: 'route.play.enter' },
+        ),
     },
     live: {
-      enter: () => driver.enterLiveRoute(),
+      enter: () => dispatcher.dispatch({ kind: 'route.live.enter' }),
     },
     library: {
-      open: (request) => driver.openLibraryRequest(request),
+      open: (request) => dispatcher.dispatch({ kind: 'library.open', request }),
     },
     learn: {
-      enterRoute: (target, signal) => driver.enterLearnRoute(target, signal),
-      exitRoute: () => driver.exitLearnRoute(),
-      enter: (request) => driver.enterLearnRequest(request),
+      enterHub: (signal) =>
+        Promise.resolve(
+          dispatcher.dispatch(
+            signal ? { kind: 'learn.hub.enter', signal } : { kind: 'learn.hub.enter' },
+          ),
+        ),
+      exitHub: () => dispatcher.dispatch({ kind: 'learn.hub.exit' }),
+      enterExercise: (route, signal) =>
+        Promise.resolve(
+          dispatcher.dispatch(
+            signal
+              ? { kind: 'learn.exercise.enter', routeId: route, signal }
+              : { kind: 'learn.exercise.enter', routeId: route },
+          ),
+        ),
+      exitExercise: () => dispatcher.dispatch({ kind: 'learn.exercise.exit' }),
+      enter: (request) => dispatcher.dispatch({ kind: 'learn.request', request }),
     },
     session: {
-      resetInteractionState: () => driver.resetInteractionState(),
-      primeInteractiveAudio: () => driver.primeInteractiveAudio(),
+      resetInteractionState: () => dispatcher.dispatch({ kind: 'session.resetInteraction' }),
+      primeInteractiveAudio: () => dispatcher.dispatch({ kind: 'session.primeInteractiveAudio' }),
     },
   }
 }

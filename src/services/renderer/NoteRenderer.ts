@@ -1,11 +1,11 @@
 import { Container, Graphics, Text } from 'pixi.js'
 import { GlowFilter } from 'pixi-filters'
-import type { MidiKeySignature, MidiTrack } from '../core/midi/types'
-import { pitchToJianpuLabel } from '../core/music/jianpu'
+import { pitchToJianpuLabel } from '@/lib/music/jianpu'
+import type { MidiKeySignature, MidiTrack } from '@/types/midi/types'
 import { getTrackColor, type Theme } from './theme'
 import { type Viewport, visibleNoteRange } from './viewport'
 
-// One Graphics object per track — same-color draws are batched together.
+// One Graphics object per track 鈥?same-color draws are batched together.
 // A separate glow container holds only the notes currently being struck,
 // so the expensive GlowFilter only runs over a small subset each frame.
 
@@ -48,7 +48,7 @@ export class NoteRenderer {
     this.container.addChild(this.glowContainer)
   }
 
-  // Call once when tracks are loaded — sets up one Graphics per track
+  // Call once when tracks are loaded 鈥?sets up one Graphics per track
   setTracks(tracks: MidiTrack[]): void {
     // Remove stale graphics
     const incomingIds = new Set(tracks.map((t) => t.id))
@@ -124,7 +124,7 @@ export class NoteRenderer {
         const h = Math.max(noteBottom - noteTop, 3)
         const y = noteTop
 
-        // Velocity → alpha (0.5 minimum so faint notes are still visible)
+        // Velocity 鈫?alpha (0.5 minimum so faint notes are still visible)
         const alpha =
           (0.5 + note.velocity * 0.5) * (practiceInactive ? PRACTICE_INACTIVE_ALPHA_SCALE : 1)
 

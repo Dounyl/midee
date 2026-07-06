@@ -1,5 +1,5 @@
 import type { BenchRuntimeDriver } from '@/app/runtime/types'
-import { fetchSampleMidi, getSample } from '../core/samples'
+import { fetchSampleMidi, getSample } from '@/services/midi/samples'
 
 /** Must match `FIXTURES` in `scripts/bench.mjs`. */
 export const BENCH_FIXTURE_IDS = [

@@ -1,4 +1,4 @@
-import { isBlackKey, MIDI_MAX, MIDI_MIN, type MidiNote } from '../core/midi/types'
+import { isBlackKey, MIDI_MAX, MIDI_MIN, type MidiNote } from '@/types/midi/types'
 
 // The strike line sits directly on the keyboard edge so notes "land" where the
 // keys begin instead of floating relative to the HUD.
@@ -10,7 +10,7 @@ export interface ViewportConfig {
   keyboardHeight: number
   pixelsPerSecond: number
   blackKeyHeightRatio?: number
-  // Visible pitch range — defaults to the full piano (21..108). Narrowing
+  // Visible pitch range 鈥?defaults to the full piano (21..108). Narrowing
   // these bounds makes each key wider and focuses the roll on a piece's
   // actual range (used by the "Fit to piece" export option).
   pitchMin?: number
@@ -49,7 +49,7 @@ export class Viewport {
     return this.cfg.canvasHeight - this.cfg.keyboardHeight
   }
 
-  // Fixed position — aligned to the top edge of the keyboard.
+  // Fixed position 鈥?aligned to the top edge of the keyboard.
   get nowLineY(): number {
     return this.rollHeight - TRAIL_PX
   }
@@ -64,7 +64,7 @@ export class Viewport {
     return Math.max(1, this.rollHeight - TRAIL_PX) / this.cfg.pixelsPerSecond
   }
 
-  // Convert a time offset relative to currentTime → Y pixel.
+  // Convert a time offset relative to currentTime 鈫?Y pixel.
   // Positive delta = future (above now-line, smaller Y), negative = past (below, larger Y).
   timeOffsetToY(deltaSeconds: number): number {
     return this.nowLineY - deltaSeconds * this.cfg.pixelsPerSecond
@@ -146,11 +146,11 @@ export class Viewport {
  * Returns a half-open index range [lo, hi) of the notes in `notes` (sorted by
  * note.time ascending) whose time window overlaps [visStart, visEnd].
  *
- * Upper bound — first note starting strictly after visEnd — is found in O(log N).
- * Lower bound — first note that might still extend into visStart — is found by
+ * Upper bound 鈥?first note starting strictly after visEnd 鈥?is found in O(log N).
+ * Lower bound 鈥?first note that might still extend into visStart 鈥?is found by
  * binary-searching for the first note.time >= visStart, then scanning backward
  * over any long notes that started before visStart but haven't ended yet.  That
- * scan is O(K) where K is the number of overlapping long-held notes (typically 0–3).
+ * scan is O(K) where K is the number of overlapping long-held notes (typically 0鈥?).
  *
  * Total cost: O(log N + K) vs the previous O(N) linear scan.
  */

@@ -1,15 +1,15 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MidiFile, MidiNote, MidiTrack } from '../core/midi/types'
+import type { MidiFile, MidiNote, MidiTrack } from '@/types/midi/types'
 import { fakeAudioContext } from '../test/fakeAudioContext'
 
-// ── Tone + instruments module mocks ────────────────────────────────────────
+// 鈹€鈹€ Tone + instruments module mocks 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 //
 // SynthEngine reaches into Tone for the audio clock (`getContext`), the
 // transport singleton (`getTransport`), `immediate()`, the `Part` scheduler,
 // `gainToDb`/`getDestination`, and `start()`. It also pulls real instruments
 // (which import Tone's synth classes) via `./instruments`. Both import chains
 // fail to resolve under vitest's node ESM loader, so we mock them with fakes
-// that RECORD calls — letting us assert scheduling order, the bpm
+// that RECORD calls 鈥?letting us assert scheduling order, the bpm
 // double-scaling sequence, and the latest-wins race guard deterministically.
 //
 // `vi.mock` is hoisted above imports, so all shared state lives in a hoisted
@@ -48,7 +48,7 @@ const holder = vi.hoisted(() => {
     }),
   }
 
-  // Resolver for the awaited `toneStart()` inside play() — lets tests open a
+  // Resolver for the awaited `toneStart()` inside play() 鈥?lets tests open a
   // window between play() being called and its async tail running so we can
   // inject a pause()/seek() to exercise the race guard.
   let startResolve: (() => void) | null = null
@@ -143,7 +143,7 @@ vi.mock('./instruments', async () => {
 // Import AFTER the mocks are registered.
 import { SynthEngine } from './SynthEngine'
 
-// ── Fixtures ────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Fixtures 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function note(pitch: number, time: number, duration = 0.5, velocity = 0.8): MidiNote {
   return { pitch, time, duration, velocity }
@@ -175,7 +175,7 @@ async function loadedEngine(midi: MidiFile): Promise<SynthEngine> {
   return engine
 }
 
-// ── Setup / teardown ─────────────────────────────────────────────────────────
+// 鈹€鈹€ Setup / teardown 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 // jsdom has no `AudioBuffer`, but `load()` does `source instanceof AudioBuffer`.
 // A plain class stub is enough: MidiFile fixtures are never instances of it, so
@@ -205,9 +205,9 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-// ── 1. bpm double-scaling sequence ───────────────────────────────────────────
+// 鈹€鈹€ 1. bpm double-scaling sequence 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('SynthEngine.play — bpm double-scaling sequence', () => {
+describe('SynthEngine.play 鈥?bpm double-scaling sequence', () => {
   it('schedules the Part at nominal bpm, then scales bpm AFTER part.start', async () => {
     const midi = makeMidi([track('a', [note(60, 0)])], 100)
     const engine = await loadedEngine(midi)
@@ -221,7 +221,7 @@ describe('SynthEngine.play — bpm double-scaling sequence', () => {
     // The order that the long source comment warns must not be reordered:
     //   1. bpm set to NOMINAL (so Tone encodes ticks at the original tempo)
     //   2. part.start (events encoded at nominal-tick positions)
-    //   3. bpm scaled to nominal*speed (transport now ticks `speed×` faster)
+    //   3. bpm scaled to nominal*speed (transport now ticks `speed脳` faster)
     //   4. transport.start
     const seq = holder.order.filter(
       (e) => e === 'part.start' || e === 'transport.start' || e.startsWith('bpm='),
@@ -263,7 +263,7 @@ describe('SynthEngine.play — bpm double-scaling sequence', () => {
     await engine.play(0)
 
     // At speed 1 both writes are bpm=140, but the sequence must still be
-    // nominal-write → part.start → scaled-write. Asserting only the final value
+    // nominal-write 鈫?part.start 鈫?scaled-write. Asserting only the final value
     // would pass even if SynthEngine skipped the nominal write entirely, so we
     // pin the full bpm sub-sequence and that part.start sits between the writes.
     const bpmWrites = holder.order.filter((e) => e.startsWith('bpm='))
@@ -277,9 +277,9 @@ describe('SynthEngine.play — bpm double-scaling sequence', () => {
   })
 })
 
-// ── 2. playGeneration latest-wins race ───────────────────────────────────────
+// 鈹€鈹€ 2. playGeneration latest-wins race 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('SynthEngine.play — latest-wins race guard', () => {
+describe('SynthEngine.play 鈥?latest-wins race guard', () => {
   it('aborts the stale play() when pause() runs during the toneStart() await', async () => {
     const midi = makeMidi([track('a', [note(60, 0)])], 120)
     const engine = await loadedEngine(midi)
@@ -347,9 +347,9 @@ describe('SynthEngine.play — latest-wins race guard', () => {
   })
 })
 
-// ── 3. binary-search note slicing at fromTime boundary ───────────────────────
+// 鈹€鈹€ 3. binary-search note slicing at fromTime boundary 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('SynthEngine.play — binary-search slicing at fromTime', () => {
+describe('SynthEngine.play 鈥?binary-search slicing at fromTime', () => {
   it('includes notes at exactly fromTime (boundary not dropped)', async () => {
     const midi = makeMidi([track('a', [note(60, 0), note(62, 1), note(64, 2)])], 120)
     const engine = await loadedEngine(midi)
@@ -374,7 +374,7 @@ describe('SynthEngine.play — binary-search slicing at fromTime', () => {
 
     const part = holder.parts[0]!
     const offsets = part.events.map(([t]) => t)
-    // 0.0 and 0.5 dropped; 1.0 → 0, 1.5 → 0.5
+    // 0.0 and 0.5 dropped; 1.0 鈫?0, 1.5 鈫?0.5
     expect(offsets).toEqual([0, 0.5])
   })
 
@@ -385,7 +385,7 @@ describe('SynthEngine.play — binary-search slicing at fromTime', () => {
     await engine.play(1)
 
     const part = holder.parts[0]!
-    // Three distinct notes all at t=1 — each appears exactly once, none twice.
+    // Three distinct notes all at t=1 鈥?each appears exactly once, none twice.
     expect(part.events.length).toBe(3)
   })
 
@@ -430,9 +430,9 @@ describe('SynthEngine.play — binary-search slicing at fromTime', () => {
   })
 })
 
-// ── 4. paused-resume fast path (does not rebuild the Part) ───────────────────
+// 鈹€鈹€ 4. paused-resume fast path (does not rebuild the Part) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('SynthEngine.play — paused resume fast path', () => {
+describe('SynthEngine.play 鈥?paused resume fast path', () => {
   it('resumes via transport.start without rebuilding the Part when fromTime matches', async () => {
     const midi = makeMidi([track('a', [note(60, 0)])], 120)
     const engine = await loadedEngine(midi)
@@ -458,7 +458,7 @@ describe('SynthEngine.play — paused resume fast path', () => {
     await engine.play(0)
     holder.transport.state = 'paused'
 
-    await engine.play(5) // far from scheduledFromTime=0 → full rebuild
+    await engine.play(5) // far from scheduledFromTime=0 鈫?full rebuild
 
     expect(holder.parts.length).toBe(2)
   })
@@ -484,9 +484,9 @@ describe('SynthEngine.play — paused resume fast path', () => {
   })
 })
 
-// ── 5. setSpeed / setVolume basic contracts ──────────────────────────────────
+// 鈹€鈹€ 5. setSpeed / setVolume basic contracts 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('SynthEngine — setSpeed / setVolume', () => {
+describe('SynthEngine 鈥?setSpeed / setVolume', () => {
   it('setSpeed scales transport bpm by midi.bpm immediately', async () => {
     const midi = makeMidi([track('a', [note(60, 0)])], 100)
     const engine = await loadedEngine(midi)
@@ -510,9 +510,9 @@ describe('SynthEngine — setSpeed / setVolume', () => {
   })
 })
 
-// ── 6. play() guards ─────────────────────────────────────────────────────────
+// 鈹€鈹€ 6. play() guards 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('SynthEngine.play — guards', () => {
+describe('SynthEngine.play 鈥?guards', () => {
   it('is a no-op when no midi is loaded', async () => {
     const engine = new SynthEngine()
     await engine.play(0)
@@ -528,7 +528,7 @@ describe('SynthEngine.play — guards', () => {
     const first = holder.parts[0]!
 
     holder.transport.state = 'started'
-    await engine.play(5) // different fromTime → rebuild
+    await engine.play(5) // different fromTime 鈫?rebuild
 
     expect(first.dispose).toHaveBeenCalled()
     expect(holder.parts.length).toBe(2)

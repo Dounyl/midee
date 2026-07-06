@@ -8,7 +8,7 @@ import {
   start as toneStart,
 } from 'tone'
 import { createEventSignal } from '@/stores/app/eventSignal'
-import type { MidiFile } from '../core/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 import type { AudioEngine } from './AudioEngine'
 import {
   createInstrument,
@@ -31,19 +31,19 @@ export class SynthEngine implements AudioEngine {
   private instruments = new Map<InstrumentId, InstrumentRuntime>()
   private loadingPromises = new Map<InstrumentId, Promise<InstrumentRuntime>>()
   // Default voice is Upright (1.2 MB of our own samples) instead of the 30 MB
-  // Salamander Grand set that @tonejs/piano pulls from an external CDN —
-  // 25× lighter first-load, bulletproof against upstream CDN outages, still
+  // Salamander Grand set that @tonejs/piano pulls from an external CDN 鈥?
+  // 25脳 lighter first-load, bulletproof against upstream CDN outages, still
   // musically pleasing. Users who specifically want the concert grand are
   // one tap away in the instrument dropdown.
   private currentId: InstrumentId = 'upright'
   // Emits the currently-active instrument id while its samples/patch are
-  // loading, null otherwise. Only tracks the *current* instrument — background
+  // loading, null otherwise. Only tracks the *current* instrument 鈥?background
   // preloads of other voices don't flicker the signal.
   readonly loadingInstrument = createEventSignal<InstrumentId | null>(null)
   private midi: MidiFile | null = null
-  // Tone.Part holding every note as a single transport entry. Replaces N×2
-  // transport.schedule calls on play/seek — O(N) work to build, but building a
-  // Part is ~10× faster than N individual schedules on dense MIDIs (tested
+  // Tone.Part holding every note as a single transport entry. Replaces N脳2
+  // transport.schedule calls on play/seek 鈥?O(N) work to build, but building a
+  // Part is ~10脳 faster than N individual schedules on dense MIDIs (tested
   // 10k+ notes), and seek reuses the same Part via `part.start(0, offset)`.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private scheduledPart: Part<[number, NoteEvent]> | null = null
@@ -54,12 +54,12 @@ export class SynthEngine implements AudioEngine {
   // Latest-wins guard for `play()`. `play()` is async (awaits readyPromise +
   // Tone.start) and can be racing against a subsequent `pause()`. Without
   // this, calling pause during the async window lets the next transport.start
-  // at the tail of play() fire after we thought we paused — audio leaks.
+  // at the tail of play() fire after we thought we paused 鈥?audio leaks.
   // Each play() call increments; if a newer call or a pause() ran, the older
   // play() bails before hitting transport.start.
   private playGeneration = 0
   // Tracks the user has muted via the Tracks panel. Checked at trigger time
-  // inside the scheduled Part — new notes from a disabled track are skipped,
+  // inside the scheduled Part 鈥?new notes from a disabled track are skipped,
   // notes already in flight finish their natural decay (we don't track per-track
   // voice handles, and stealing them mid-note would click).
   private disabledTrackIds = new Set<string>()
@@ -91,7 +91,7 @@ export class SynthEngine implements AudioEngine {
     return this.disabledTrackIds
   }
 
-  // Kick off piano sample download in the background — safe to call at app
+  // Kick off piano sample download in the background 鈥?safe to call at app
   // boot. AudioContext still requires a user gesture before `play()`.
   preloadDefault(): void {
     void this.ensureInstrument(this.currentId).catch(() => undefined)
@@ -118,7 +118,7 @@ export class SynthEngine implements AudioEngine {
     if (existing) return existing
 
     // Reflect loading in the signal only when we're loading the *current*
-    // instrument — preloads of others happen silently in the background.
+    // instrument 鈥?preloads of others happen silently in the background.
     if (id === this.currentId) this.loadingInstrument.set(id)
 
     const clearIfCurrent = (): void => {
@@ -146,7 +146,7 @@ export class SynthEngine implements AudioEngine {
     const gen = ++this.playGeneration
     await this.readyPromise
     await toneStart()
-    // A pause() or a newer play() happened during the awaits — abandon this
+    // A pause() or a newer play() happened during the awaits 鈥?abandon this
     // invocation so we don't resurrect transport audio against user intent.
     if (gen !== this.playGeneration) return
 
@@ -161,19 +161,19 @@ export class SynthEngine implements AudioEngine {
     transport.position = 0
     this.scheduledFromTime = fromTime
 
-    // Tone converts seconds→ticks using the *current* bpm at schedule time.
+    // Tone converts seconds鈫抰icks using the *current* bpm at schedule time.
     // We schedule at the nominal tempo so every event's tick position encodes
     // the note's original musical moment, then reapply the speed-scaled bpm
-    // right before start(). The transport then ticks `speed ×` faster and
-    // events fire at `t / speed` wall time — matching MasterClock.currentTime,
-    // which advances at `speed × wall`. If we schedule while bpm is already
-    // `midi.bpm × speed`, the two scalings cancel and audio plays at 1× while
-    // the visual clock is at `speed ×` → desync on fresh play / seek.
+    // right before start(). The transport then ticks `speed 脳` faster and
+    // events fire at `t / speed` wall time 鈥?matching MasterClock.currentTime,
+    // which advances at `speed 脳 wall`. If we schedule while bpm is already
+    // `midi.bpm 脳 speed`, the two scalings cancel and audio plays at 1脳 while
+    // the visual clock is at `speed 脳` 鈫?desync on fresh play / seek.
     const nominalBpm = this.midi.bpm
     transport.bpm.value = nominalBpm
 
     // Build (or rebuild) a single Tone.Part containing every note from fromTime
-    // onward. One transport entry instead of 2×N — on a 10k-note MIDI, seek
+    // onward. One transport entry instead of 2脳N 鈥?on a 10k-note MIDI, seek
     // goes from "visible stall" to "imperceptible".
     //
     // Notes are time-sorted (parser invariant) so binary-search skips past
@@ -229,7 +229,7 @@ export class SynthEngine implements AudioEngine {
 
   seek(time: number): void {
     const wasPlaying = getTransport().state === 'started'
-    // Same latest-wins guard — a concurrent play() racing with a seek would
+    // Same latest-wins guard 鈥?a concurrent play() racing with a seek would
     // otherwise restart transport at a stale fromTime.
     this.playGeneration++
     getTransport().stop()
@@ -247,7 +247,7 @@ export class SynthEngine implements AudioEngine {
     getTransport().bpm.value = (this.midi?.bpm ?? 120) * s
   }
 
-  // ── Live MIDI keyboard input ───────────────────────────────────────────
+  // 鈹€鈹€ Live MIDI keyboard input 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
   primeLiveInput(): void {
     if (this.liveWarmupStarted) return
@@ -259,7 +259,7 @@ export class SynthEngine implements AudioEngine {
   liveNoteOn(pitch: number, velocity: number): void {
     this.primeLiveInput()
     const inst = this.instruments.get(this.currentId)
-    if (!inst) return // still loading — first notes may drop, acceptable tradeoff
+    if (!inst) return // still loading 鈥?first notes may drop, acceptable tradeoff
     inst.triggerAttack(midiToNoteName(pitch), immediate(), velocity)
   }
 
@@ -294,7 +294,7 @@ export class SynthEngine implements AudioEngine {
     return getContext().currentTime
   }
 
-  // ── Scheduled playback (internal) ──────────────────────────────────────
+  // 鈹€鈹€ Scheduled playback (internal) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
   private clearScheduled(): void {
     if (this.scheduledPart) {

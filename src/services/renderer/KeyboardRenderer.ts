@@ -1,23 +1,23 @@
 import type { Application } from 'pixi.js'
 import { Container, Graphics, RenderTexture, Sprite, Text, Texture, TilingSprite } from 'pixi.js'
-import { getKeyboardHeightProfile, type KeyboardMode } from '../core/keyboardLayout'
-import { isBlackKey, MIDI_MAX, MIDI_MIN, type MidiKeySignature } from '../core/midi/types'
-import { pitchToKeyboardLabels } from '../core/music/jianpu'
+import { getKeyboardHeightProfile, type KeyboardMode } from '@/lib/core/keyboardLayout'
+import { pitchToKeyboardLabels } from '@/lib/music/jianpu'
+import { isBlackKey, MIDI_MAX, MIDI_MIN, type MidiKeySignature } from '@/types/midi/types'
 import type { Theme } from './theme'
 import type { Viewport } from './viewport'
 
-// The static keyboard base is split into two RenderTextures — a white-keys
-// sprite and a black-keys sprite — with the active-key overlay sandwiched
+// The static keyboard base is split into two RenderTextures 鈥?a white-keys
+// sprite and a black-keys sprite 鈥?with the active-key overlay sandwiched
 // between them. This lets a pressed white key's color be naturally clipped
 // by any black keys sitting on top: the overlay draws on top of the white
 // sprite, and the black sprite renders on top of the overlay, covering the
 // occluded portions for free via z-order. No masks, no polygon math.
 //
-// Z-order (bottom → top):
-//   1. whiteSprite       — bg + whites + depth + ivory wash + noise
-//   2. whiteActiveLayer  — per-frame: tinted overlay for pressed white keys
-//   3. blackSprite       — blacks + bevels + rails
-//   4. blackActiveLayer  — per-frame: tinted overlay for pressed black keys
+// Z-order (bottom 鈫?top):
+//   1. whiteSprite       鈥?bg + whites + depth + ivory wash + noise
+//   2. whiteActiveLayer  鈥?per-frame: tinted overlay for pressed white keys
+//   3. blackSprite       鈥?blacks + bevels + rails
+//   4. blackActiveLayer  鈥?per-frame: tinted overlay for pressed black keys
 
 // Convert a CSS-style hex color (`#abcdef` / `#abc`) into a Pixi 0xRRGGBB
 // number. Returns null on parse failure so callers can fall back.
@@ -35,7 +35,7 @@ function parseHexColor(s: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-// One 96×96 greyscale noise tile is enough — it tiles imperceptibly
+// One 96脳96 greyscale noise tile is enough 鈥?it tiles imperceptibly
 // across 88 keys. Cached at module scope so theme rebuilds don't
 // re-roll the RNG (would cause visible shimmer across theme cycles).
 let ivoryNoiseCanvas: HTMLCanvasElement | null = null
@@ -49,7 +49,7 @@ function getIvoryNoiseCanvas(): HTMLCanvasElement {
   const img = ctx.createImageData(size, size)
   for (let i = 0; i < img.data.length; i += 4) {
     // Bias brightness high so the grain reads as "ivory", not "static".
-    // Alpha is ~8% — subtle but visible on close look.
+    // Alpha is ~8% 鈥?subtle but visible on close look.
     const v = 200 + Math.random() * 55
     img.data[i] = v
     img.data[i + 1] = v
@@ -74,7 +74,7 @@ export class KeyboardRenderer {
   private keySignature: MidiKeySignature | null = null
   private labelsVisible = true
 
-  // Per-frame active overlays — one per key colour (white vs black) so we
+  // Per-frame active overlays 鈥?one per key colour (white vs black) so we
   // can insert the black sprite between them for automatic clipping.
   private whiteActiveLayer: Graphics
   private blackActiveLayer: Graphics
@@ -92,14 +92,14 @@ export class KeyboardRenderer {
   private practiceAccepted: ReadonlySet<number> | null = null
   private practiceTheme: Theme | null = null
 
-  // Snapshot of the last-drawn pitch→color map as a single signature string.
+  // Snapshot of the last-drawn pitch鈫抍olor map as a single signature string.
   // If nothing changed we skip the clear + redraw entirely (common during
   // sustained chords and idle frames).
   private lastSignature = ''
   private activeLayerDirty = true
   // Signature of the last baked-texture inputs (size + key positions + theme
   // colors). Used to short-circuit build() when nothing that affects the
-  // baked RenderTextures has actually changed — skips a texture destroy/
+  // baked RenderTextures has actually changed 鈥?skips a texture destroy/
   // recreate that would otherwise stall the GPU on every theme re-apply.
   private lastBuildSignature = ''
 
@@ -150,7 +150,7 @@ export class KeyboardRenderer {
       `${this.theme.whiteKey}.${this.theme.blackKey}.${this.theme.keyBorder}|y=${yOffset}|ks=${this.keySignatureCacheKey()}|labels=${this.labelsVisible ? 1 : 0}`
     if (sig === this.lastBuildSignature && this.whiteSprite && this.blackSprite) {
       // Positions may still need to be re-cached if the caller swapped the
-      // Viewport instance — but sig encodes every positional input, so
+      // Viewport instance 鈥?but sig encodes every positional input, so
       // referential equality is fine here too.
       if (!this.lastPositions) this.lastPositions = new Map(positions)
       return
@@ -171,7 +171,7 @@ export class KeyboardRenderer {
       child.destroy()
     })
 
-    // ─── White bake ──────────────────────────────────────────────────
+    // 鈹€鈹€鈹€ White bake 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     // bg + white keys + depth cues + ivory wash + ivory grain noise.
     const whiteBake = new Container()
 
@@ -196,19 +196,19 @@ export class KeyboardRenderer {
       // Body
       whiteLayer.roundRect(x, y, w, h, wRadius).fill({ color: this.theme.whiteKey })
 
-      // Ivory warmth wash — pure white keys read sterile; real ivory has a
+      // Ivory warmth wash 鈥?pure white keys read sterile; real ivory has a
       // cream undertone. A ~4% cream overlay shifts the whole material
       // toward "instrument" without tinting any one area obviously.
       whiteLayer.roundRect(x, y, w, h, wRadius).fill({ color: 0xfff1d8, alpha: 0.05 })
 
-      // Top highlight — 4px, stacked rects simulate a soft gradient. Inset
+      // Top highlight 鈥?4px, stacked rects simulate a soft gradient. Inset
       // by the corner radius so the highlight respects the key's rounded
       // corners and doesn't bleed into the seam between keys.
       whiteLayer.rect(x + wRadius, y, w - wRadius * 2, 1).fill({ color: 0xffffff, alpha: 0.35 })
       whiteLayer.rect(x + 1, y + 1, w - 2, 2).fill({ color: 0xffffff, alpha: 0.18 })
       whiteLayer.rect(x + 1, y + 3, w - 2, 2).fill({ color: 0xffffff, alpha: 0.08 })
 
-      // Bottom shadow — 5px, three stacked rects fading into a strong 1px
+      // Bottom shadow 鈥?5px, three stacked rects fading into a strong 1px
       // edge line. Gives each key the "slightly dipped at the player's
       // edge" read you'd see on a real piano under stage lighting.
       whiteLayer.rect(x + 1, y + h - 5, w - 2, 3).fill({ color: 0x000000, alpha: 0.07 })
@@ -219,7 +219,7 @@ export class KeyboardRenderer {
     }
     whiteBake.addChild(whiteLayer)
 
-    // Ivory grain — tiled from a 96×96 noise canvas. Only appears on white
+    // Ivory grain 鈥?tiled from a 96脳96 noise canvas. Only appears on white
     // keys; the dark inter-key seams absorb it to invisibility against
     // the near-black bg.
     const noiseTex = Texture.from(getIvoryNoiseCanvas())
@@ -235,7 +235,7 @@ export class KeyboardRenderer {
     whiteBake.destroy({ children: true })
     noiseTex.destroy(true)
 
-    // ─── Black bake ──────────────────────────────────────────────────
+    // 鈹€鈹€鈹€ Black bake 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     // Black keys + bevels + rails. Transparent background so the active
     // overlay below can show through inter-black-key gaps.
     const blackBake = new Container()
@@ -254,18 +254,18 @@ export class KeyboardRenderer {
       // Body
       blackLayer.roundRect(x, y, w, h, bRadius).fill({ color: this.theme.blackKey })
 
-      // Top bevel — hints at the rounded physical top of a real black key.
+      // Top bevel 鈥?hints at the rounded physical top of a real black key.
       blackLayer.rect(x + bRadius, y, w - bRadius * 2, 1).fill({ color: 0xffffff, alpha: 0.28 })
       blackLayer.rect(x + 1, y + 1, w - 2, 2).fill({ color: 0xffffff, alpha: 0.12 })
 
-      // Bottom lip — where the finger rests on a physical piano. A thin
+      // Bottom lip 鈥?where the finger rests on a physical piano. A thin
       // bright edge catches light and sells the 3D form cheaply.
       blackLayer.rect(x + 1, y + h - 3, w - 2, 2).fill({ color: 0xffffff, alpha: 0.1 })
       blackLayer
         .rect(x + bRadius, y + h - 1, w - bRadius * 2, 1)
         .fill({ color: 0xffffff, alpha: 0.22 })
 
-      // Side-edge rails — reflective highlights along the left and right
+      // Side-edge rails 鈥?reflective highlights along the left and right
       // edges, running the full length. Directional asymmetry (left
       // brighter than right) sells a light source from the upper-left.
       const railY = y + bRadius
@@ -283,7 +283,7 @@ export class KeyboardRenderer {
     this.app.renderer.render({ container: blackBake, target: this.blackTexture })
     blackBake.destroy({ children: true })
 
-    // ─── Assemble the z-stack ────────────────────────────────────────
+    // 鈹€鈹€鈹€ Assemble the z-stack 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     // After the destroys above, the container holds only the four overlay
     // layers. Reinsert the sprites
     // at the correct indices so the final order is:
@@ -304,12 +304,12 @@ export class KeyboardRenderer {
     this.blackActiveLayer.y = yOffset
     this.keyLabelLayer.y = yOffset
     this.buildKeyLabels(positions, keyboardHeight)
-    // Force a redraw of the hint layer on the next setPracticeHints call —
+    // Force a redraw of the hint layer on the next setPracticeHints call 鈥?
     // the geometry depends on the freshly-built viewport.
     this.practiceSignature = ''
   }
 
-  // Called every frame — draws only the keys that are currently pressed, each
+  // Called every frame 鈥?draws only the keys that are currently pressed, each
   // tinted with the color of the track/source it came from. Routes white and
   // black presses to separate Graphics layers so the black static sprite can
   // clip the white overlay by sitting on top of it in the z-stack.
@@ -420,7 +420,7 @@ export class KeyboardRenderer {
         layer.fill({ color: tint, alpha })
       }
 
-      // Body — exact static-key shape so the active state lives inside the key's border.
+      // Body 鈥?exact static-key shape so the active state lives inside the key's border.
       layer.roundRect(x, y, w, h, radius)
       layer.fill({ color: tint, alpha: isBlack ? 0.92 : 0.78 })
     }
@@ -428,7 +428,7 @@ export class KeyboardRenderer {
 
   updateTheme(theme: Theme): void {
     this.theme = theme
-    // Colors baked into the active-key fill changed — force a redraw.
+    // Colors baked into the active-key fill changed 鈥?force a redraw.
     this.activeLayerDirty = true
     // Practice hint colours follow the active theme accent.
     this.practiceTheme = theme
@@ -482,7 +482,7 @@ export class KeyboardRenderer {
     if (wantTicker && !this.practiceTickerHandler) {
       this.practiceTickerHandler = (ticker) => {
         // ticker.deltaTime is Pixi units (~1 per 16.6ms). Scale to a slow
-        // pulse — about one full breath every 1.4 seconds.
+        // pulse 鈥?about one full breath every 1.4 seconds.
         this.practicePulsePhase += ticker.deltaTime * 0.075
         this.drawPracticeHints()
       }
@@ -598,7 +598,7 @@ export class KeyboardRenderer {
   private lastPositions: Map<number, { x: number; width: number }> | null = null
 
   // Cheap change-detection: concatenate sorted pitch:color pairs. The map is
-  // small (≤ ~10 active pitches at once) so this is essentially free and
+  // small (鈮?~10 active pitches at once) so this is essentially free and
   // catches both pitch-change and color-change in one check.
   private signatureFor(activeByPitch: Map<number, number>): string {
     if (activeByPitch.size === 0) return ''

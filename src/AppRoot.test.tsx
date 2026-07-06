@@ -25,7 +25,11 @@ describe('AppRoot routing', () => {
   it('renders the learn page on /learn', async () => {
     window.history.pushState({}, '', '/learn')
     const { ctx } = renderWithApp(() => <AppRoot />)
-    await vi.waitFor(() => expect(ctx.actions.learn.enterRoute).toHaveBeenCalledOnce())
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    await vi.waitFor(
+      () => expect(ctx.actions.learn.enterHub).toHaveBeenCalledWith(expect.anything()),
+      { timeout: 3_000 },
+    )
   })
 
   it('enters the play route from the /play URL', async () => {

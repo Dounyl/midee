@@ -1,4 +1,4 @@
-import type { MidiFile, MidiNote, MidiTrack } from '../core/midi/types'
+import type { MidiFile, MidiNote, MidiTrack } from '@/types/midi/types'
 import type { CapturedEvent } from './MidiEncoding'
 
 // Matches the default indigo from the parser's track palette so a session

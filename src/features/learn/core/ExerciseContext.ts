@@ -1,4 +1,4 @@
-import type { AppServices } from '../../core/services'
+import type { AppServices } from '@/types/app/AppServices'
 import type { LearnOverlay } from '../overlays/LearnOverlay'
 import type { ExerciseDescriptor } from './Exercise'
 import type { LearnState } from './LearnState'

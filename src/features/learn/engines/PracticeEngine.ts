@@ -1,6 +1,6 @@
 import { createEventSignal } from '@/stores/app/eventSignal'
-import type { MasterClock } from '../../core/clock/MasterClock'
-import type { MidiFile } from '../../core/midi/types'
+import type { MasterClock } from '@/types/clock/MasterClock'
+import type { MidiFile } from '@/types/midi/types'
 
 // Minimum gap between two consecutive note-onsets to consider them a *new*
 // step. Notes within this window collapse into a single chord step, which is

@@ -72,3 +72,40 @@ The following directories may still exist during migration, but they are compati
 - Prefer imports from canonical directories and `@/` aliases.
 - Prefer moving or adding real code under `app/components/features/stores/services/lib/types`.
 - Avoid creating new compatibility shims unless needed to keep the build green during migration.
+
+## Runtime Boundaries
+
+- Treat the app as 4 layers: `Intent`, `Navigation/Application`, `Domain Runtime`, `Infrastructure`.
+- Keep responsibilities narrow; do not let route parsing, business branching, and runtime state ownership collapse back into one class.
+
+### Routing Rules
+
+- `RouteTarget` is the only route-level business target model.
+- Router code may translate `URL <-> RouteTarget`; business code should not infer behavior from raw path strings.
+- Canonical routes are the source of truth; compatibility paths are redirect-only and must not become business-state inputs.
+
+### Intent Rules
+
+- `AppIntent` is the single entry for user/business flow dispatch.
+- Components, coordinators, and services should express business transitions by dispatching intent, not by directly calling path-oriented helpers.
+- New flows should be added at the intent layer first, then wired downward.
+
+### Runtime Ownership
+
+- Router owns the current `RouteTarget`.
+- Application-layer orchestration owns one-shot handoff and runtime registration, not long-lived feature session state.
+- Shared global state should hold only truly cross-page state.
+- Page or feature runtime should own its own session state instead of pushing it upward into `AppRuntime`.
+- Do not fake unsupported runtime capabilities with `null` or no-op methods.
+
+### Learn Runtime Capability Rules
+
+- Prefer explicit capability interfaces over one large runtime surface.
+- Use `LearnRuntimeHandle` for lifecycle, and add optional capabilities only where they are truly implemented.
+- If a runtime does not own a concern, it should not implement that capability.
+
+### Composition Rules
+
+- `AppRuntime` is a composition root and wiring boundary, not the owner of ad-hoc learn state.
+- Do not reintroduce feature-owned runtime state into `AppRuntime`.
+- Do not keep widening shared dependency bags such as `AppRuntimeDeps`; prefer narrow ports grouped by responsibility.

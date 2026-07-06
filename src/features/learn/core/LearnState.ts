@@ -1,6 +1,6 @@
 import { batch } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import type { MidiFile } from '../../core/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 
 // Learn mode's own transport + loaded-MIDI state. Kept isolated from
 // `AppStore` so Learn never pollutes Play/Live and vice versa — a user can

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isBlackKey, type MidiNote } from '../core/midi/types'
+import { isBlackKey, type MidiNote } from '@/types/midi/types'
 import { Viewport, type ViewportConfig, visibleNoteRange } from './viewport'
 
 const note = (time: number, duration: number): MidiNote => ({
@@ -20,14 +20,14 @@ describe('visibleNoteRange', () => {
   })
 
   it('excludes notes entirely before visStart', () => {
-    // note ends at 1.0, visStart is 2.0 — should be excluded
+    // note ends at 1.0, visStart is 2.0 鈥?should be excluded
     const notes = [note(0, 1), note(3, 0.5), note(5, 0.5)]
     const [lo, hi] = visibleNoteRange(notes, 2, 8)
     expect(notes.slice(lo, hi).map((n) => n.time)).toEqual([3, 5])
   })
 
   it('excludes notes starting after visEnd', () => {
-    // note starts at 10.0, visEnd is 5.0 — should be excluded
+    // note starts at 10.0, visEnd is 5.0 鈥?should be excluded
     const notes = [note(1, 0.5), note(3, 0.5), note(10, 0.5)]
     const [lo, hi] = visibleNoteRange(notes, 0, 5)
     expect(notes.slice(lo, hi).map((n) => n.time)).toEqual([1, 3])
@@ -43,7 +43,7 @@ describe('visibleNoteRange', () => {
   it('handles visStart === visEnd (active-note point query)', () => {
     // Only the note containing t=5 should be returned.
     const notes = [note(0, 3), note(3, 3), note(7, 2)]
-    // note at t=3, dur=3 covers [3,6] — contains t=5
+    // note at t=3, dur=3 covers [3,6] 鈥?contains t=5
     const [lo, hi] = visibleNoteRange(notes, 5, 5)
     expect(notes.slice(lo, hi).map((n) => n.time)).toEqual([3])
   })
@@ -55,9 +55,9 @@ describe('visibleNoteRange', () => {
   })
 
   it('excludes a note ending exactly at visStart (strict)', () => {
-    // note ends at exactly visStart — not strictly inside the window
+    // note ends at exactly visStart 鈥?not strictly inside the window
     const notes = [note(0, 2), note(3, 1)]
-    // visStart=2: note(0,2) ends at 2.0, not > 2.0 → excluded
+    // visStart=2: note(0,2) ends at 2.0, not > 2.0 鈫?excluded
     const [lo, hi] = visibleNoteRange(notes, 2, 5)
     expect(notes.slice(lo, hi).map((n) => n.time)).toEqual([3])
   })
@@ -75,7 +75,7 @@ describe('visibleNoteRange', () => {
   it('handles many notes with only the middle slice visible', () => {
     const notes = Array.from({ length: 100 }, (_, i) => note(i, 0.5))
     const [lo, hi] = visibleNoteRange(notes, 40, 60)
-    // notes 40–60 start in [40, 60]; note 39 ends at 39.5 < 40, excluded
+    // notes 40鈥?0 start in [40, 60]; note 39 ends at 39.5 < 40, excluded
     expect(notes[lo]!.time).toBe(40)
     expect(notes[hi - 1]!.time).toBe(60)
   })
@@ -174,14 +174,14 @@ describe('Viewport.buildKeyLayout with narrowed pitch range (fit-to-piece)', () 
 
     // Each successive white key is offset by exactly one white-key width.
     expect(vp.pitchToX(50)).toBeCloseTo(whiteW) // D3 is the 2nd white key
-    // Last white key (C5=72) is the 15th → x = 14 * whiteW.
+    // Last white key (C5=72) is the 15th 鈫?x = 14 * whiteW.
     expect(vp.pitchToX(72)).toBeCloseTo(14 * whiteW)
   })
 
   it('positions black keys as narrower keys offset between their neighbours', () => {
     const vp = makeViewport({ canvasWidth: 1000, pitchMin: 48, pitchMax: 72 })
     // Literals (not recomputed from the source 0.58 ratio, so a ratio change is
-    // actually caught): C3..C5 has 15 white keys → whiteW = 1000/15 = 66.667.
+    // actually caught): C3..C5 has 15 white keys 鈫?whiteW = 1000/15 = 66.667.
     // blackW = whiteW * 0.58 = 38.667. C3 (48) is the first white at x=0, so
     // C#3 (49) sits at whiteW - blackW/2 = 66.667 - 19.333 = 47.333.
     expect(isBlackKey(49)).toBe(true)
@@ -192,10 +192,10 @@ describe('Viewport.buildKeyLayout with narrowed pitch range (fit-to-piece)', () 
 
   it('narrowing the range via update() rebuilds the layout wider', () => {
     const vp = makeViewport({ canvasWidth: 1000 })
-    const fullWhiteW = vp.pitchWidth(60) // full piano: many white keys → narrow
+    const fullWhiteW = vp.pitchWidth(60) // full piano: many white keys 鈫?narrow
     vp.update({ pitchMin: 48, pitchMax: 72 })
     const narrowedWhiteW = vp.pitchWidth(60)
-    // Fewer keys across the same canvas ⇒ each key is wider.
+    // Fewer keys across the same canvas 鈬?each key is wider.
     expect(narrowedWhiteW).toBeGreaterThan(fullWhiteW)
   })
 })

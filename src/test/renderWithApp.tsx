@@ -1,37 +1,43 @@
 import { render } from '@solidjs/testing-library'
 import type { JSX } from 'solid-js'
 import { vi } from 'vitest'
+import { createLearnState } from '@/features/learn/core/LearnState'
+import type {
+  CreateExercisePageRuntimeOptions,
+  ExercisePageRuntimeHandle,
+  PlayAlongPageRuntimeHandle,
+} from '@/features/learn/runtime/types'
 import { AppCtx, type AppCtxValue } from '@/stores/app/AppCtx'
+import { createEventSignal } from '@/stores/app/eventSignal'
 import { createAppStore } from '@/stores/app/state'
-import type { AppServices } from '../core/services'
-import type { LearnController } from '../modes/LearnController'
 
-function fakeRenderer(): AppServices['renderer'] {
+function makePlayAlongRuntime(): PlayAlongPageRuntimeHandle {
   return {
-    clearMidi: vi.fn(),
-    loadMidi: vi.fn(),
-    setVisible: vi.fn(),
-    setLiveNotesVisible: vi.fn(),
-  } as unknown as AppServices['renderer']
+    routeId: 'play-along',
+    learnState: createLearnState(),
+    view: createEventSignal<'page' | 'exercise'>('page'),
+    enter: vi.fn(),
+    exit: vi.fn(),
+    startPlayAlong: vi.fn(async () => {}),
+    loadPreparedMidi: vi.fn(async () => {}),
+    getConsoleState: vi.fn(() => ({ enabled: false, baseKey: null, current: 0 })),
+    setTranspose: vi.fn(),
+    getLoadedMidi: vi.fn(() => null),
+  }
 }
 
-function fakeServices(): AppServices {
-  const store = createAppStore()
+function makeExerciseRuntime(): ExercisePageRuntimeHandle {
   return {
-    store,
-    clock: null as never,
-    synth: null as never,
-    metronome: null as never,
-    renderer: fakeRenderer(),
-    input: null as never,
+    routeId: 'intervals',
+    enter: vi.fn(async () => {}),
+    exit: vi.fn(),
   }
 }
 
 function makeFakeCtx(): AppCtxValue {
-  const services = fakeServices()
+  const store = createAppStore()
   return {
-    services,
-    store: services.store,
+    store,
     actions: {
       navigation: {
         toMode: vi.fn(),
@@ -49,8 +55,10 @@ function makeFakeCtx(): AppCtxValue {
         open: vi.fn(),
       },
       learn: {
-        enterRoute: vi.fn(async () => {}),
-        exitRoute: vi.fn(),
+        enterHub: vi.fn(async () => {}),
+        exitHub: vi.fn(),
+        enterExercise: vi.fn(async () => {}),
+        exitExercise: vi.fn(),
         enter: vi.fn(),
       },
       session: {
@@ -58,29 +66,19 @@ function makeFakeCtx(): AppCtxValue {
         primeInteractiveAudio: vi.fn(),
       },
     },
-    ensureLearnController: vi.fn(async () => ({
-      learnState: {
-        state: {
-          loadedMidi: null,
-          currentTime: 0,
-          duration: 0,
-          status: 'idle',
-          transportWanted: false,
-        },
-      },
-      startPlayAlong: vi.fn(),
-    })) as unknown as () => Promise<LearnController>,
+    learnRuntime: {
+      createPlayAlongPageRuntime: vi.fn(() => makePlayAlongRuntime()),
+      createExercisePageRuntime: vi.fn((_options: CreateExercisePageRuntimeOptions) =>
+        makeExerciseRuntime(),
+      ),
+    },
   }
 }
 
 function applyOverrides(base: AppCtxValue, overrides?: DeepPartialCtx): AppCtxValue {
   if (!overrides) return base
-  const { services: serviceOverrides, actions: actionOverrides, ...rest } = overrides
+  const { actions: actionOverrides, learnRuntime: learnRuntimeOverrides, ...rest } = overrides
   const merged: AppCtxValue = { ...base, ...rest } as AppCtxValue
-  if (serviceOverrides) {
-    merged.services = { ...base.services, ...serviceOverrides }
-    if (serviceOverrides.store) merged.store = serviceOverrides.store
-  }
   if (actionOverrides) {
     merged.actions = {
       ...base.actions,
@@ -94,11 +92,13 @@ function applyOverrides(base: AppCtxValue, overrides?: DeepPartialCtx): AppCtxVa
       session: { ...base.actions.session, ...actionOverrides.session },
     }
   }
+  if (learnRuntimeOverrides) {
+    merged.learnRuntime = { ...base.learnRuntime, ...learnRuntimeOverrides }
+  }
   return merged
 }
 
-export type DeepPartialCtx = Partial<Omit<AppCtxValue, 'services' | 'actions'>> & {
-  services?: Partial<AppServices>
+export type DeepPartialCtx = Partial<Omit<AppCtxValue, 'actions' | 'learnRuntime'>> & {
   actions?: Partial<AppCtxValue['actions']> & {
     navigation?: Partial<AppCtxValue['actions']['navigation']>
     home?: Partial<AppCtxValue['actions']['home']>
@@ -108,6 +108,7 @@ export type DeepPartialCtx = Partial<Omit<AppCtxValue, 'services' | 'actions'>> 
     learn?: Partial<AppCtxValue['actions']['learn']>
     session?: Partial<AppCtxValue['actions']['session']>
   }
+  learnRuntime?: Partial<AppCtxValue['learnRuntime']>
 }
 
 export type RenderWithAppResult = ReturnType<typeof render> & { ctx: AppCtxValue }

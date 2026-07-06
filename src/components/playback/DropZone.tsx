@@ -1,7 +1,7 @@
 import { createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { render } from 'solid-js/web'
+import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
 import { t } from '../i18n'
-import type { MidiDeviceStatus } from '../midi/MidiInputManager'
 import styles from './DropZone.module.css'
 import { icons } from './icons'
 import { SamplesGrid } from './SamplesGrid'

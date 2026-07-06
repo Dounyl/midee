@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MidiTrack } from '../core/midi/types'
+import type { MidiTrack } from '@/types/midi/types'
 import { getTrackColor, THEMES } from './theme'
 
 const track = (colorIndex: number): MidiTrack => ({
@@ -16,7 +16,7 @@ const track = (colorIndex: number): MidiTrack => ({
 describe('getTrackColor', () => {
   // The TrackPanel swatch resolves through this function so the dropdown
   // colour matches the on-canvas note. If this drifts, swatches lie about
-  // which track is which — the bug we just fixed.
+  // which track is which 鈥?the bug we just fixed.
   it.each(THEMES)('returns the theme palette colour for $name', (theme) => {
     for (let i = 0; i < theme.trackColors.length; i++) {
       expect(getTrackColor(track(i), theme)).toBe(theme.trackColors[i])

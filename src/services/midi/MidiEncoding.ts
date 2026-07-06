@@ -1,5 +1,5 @@
-import { loadMidiModule } from '../core/midi/parser'
-import type { MidiFile } from '../core/midi/types'
+import { loadMidiModule } from '@/types/midi/parser'
+import type { MidiFile } from '@/types/midi/types'
 
 // Shared note-event format used by both LiveLooper and SessionRecorder.
 // Time is in seconds from the start of the capture.

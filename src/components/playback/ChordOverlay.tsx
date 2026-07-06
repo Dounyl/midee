@@ -1,6 +1,6 @@
 import { createSignal, Show } from 'solid-js'
 import { render } from 'solid-js/web'
-import type { ChordReading } from '../core/music/ChordDetector'
+import type { ChordReading } from '@/lib/music/ChordDetector'
 import { t } from '../i18n'
 import styles from './ChordOverlay.module.css'
 

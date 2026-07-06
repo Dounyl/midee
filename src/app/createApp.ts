@@ -1,8 +1,8 @@
 import { App } from '@/app/AppRuntime'
 import { createAppActions } from '@/app/runtime/actions'
-import { assertDefined } from '@/app/runtime/assert'
 import type { AppRuntimeInstance, AppShellHandles } from '@/app/runtime/types'
-import type { AppCtxValue } from '@/stores/app/AppCtx'
+import { assertDefined } from '@/lib/assert'
+import type { AppActions, AppCtxValue } from '@/stores/app/AppCtx'
 import { createAppStore } from '@/stores/app/state'
 
 // Boots the app. Constructs the single `AppStore`, hands it to the `App`
@@ -23,14 +23,14 @@ import { createAppStore } from '@/stores/app/state'
 export async function createApp(handles: AppShellHandles): Promise<AppRuntimeInstance> {
   const store = createAppStore()
   const app = new App(store)
-  const actions = createAppActions(app)
+  let actions: AppActions
   try {
-    await app.init(
+    actions = await app.init(
       {
         canvas: assertDefined(handles.canvas, 'createApp() called without a canvas handle'),
         overlay: assertDefined(handles.overlay, 'createApp() called without an overlay handle'),
       },
-      actions,
+      createAppActions,
     )
   } catch (error) {
     try {
@@ -41,10 +41,12 @@ export async function createApp(handles: AppShellHandles): Promise<AppRuntimeIns
     throw error
   }
   const ctx: AppCtxValue = {
-    services: app.services,
     store: app.store,
     actions,
-    ensureLearnController: () => app.ensureLearnController(),
+    learnRuntime: {
+      createPlayAlongPageRuntime: () => app.createPlayAlongPageRuntime(),
+      createExercisePageRuntime: (options) => app.createExercisePageRuntime(options),
+    },
   }
   return {
     ctx,

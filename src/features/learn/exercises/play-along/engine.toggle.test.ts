@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { MidiFile } from '../../../core/midi/types'
-import type { AppServices } from '../../../core/services'
-import { createLearnState, type LearnState } from '../../core/LearnState'
+import { createLearnState, type LearnState } from '@/features/learn/core/LearnState'
+import type { AppServices } from '@/types/app/AppServices'
+import type { MidiFile } from '@/types/midi/types'
 import { PlayAlongEngine } from './engine'
 
 function makeClock() {

@@ -1,31 +1,31 @@
 import { useNavigate } from '@solidjs/router'
 import { onCleanup, onMount } from 'solid-js'
-import { useAppShell } from '@/app/AppShellContext'
+import { intervalsDescriptor } from '@/features/learn/exercises/intervals'
 import { intervalsMeta } from '@/features/learn/exercises/intervals/meta'
+import { LEARN_HUB_PATH } from '@/features/routing/learnRoutes'
 import { useApp } from '@/stores/app/AppCtx'
-import { intervalsDescriptor } from '../../learn/exercises/intervals'
 import { LearnLayout } from './LearnLayout'
-import { RoutedExerciseRuntime } from './RoutedExerciseRuntime'
 
 export function LearnIntervalsPage() {
-  const { actions, services } = useApp()
-  const { overlay } = useAppShell()
+  const { actions, learnRuntime } = useApp()
   const navigate = useNavigate()
+  const runtime = learnRuntime.createExercisePageRuntime({
+    routeId: 'intervals',
+    descriptor: intervalsDescriptor,
+    onNext: () => navigate(LEARN_HUB_PATH),
+  })
 
   onMount(() => {
     const abort = new AbortController()
-    const runtime = new RoutedExerciseRuntime(services, overlay, intervalsDescriptor, () =>
-      navigate('/learn'),
-    )
     void (async () => {
-      await actions.learn.enterRoute('intervals', abort.signal)
+      await actions.learn.enterExercise('intervals', abort.signal)
       if (abort.signal.aborted) return
       await runtime.enter()
     })()
     onCleanup(() => {
       abort.abort()
       runtime.exit()
-      actions.learn.exitRoute()
+      actions.learn.exitExercise()
     })
   })
 

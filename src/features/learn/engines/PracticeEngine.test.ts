@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MasterClock } from '../../core/clock/MasterClock'
-import type { MidiFile } from '../../core/midi/types'
+import type { MasterClock } from '@/types/clock/MasterClock'
+import type { MidiFile } from '@/types/midi/types'
 import { PracticeEngine } from './PracticeEngine'
 
 function makeClock() {

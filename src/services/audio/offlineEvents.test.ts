@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MidiFile, MidiTrack } from '../core/midi/types'
+import type { MidiFile, MidiTrack } from '@/types/midi/types'
 import { buildOfflineEvents } from './offlineEvents'
 
 function track(id: string, pitches: number[]): MidiTrack {

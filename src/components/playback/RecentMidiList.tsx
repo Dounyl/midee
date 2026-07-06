@@ -1,11 +1,11 @@
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js'
-import type { LibraryOpenRequest } from '@/stores/app/AppCtx'
 import {
   listLocalMidiEntries,
   loadSamplePlaybackHistory,
   MIDI_LIBRARY_CHANGED,
-} from '../core/midiLibrary'
-import { SAMPLES } from '../core/samples'
+} from '@/services/midi/midiLibrary'
+import { SAMPLES } from '@/services/midi/samples'
+import type { LibraryOpenRequest } from '@/stores/app/AppCtx'
 import { t } from '../i18n'
 import { icons } from './icons'
 import styles from './RecentMidiList.module.css'

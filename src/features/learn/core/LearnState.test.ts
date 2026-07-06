@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { watch } from '@/stores/app/watch'
-import type { MidiFile } from '../../core/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 import { createLearnState } from './LearnState'
 
 function fakeMidi(name = 'etude.mid', duration = 15): MidiFile {

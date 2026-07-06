@@ -1,8 +1,8 @@
 import { onMount, Show } from 'solid-js'
+import { icons } from '@/components/common/icons'
+import { RecentMidiList } from '@/components/playback/RecentMidiList'
+import { t } from '@/i18n'
 import { useApp } from '@/stores/app/AppCtx'
-import { t } from '../../i18n'
-import { icons } from '../../ui/icons'
-import { RecentMidiList } from '../../ui/RecentMidiList'
 import styles from './PlayPage.module.css'
 
 export function PlayPage() {

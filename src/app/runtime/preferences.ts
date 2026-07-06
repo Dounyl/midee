@@ -1,6 +1,6 @@
-import { booleanPersisted, indexPersisted, numberPersisted } from '@/core/persistence'
-import { PARTICLE_STYLES } from '@/renderer/ParticleSystem'
-import { THEMES } from '@/renderer/theme'
+import { booleanPersisted, indexPersisted, numberPersisted } from '@/lib/persistence'
+import { PARTICLE_STYLES } from '@/services/renderer/ParticleSystem'
+import { THEMES } from '@/services/renderer/theme'
 import { SKIP_HOME_INTRO_STORAGE_KEY } from '@/stores/app/state'
 
 export interface AppPreferenceStores {

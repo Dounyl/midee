@@ -1,12 +1,17 @@
-import type { AppServices } from '../../core/services'
-import { track, trackEvent } from '../../telemetry'
-import type { LearnOverlay } from '../overlays/LearnOverlay'
-import type { Exercise, ExerciseDescriptor } from './Exercise'
-import type { ExerciseContext, ExerciseLog, ExerciseStorage } from './ExerciseContext'
-import type { LearnState } from './LearnState'
-import type { LearnProgressStore } from './progress'
-import type { ExerciseResult } from './Result'
-import { Session } from './Session'
+import type { Exercise, ExerciseDescriptor } from '@/features/learn/core/Exercise'
+import type {
+  ExerciseContext,
+  ExerciseLog,
+  ExerciseStorage,
+} from '@/features/learn/core/ExerciseContext'
+import type { LearnState } from '@/features/learn/core/LearnState'
+import type { LearnProgressStore } from '@/features/learn/core/progress'
+import type { ExerciseResult } from '@/features/learn/core/Result'
+import { Session } from '@/features/learn/core/Session'
+import type { LearnOverlay } from '@/features/learn/overlays/LearnOverlay'
+import { track, trackEvent } from '@/features/telemetry'
+import type { AppServices } from '@/types/app/AppServices'
+import type { MidiFile } from '@/types/midi/types'
 
 // Deps injected by `LearnController` — all Learn-scoped so the runner never
 // reaches into the global AppServices for Learn-only state.
@@ -68,7 +73,7 @@ export class ExerciseRunner {
     return this.currentDescriptor?.id ?? null
   }
 
-  replaceMidi(midi: import('../../core/midi/types').MidiFile): void {
+  replaceMidi(midi: MidiFile): void {
     this.currentExercise?.onMidiReplaced?.(midi)
   }
 

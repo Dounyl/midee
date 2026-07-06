@@ -1,13 +1,13 @@
 import { Midi } from '@tonejs/midi'
 import { describe, expect, it, vi } from 'vitest'
-import { PracticeEngine } from '../../learn/engines/PracticeEngine'
+import { PracticeEngine } from '@/features/learn/engines/PracticeEngine'
 import type { MasterClock } from '../clock/MasterClock'
 import { EmptyMidiError, parseMidiFile } from './parser'
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// 鈹€鈹€ Helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 // Builds a single-track MIDI ArrayBuffer using @tonejs/midi's writer.
-// Same approach as MidiEncoding.test.ts — proven to work in vitest/Node.
+// Same approach as MidiEncoding.test.ts 鈥?proven to work in vitest/Node.
 async function makeBuf(
   notes: Array<{ midi: number; time: number; duration: number; velocity?: number }>,
   opts: {
@@ -26,7 +26,7 @@ async function makeBuf(
   for (const n of notes) {
     track.addNote({ midi: n.midi, time: n.time, duration: n.duration, velocity: n.velocity ?? 0.8 })
   }
-  // .slice() detaches from the shared ArrayBuffer — same idiom as MidiEncoding tests.
+  // .slice() detaches from the shared ArrayBuffer 鈥?same idiom as MidiEncoding tests.
   return midi.toArray().slice().buffer as ArrayBuffer
 }
 
@@ -58,9 +58,9 @@ function makeFakeClock() {
   }
 }
 
-// ── parseMidiFile — shape ─────────────────────────────────────────────────
+// 鈹€鈹€ parseMidiFile 鈥?shape 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('parseMidiFile — shape', () => {
+describe('parseMidiFile 鈥?shape', () => {
   it('strips .mid extension from the name parameter', async () => {
     const buf = await makeBuf([{ midi: 60, time: 1, duration: 0.5 }])
     const result = await parseMidiFile(buf, 'Bach Prelude.mid')
@@ -92,13 +92,13 @@ describe('parseMidiFile — shape', () => {
   })
 
   it('falls back to 120 BPM when the header has no tempo event', async () => {
-    // makeBuf without bpm — Midi() default has no explicit tempo
+    // makeBuf without bpm 鈥?Midi() default has no explicit tempo
     const midi = new Midi()
     const track = midi.addTrack()
     track.addNote({ midi: 60, time: 1, duration: 0.5, velocity: 0.8 })
     const buf = midi.toArray().slice().buffer as ArrayBuffer
     const result = await parseMidiFile(buf, 'test')
-    // @tonejs/midi may add a default 120 BPM or leave tempos empty — either way
+    // @tonejs/midi may add a default 120 BPM or leave tempos empty 鈥?either way
     // the parser resolves to 120.
     expect(result.bpm).toBeCloseTo(120, 0)
   })
@@ -182,11 +182,11 @@ describe('parseMidiFile — shape', () => {
     expect(result.tracks[1]?.id).toBe('track-1')
   })
 
-  it('empty tracks are filtered before ID assignment — the first non-empty track is track-0', async () => {
+  it('empty tracks are filtered before ID assignment 鈥?the first non-empty track is track-0', async () => {
     // Raw MIDI has two tracks; the first has no notes and is filtered out.
     // The second (with notes) must become track-0, not track-1.
     const midi = new Midi()
-    midi.addTrack() // empty — no notes
+    midi.addTrack() // empty 鈥?no notes
     const second = midi.addTrack()
     second.addNote({ midi: 72, time: 1, duration: 0.5, velocity: 0.8 })
     const buf = midi.toArray().slice().buffer as ArrayBuffer
@@ -197,9 +197,9 @@ describe('parseMidiFile — shape', () => {
   })
 })
 
-// ── parseMidiFile — EmptyMidiError ────────────────────────────────────────
+// 鈹€鈹€ parseMidiFile 鈥?EmptyMidiError 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('parseMidiFile — EmptyMidiError', () => {
+describe('parseMidiFile 鈥?EmptyMidiError', () => {
   it('throws EmptyMidiError when the MIDI has no tracks at all', async () => {
     const buf = await makeEmptyBuf()
     await expect(parseMidiFile(buf, 'empty')).rejects.toBeInstanceOf(EmptyMidiError)
@@ -214,9 +214,9 @@ describe('parseMidiFile — EmptyMidiError', () => {
   })
 })
 
-// ── parseMidiFile — note transforms ──────────────────────────────────────
+// 鈹€鈹€ parseMidiFile 鈥?note transforms 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('parseMidiFile — note transforms', () => {
+describe('parseMidiFile 鈥?note transforms', () => {
   it('clamps very short note durations to 0.05 s minimum', async () => {
     // 0.02 s survives MIDI tick quantization at 120 BPM / 480 PPQ (~9 ticks)
     // but is below the 0.05 clamp; the parser must raise it.
@@ -242,7 +242,7 @@ describe('parseMidiFile — note transforms', () => {
   })
 
   it('produces notes in ascending time order', async () => {
-    // Added in descending order — parser must sort ascending.
+    // Added in descending order 鈥?parser must sort ascending.
     const buf = await makeBuf([
       { midi: 67, time: 3, duration: 0.5 },
       { midi: 64, time: 2, duration: 0.5 },
@@ -254,9 +254,9 @@ describe('parseMidiFile — note transforms', () => {
   })
 })
 
-// ── parseMidiFile — track metadata ────────────────────────────────────────
+// 鈹€鈹€ parseMidiFile 鈥?track metadata 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('parseMidiFile — track metadata', () => {
+describe('parseMidiFile 鈥?track metadata', () => {
   it('marks channel-9 tracks as drums (isDrum: true)', async () => {
     const buf = await makeBuf([{ midi: 36, time: 1, duration: 0.1 }], { channel: 9 })
     const result = await parseMidiFile(buf, 'test')
@@ -284,7 +284,7 @@ describe('parseMidiFile — track metadata', () => {
   })
 
   it('wraps color index back to 0 after 10 tracks', async () => {
-    // Build a MIDI with 11 tracks — the 11th (index 10) must wrap to colorIndex 0.
+    // Build a MIDI with 11 tracks 鈥?the 11th (index 10) must wrap to colorIndex 0.
     const midi = new Midi()
     for (let i = 0; i < 11; i++) {
       const track = midi.addTrack()
@@ -299,11 +299,11 @@ describe('parseMidiFile — track metadata', () => {
   })
 })
 
-// ── parseMidiFile → PracticeEngine pipeline ───────────────────────────────
+// 鈹€鈹€ parseMidiFile 鈫?PracticeEngine pipeline 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-describe('parseMidiFile → PracticeEngine pipeline', () => {
+describe('parseMidiFile 鈫?PracticeEngine pipeline', () => {
   it('parsed note order produces the correct step sequence in PracticeEngine', async () => {
-    // Notes added in descending time order — parser sorts ascending;
+    // Notes added in descending time order 鈥?parser sorts ascending;
     // PracticeEngine must see them in the correct wait order.
     const buf = await makeBuf(
       [
@@ -329,7 +329,7 @@ describe('parseMidiFile → PracticeEngine pipeline', () => {
     expect(first?.pitches.has(60)).toBe(true)
   })
 
-  it('drum track in parsed MIDI is excluded — PracticeEngine has no wait step for it', async () => {
+  it('drum track in parsed MIDI is excluded 鈥?PracticeEngine has no wait step for it', async () => {
     // A drum-only MIDI must not engage any wait steps.
     const buf = await makeBuf([{ midi: 36, time: 2, duration: 0.1 }], { channel: 9 })
     const midi = await parseMidiFile(buf, 'drums')

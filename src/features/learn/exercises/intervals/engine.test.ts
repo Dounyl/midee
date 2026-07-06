@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { AppServices } from '../../../core/services'
+import type { AppServices } from '@/types/app/AppServices'
 import { IntervalsEngine } from './engine'
 import { BEGINNER_SET } from './theory'
 

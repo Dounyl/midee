@@ -6,7 +6,7 @@
 // the test's cwd. See `fixtures/README.md` for the available files.
 //
 //   import { loadFixtureMidi } from '../test/loadFixtureMidi'
-//   import { parseMidiFile } from '../core/midi/parser'
+//   import { parseMidiFile } from '@/types/midi/parser'
 //   const midi = await parseMidiFile(loadFixtureMidi('multi-track.mid'), 'multi')
 
 import { readFileSync } from 'node:fs'

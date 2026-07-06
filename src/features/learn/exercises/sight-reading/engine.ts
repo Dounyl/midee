@@ -1,7 +1,7 @@
 import { batch } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
-import type { WeakSpot } from '../../core/Result'
-import { classifyTiming, GOOD_WINDOW_SEC, LATE_HIT_WINDOW_SEC } from '../../core/scoring'
+import type { WeakSpot } from '@/features/learn/core/Result'
+import { classifyTiming, GOOD_WINDOW_SEC, LATE_HIT_WINDOW_SEC } from '@/features/learn/core/scoring'
 import type { EngineConfig, NoteSource, SessionScore, StreamNote } from './types'
 
 export const KNOCKOUT_THRESHOLD = 10

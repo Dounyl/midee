@@ -1,8 +1,12 @@
-import { type LearnRouteId, learnRouteToPath } from '../../routing/learnRoutes'
-import type { ExerciseCategory, ExerciseDifficulty, ExerciseMetadata } from '../core/Exercise'
-import { intervalsMeta } from '../exercises/intervals/meta'
-import { playAlongMeta } from '../exercises/play-along/meta'
-import { sightReadingMeta } from '../exercises/sight-reading/meta'
+import type {
+  ExerciseCategory,
+  ExerciseDifficulty,
+  ExerciseMetadata,
+} from '@/features/learn/core/Exercise'
+import { intervalsMeta } from '@/features/learn/exercises/intervals/meta'
+import { playAlongMeta } from '@/features/learn/exercises/play-along/meta'
+import { sightReadingMeta } from '@/features/learn/exercises/sight-reading/meta'
+import { type ExerciseRouteId, exerciseRouteToPath } from '@/features/routing/learnRoutes'
 
 export interface LearnRouteEntry {
   id: ExerciseMetadata['id']
@@ -14,7 +18,7 @@ export interface LearnRouteEntry {
   requiresLoadedMidi: boolean
 }
 
-function asRouteEntry(descriptor: ExerciseMetadata, route: LearnRouteId): LearnRouteEntry {
+function asRouteEntry(descriptor: ExerciseMetadata, route: ExerciseRouteId): LearnRouteEntry {
   return {
     id: descriptor.id,
     get title() {
@@ -25,7 +29,7 @@ function asRouteEntry(descriptor: ExerciseMetadata, route: LearnRouteId): LearnR
     },
     category: descriptor.category,
     difficulty: descriptor.difficulty,
-    route: learnRouteToPath(route),
+    route: exerciseRouteToPath(route),
     requiresLoadedMidi: descriptor.capabilities.requiresLoadedMidi,
   }
 }

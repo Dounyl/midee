@@ -1,21 +1,21 @@
-import { createMemo, createResource, onCleanup, onMount, Show } from 'solid-js'
+import { createMemo, onCleanup, onMount, Show } from 'solid-js'
+import { icons } from '@/components/common/icons'
+import { RecentMidiList } from '@/components/playback/RecentMidiList'
 import { playAlongMeta } from '@/features/learn/exercises/play-along/meta'
+import { t } from '@/i18n'
 import { useApp } from '@/stores/app/AppCtx'
-import { t } from '../../i18n'
-import { icons } from '../../ui/icons'
-import { RecentMidiList } from '../../ui/RecentMidiList'
 import { LearnLayout, learnLayoutStyles } from './LearnLayout'
 import styles from './LearnPlayAlongPage.module.css'
 
 export function LearnPlayAlongPage() {
-  const { actions, ensureLearnController } = useApp()
-  const [learnController] = createResource(() => ensureLearnController())
-  const currentMidi = () => learnController()?.learnState.state.loadedMidi ?? null
-  const isExerciseView = createMemo(() => learnController()?.view.value === 'exercise')
+  const { actions, learnRuntime } = useApp()
+  const runtime = learnRuntime.createPlayAlongPageRuntime()
+  const currentMidi = () => runtime.learnState.state.loadedMidi ?? null
+  const isExerciseView = createMemo(() => runtime.view.value === 'exercise')
   const showEmptyState = createMemo(() => !isExerciseView())
   const activateCard = () => {
     if (currentMidi()) {
-      void learnController()?.startPlayAlong()
+      void runtime.startPlayAlong()
       return
     }
     actions.library.open({ kind: 'picker', target: 'learn' })
@@ -23,10 +23,12 @@ export function LearnPlayAlongPage() {
 
   onMount(() => {
     const abort = new AbortController()
-    void actions.learn.enterRoute('play-along', abort.signal)
+    void actions.learn.enterExercise('play-along', abort.signal)
+    runtime.enter()
     onCleanup(() => {
       abort.abort()
-      actions.learn.exitRoute()
+      runtime.exit()
+      actions.learn.exitExercise()
     })
   })
 
@@ -86,7 +88,7 @@ export function LearnPlayAlongPage() {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation()
-                          void learnController()?.startPlayAlong()
+                          void runtime.startPlayAlong()
                         }}
                       >
                         <span

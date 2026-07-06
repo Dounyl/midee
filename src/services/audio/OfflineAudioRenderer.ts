@@ -17,7 +17,7 @@ import {
   Part,
   setContext,
 } from 'tone'
-import type { MidiFile } from '../core/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 import { createInstrument, type InstrumentId, preloadSampleBuffers } from './instruments'
 import { buildOfflineEvents, type OfflineNoteEvent } from './offlineEvents'
 
@@ -26,21 +26,21 @@ export { buildOfflineEvents, type OfflineNoteEvent } from './offlineEvents'
 export interface OfflineRenderOptions {
   midi: MidiFile
   instrumentId: InstrumentId
-  volume: number // 0–1
+  volume: number // 0鈥?
   // Tracks the user has muted; their notes are excluded from the render so the
   // exported audio matches what was audible during interactive playback.
   disabledTrackIds?: ReadonlySet<string>
   sampleRate?: number
-  // Progress in [0, 1] — how far through the render we are. Called ~20 times
+  // Progress in [0, 1] 鈥?how far through the render we are. Called ~20 times
   // across the render, driven by OfflineAudioContext.suspend() checkpoints.
   onProgress?: (pct: number) => void
   // Fired once the offline context exists, before any async work in that context.
   // `true` means `onProgress` will be called; `false` = no suspend API (older
-  // runtimes) — the UI should stay indeterminate for this stage.
+  // runtimes) 鈥?the UI should stay indeterminate for this stage.
   onRenderAudioProgressMode?: (determinate: boolean) => void
 }
 
-// 44.1 kHz matches AAC output in the muxer — rendering at 48 kHz cost ~9% more
+// 44.1 kHz matches AAC output in the muxer 鈥?rendering at 48 kHz cost ~9% more
 // per render for no audible benefit on the downstream MP4 track. The exported
 // AudioBuffer is what the WebCodecs AudioEncoder consumes, so its sample rate
 // flows straight through to the MP4's audio stream.
@@ -48,7 +48,7 @@ const DEFAULT_SAMPLE_RATE = 44_100
 
 // Small tail past midi.duration so release envelopes on the final notes don't
 // clip mid-swell. The exporter still trims video to midi.duration, and the
-// muxer tolerates slightly-longer audio — AAC's last frames beyond the video
+// muxer tolerates slightly-longer audio 鈥?AAC's last frames beyond the video
 // are dropped on playback start, which is preferable to a hard audio cutoff.
 const TAIL_SECONDS = 1.5
 
@@ -72,21 +72,21 @@ export async function renderAudioOffline(opts: OfflineRenderOptions): Promise<Au
 
   // Pre-decode sample buffers against the online context BEFORE building the
   // offline context. Decoding inside the offline scope is the single biggest
-  // reason exports stall — see Tone.js issue #405. The Sampler built inside
+  // reason exports stall 鈥?see Tone.js issue #405. The Sampler built inside
   // the offline context picks up the cached AudioBuffers directly and has no
   // async init work left to do.
   await preloadSampleBuffers(instrumentId)
 
-  // Flatten all tracks into one time-ordered event list up-front. Avoids N×M
+  // Flatten all tracks into one time-ordered event list up-front. Avoids N脳M
   // nested scheduling inside the offline context and lets Tone.Part slot the
-  // whole batch into a single transport entry instead of 2×notes entries.
+  // whole batch into a single transport entry instead of 2脳notes entries.
   const events = buildOfflineEvents(midi, disabledTrackIds)
 
   const renderDuration = Math.max(0.1, midi.duration + TAIL_SECONDS)
 
   // Build a NATIVE OfflineAudioContext and hand it to Tone, rather than letting
   // Tone create one via its `standardized-audio-context` polyfill. The polyfill
-  // omits `OfflineAudioContext.suspend(time)` — which is the browser API we
+  // omits `OfflineAudioContext.suspend(time)` 鈥?which is the browser API we
   // need for mid-render progress checkpoints. Tone accepts a pre-built offline
   // context as its first constructor arg and uses it directly, so `rawContext`
   // ends up being the native one with `suspend` available.
@@ -119,11 +119,11 @@ export async function renderAudioOffline(opts: OfflineRenderOptions): Promise<Au
     // Schedule suspend checkpoints BEFORE calling render(). Each resolves as
     // the render sweeps past its timestamp, reports progress, and resumes the
     // render. If the browser lacks `OfflineAudioContext.suspend(time)` (older
-    // Safari), fall through silently — the render still completes, the bar
+    // Safari), fall through silently 鈥?the render still completes, the bar
     // just doesn't move for this stage.
     if (onProgress && typeof rawContext.suspend === 'function') {
       for (let i = 1; i <= PROGRESS_STEPS; i++) {
-        // Leave a small gap before renderDuration — suspending exactly at the
+        // Leave a small gap before renderDuration 鈥?suspending exactly at the
         // end is a race with render completion.
         const t = Math.min((i / PROGRESS_STEPS) * renderDuration, renderDuration - 0.001)
         try {
@@ -132,7 +132,7 @@ export async function renderAudioOffline(opts: OfflineRenderOptions): Promise<Au
             void rawContext.resume()
           })
         } catch {
-          // suspend() threw synchronously (unsupported) — give up on progress
+          // suspend() threw synchronously (unsupported) 鈥?give up on progress
           // for the rest of this render without failing the export.
           break
         }

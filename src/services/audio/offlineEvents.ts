@@ -2,7 +2,7 @@
 // filtering can be unit-tested without instantiating an OfflineAudioContext
 // (which jsdom lacks) or pulling Tone (which won't resolve under vitest).
 
-import type { MidiFile } from '../core/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 import { midiToNoteName } from './midiNoteName'
 
 export interface OfflineNoteEvent {
@@ -12,7 +12,7 @@ export interface OfflineNoteEvent {
   velocity: number
 }
 
-// Flattens midi.tracks → time-ordered note events, skipping any track the
+// Flattens midi.tracks 鈫?time-ordered note events, skipping any track the
 // user has muted in the Tracks panel. The export pipeline calls this so the
 // rendered MP4's audio matches what the user heard interactively.
 export function buildOfflineEvents(

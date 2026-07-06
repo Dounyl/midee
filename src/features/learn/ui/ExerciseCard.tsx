@@ -1,6 +1,6 @@
 import { Show } from 'solid-js'
-import { t } from '../../i18n'
-import type { ExerciseCategory, ExerciseDifficulty } from '../core/Exercise'
+import type { ExerciseCategory, ExerciseDifficulty } from '@/features/learn/core/Exercise'
+import { t } from '@/i18n'
 import styles from './ExerciseCard.module.css'
 
 export interface ExerciseCardDescriptorLike {

@@ -1,5 +1,5 @@
 import { createStore, reconcile } from 'solid-js/store'
-import { jsonPersisted } from '../../core/persistence'
+import { jsonPersisted } from '@/lib/persistence'
 import { applyStreak, type CommitOutcome, commitResult, isoDay } from './progress-actions'
 import {
   emptyProgress,

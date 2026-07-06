@@ -1,12 +1,12 @@
 import { createEffect, createMemo, createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
-import type { KeyboardMode } from '../core/keyboardLayout'
-import type { MidiKeySignature } from '../core/midi/types'
+import type { KeyboardMode } from '@/lib/core/keyboardLayout'
 import {
   buildTransposeOptions,
   keySignatureLabel,
   transposeKeySignature,
-} from '../core/music/KeySignature'
+} from '@/lib/music/KeySignature'
+import type { MidiKeySignature } from '@/types/midi/types'
 import { t } from '../i18n'
 import styles from './ConsolePanel.module.css'
 import { icons } from './icons'

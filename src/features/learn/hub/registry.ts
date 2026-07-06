@@ -1,4 +1,4 @@
-import type { ExerciseDescriptor } from '../core/Exercise'
+import type { ExerciseDescriptor } from '@/features/learn/core/Exercise'
 import { intervalsDescriptor } from '../exercises/intervals'
 import { playAlongDescriptor } from '../exercises/play-along'
 import { sightReadingDescriptor } from '../exercises/sight-reading'

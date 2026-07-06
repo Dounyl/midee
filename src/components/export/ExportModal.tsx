@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
-import type { ExportStage } from '../export/VideoExporter'
+import type { ExportStage } from '@/services/export/VideoExporter'
 import { t } from '../i18n'
 import styles from './ExportModal.module.css'
 import { icons } from './icons'

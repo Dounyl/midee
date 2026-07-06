@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MidiTrack } from '../core/midi/types'
+import type { MidiTrack } from '@/types/midi/types'
 import { NoteRenderer } from './NoteRenderer'
 import { darkTheme } from './theme'
 import { Viewport } from './viewport'

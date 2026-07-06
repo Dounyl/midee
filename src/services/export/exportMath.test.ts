@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { MidiFile, MidiNote, MidiTrack } from '../core/midi/types'
+import type { MidiFile, MidiNote, MidiTrack } from '@/types/midi/types'
 import {
   fitPitchRange,
   pitchSignature,

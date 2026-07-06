@@ -1,8 +1,8 @@
 import { createMemo, For } from 'solid-js'
-import { t } from '../../i18n'
-import { cssModuleClass } from '../../ui/utils'
-import type { LearnProgressStore } from '../core/progress'
-import { isoDay } from '../core/progress-actions'
+import { cssModuleClass } from '@/components/common/utils'
+import type { LearnProgressStore } from '@/features/learn/core/progress'
+import { isoDay } from '@/features/learn/core/progress-actions'
+import { t } from '@/i18n'
 import styles from './StreakRow.module.css'
 
 const WINDOW_DAYS = 14

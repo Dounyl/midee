@@ -1,7 +1,7 @@
+import { track, trackEvent } from '@/features/telemetry'
 import { t } from '@/i18n'
 import type { PlayRouteEnterOptions } from '@/stores/app/AppCtx'
 import type { AppMode, AppStore } from '@/stores/app/state'
-import { track, trackEvent } from '@/telemetry'
 
 interface RouteEntryShell {
   renderer: {

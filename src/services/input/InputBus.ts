@@ -1,8 +1,8 @@
+import type { MidiNoteEvent } from '@/services/midi/MidiInputManager'
 import { createEventSignal } from '@/stores/app/eventSignal'
-import type { MidiNoteEvent } from '../../midi/MidiInputManager'
 
 // Where a note/pedal event entered the app. Subscribers use this for telemetry
-// (per-source first-note counting) and occasionally to gate behavior — but the
+// (per-source first-note counting) and occasionally to gate behavior 鈥?but the
 // default policy is "treat every source equally; the user pressed a key".
 export type InputSource = 'midi' | 'keyboard' | 'touch'
 
@@ -20,7 +20,7 @@ export interface BusPedalEvent {
 // the `emit*` methods; consumers (App live handler, exercise runners, ...)
 // subscribe to the signals.
 //
-// The bus is a transport layer — it does not merge multi-source pedal state.
+// The bus is a transport layer 鈥?it does not merge multi-source pedal state.
 // Callers that need a "pedal is down from any source" view maintain their own
 // per-source flags and OR them (see App.applyPedalState). Keeping the bus
 // dumb means exercises can observe each source independently if they want.

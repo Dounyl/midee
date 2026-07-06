@@ -1,6 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import { GlowFilter } from 'pixi-filters'
-import type { LiveNote, LiveNoteStore } from '../midi/LiveNoteStore'
+import type { LiveNote, LiveNoteStore } from '@/services/midi/LiveNoteStore'
 import type { Theme } from './theme'
 import type { Viewport } from './viewport'
 
@@ -8,7 +8,7 @@ import type { Viewport } from './viewport'
 // once released, the captured trail keeps translating upward with time until it
 // leaves the roll.
 //
-// An optional secondary store renders ghost notes for loop playback — dimmer,
+// An optional secondary store renders ghost notes for loop playback 鈥?dimmer,
 // no glow, drawn behind live notes so the user can tell "me vs. my loop" at a
 // glance.
 //

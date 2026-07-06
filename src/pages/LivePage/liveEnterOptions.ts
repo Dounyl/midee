@@ -1,5 +1,8 @@
 import { createSignal } from 'solid-js'
-import type { EnterOptions } from '../../modes/ModeController'
+
+export interface EnterOptions {
+  primeAudio?: boolean
+}
 
 const [pendingOpts, setPendingOpts] = createSignal<EnterOptions>({ primeAudio: true })
 

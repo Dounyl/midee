@@ -1,14 +1,14 @@
 import { createSignal } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
 import { render } from 'solid-js/web'
+import type { LiveLooperState } from '@/services/midi/LiveLooper'
+import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
 import type { AppActions } from '@/stores/app/AppCtx'
 import type { AppMode } from '@/stores/app/state'
 import { watch } from '@/stores/app/watch'
-import type { AppServices } from '../core/services'
+import { getCurrentRouteMode, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
+import type { AppServices } from '@/types/app/AppServices'
 import { t } from '../i18n'
-import type { LiveLooperState } from '../midi/LiveLooper'
-import type { MidiDeviceStatus } from '../midi/MidiInputManager'
-import { getCurrentRouteMode, subscribeCurrentRoute } from '../routing/routerBridge'
 import { trackEvent, trackEventSettled } from '../telemetry'
 import {
   formatMMSS,

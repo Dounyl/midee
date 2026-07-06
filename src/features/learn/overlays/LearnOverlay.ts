@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import type { RenderContext, RenderLayer } from '../../renderer/RenderLayer'
+import type { RenderContext, RenderLayer } from '@/services/renderer/RenderLayer'
 
 // Shared cinematic vocabulary for Learn-mode exercises. Every exercise that
 // wants target zones, loop bands, or celebration swells

@@ -1,6 +1,10 @@
 import { createContext, useContext } from 'solid-js'
-import type { AppServices } from '../core/services'
-import type { LearnController } from '../modes/LearnController'
+import type {
+  CreateExercisePageRuntimeOptions,
+  ExercisePageRuntimeHandle,
+  PlayAlongPageRuntimeHandle,
+} from '@/features/learn/runtime/types'
+import type { ExerciseRouteId } from '@/features/routing/learnRoutes'
 import type { AppMode, AppPublicStore } from './state'
 
 export interface PlayRouteEnterOptions {
@@ -19,8 +23,6 @@ export type LearnEnterRequest =
   | { kind: 'sample'; sampleId: string }
   | { kind: 'local'; id: string }
 
-export type LearnMountTarget = 'hub' | 'play-along' | 'intervals' | 'sight-reading'
-
 export interface AppActions {
   navigation: {
     toMode(mode: AppMode): void
@@ -38,8 +40,10 @@ export interface AppActions {
     open(request: LibraryOpenRequest): Promise<void> | void
   }
   learn: {
-    enterRoute(target: LearnMountTarget, signal?: AbortSignal): Promise<void>
-    exitRoute(): void
+    enterHub(signal?: AbortSignal): Promise<void>
+    exitHub(): void
+    enterExercise(route: ExerciseRouteId, signal?: AbortSignal): Promise<void>
+    exitExercise(): void
     enter(request: LearnEnterRequest): Promise<void> | void
   }
   session: {
@@ -48,16 +52,19 @@ export interface AppActions {
   }
 }
 
-// Context value threaded via `<AppCtx.Provider value={ctx}>`. Mode shells and
-// Solid components read app state from `services` / `store`, then express user
-// intent exclusively through `actions`. Avoid exposing imperative UI handles or
-// parallel entrypoints here — they create branching "which path do I change?"
-// decisions that make follow-up work more expensive.
+export interface LearnRuntimeFactories {
+  createPlayAlongPageRuntime(): PlayAlongPageRuntimeHandle
+  createExercisePageRuntime(options: CreateExercisePageRuntimeOptions): ExercisePageRuntimeHandle
+}
+
+// Context value threaded via `<AppCtx.Provider value={ctx}>`. Components read
+// the public app store, express intent through `actions`, and opt into
+// page-owned exercise runtimes through narrow factories instead of the entire
+// runtime dependency bag.
 export interface AppCtxValue {
-  services: AppServices
   store: AppPublicStore
   actions: AppActions
-  ensureLearnController: () => Promise<LearnController>
+  learnRuntime: LearnRuntimeFactories
 }
 
 export const AppCtx = createContext<AppCtxValue>()

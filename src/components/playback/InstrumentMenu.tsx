@@ -1,6 +1,6 @@
 import { createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
-import { INSTRUMENTS, type InstrumentId } from '../audio/SynthEngine'
+import { INSTRUMENTS, type InstrumentId } from '@/services/audio/SynthEngine'
 import { t } from '../i18n'
 import styles from './InstrumentMenu.module.css'
 import { icons } from './icons'

@@ -1,12 +1,12 @@
 import { Application, Graphics, type Ticker } from 'pixi.js'
-import type { MasterClock } from '../core/clock/MasterClock'
 import {
   getKeyboardHeightProfile,
   getKeyboardRange,
   type KeyboardMode,
-} from '../core/keyboardLayout'
-import type { MidiFile } from '../core/midi/types'
-import type { LiveNoteStore } from '../midi/LiveNoteStore'
+} from '@/lib/core/keyboardLayout'
+import type { MasterClock } from '@/lib/core/MasterClock'
+import type { LiveNoteStore } from '@/services/midi/LiveNoteStore'
+import type { MidiFile } from '@/types/midi/types'
 import { BeatGrid } from './BeatGrid'
 import { type EmitCadence, scheduleEmissions } from './emitSchedule'
 import { KeyboardRenderer } from './KeyboardRenderer'
@@ -18,7 +18,7 @@ import { darkTheme, getTrackColor, type Theme } from './theme'
 import { Viewport, visibleNoteRange } from './viewport'
 
 // Must match the `--keyboard-h` value in the global CSS tokens and the reset value
-// in KeyboardResizer.onDoubleClick — all three describe the same default,
+// in KeyboardResizer.onDoubleClick 鈥?all three describe the same default,
 // and drift between them shows up as a gap under the resize handle on first
 // load (before any saved preference or user drag has synced the CSS var).
 const DEFAULT_KEYBOARD_HEIGHT = 120
@@ -28,7 +28,7 @@ const HUD_GAP_88 = 20
 const HUD_GAP_61 = 12
 const KEYBOARD_HEIGHT_MIN = 80
 const KEYBOARD_HEIGHT_MAX = 360
-// Raised from 220 so portrait phones can host a substantial keyboard —
+// Raised from 220 so portrait phones can host a substantial keyboard 鈥?
 // a 220px cap on an 844px-tall iPhone only gives 26% of the screen to the
 // keys. Desktop users rarely drag above ~200px, so this is purely headroom.
 
@@ -65,7 +65,7 @@ function syncHudGap(mode: KeyboardMode): void {
   )
 }
 
-// Same formula as KeyboardResizer.viewportBounds — duplicated here so the
+// Same formula as KeyboardResizer.viewportBounds 鈥?duplicated here so the
 // renderer can re-clamp on rotation without reaching into UI-layer code.
 // Max is 45% of viewport height: on a 390px landscape phone that gives a
 // 176px cap, rescuing rotation from portrait where the keyboard would
@@ -121,9 +121,9 @@ export class PianoRollRenderer {
   // so comparisons never allocate strings in the hot path.
   private prevActive = new Set<number>()
   private currActive = new Set<number>()
-  // Map pitch → color so the keyboard overlay picks up each track's own hue
+  // Map pitch 鈫?color so the keyboard overlay picks up each track's own hue
   // rather than a single accent. Last-write-wins when multiple tracks sound
-  // the same pitch — acceptable; the rest of the visualization already does
+  // the same pitch 鈥?acceptable; the rest of the visualization already does
   // the same.
   private activeKeyColors = new Map<number, number>()
   private exportMode = false
@@ -170,7 +170,7 @@ export class PianoRollRenderer {
     })
 
     // Pick a viewport-appropriate initial keyboard height before building the
-    // scene — otherwise the first paint uses the desktop 120px default even
+    // scene 鈥?otherwise the first paint uses the desktop 120px default even
     // on portrait phones, and a later resize would cause a flash.
     this.keyboardHeight = clampKeyboardHeight(computeInitialKeyboardHeight(this.keyboardMode))
 
@@ -183,13 +183,13 @@ export class PianoRollRenderer {
     })
 
     // Keep the CSS --keyboard-h in lockstep with the JS-side height from the
-    // very first paint — the resize handle + HUD positioning reads this var
+    // very first paint 鈥?the resize handle + HUD positioning reads this var
     // and would otherwise drift until the first setKeyboardHeight() call.
     document.documentElement.style.setProperty('--keyboard-h', `${this.keyboardHeight}px`)
     syncHudGap(this.keyboardMode)
 
     this.buildScene()
-    // handleResize calls resize() → rebuildStaticLayers() + renderStaticFrame(0),
+    // handleResize calls resize() 鈫?rebuildStaticLayers() + renderStaticFrame(0),
     // so buildScene must not call rebuildStaticLayers itself.
     this.handleResize()
 
@@ -199,7 +199,7 @@ export class PianoRollRenderer {
   private buildScene(): void {
     const stage = this.app.stage
 
-    // Layer order (bottom → top):
+    // Layer order (bottom 鈫?top):
     // 1. background  2. beat-grid  3. notes  4. live-notes  5. now-line  6. keyboard  7. particles
 
     this.backgroundGraphics = new Graphics()
@@ -327,7 +327,7 @@ export class PianoRollRenderer {
 
   setZoom(pixelsPerSecond: number): void {
     this.pixelsPerSecond = pixelsPerSecond
-    // Key layout and keyboard texture are width-dependent, not zoom-dependent —
+    // Key layout and keyboard texture are width-dependent, not zoom-dependent 鈥?
     // no need to rebuild them when only pixelsPerSecond changes. External layers
     // may cache timeOffsetToY-derived positions though, so notify them.
     this.viewport.update({ pixelsPerSecond })
@@ -406,7 +406,7 @@ export class PianoRollRenderer {
     this.noteRenderer.updateTheme(theme)
     this.liveNoteRenderer.updateTheme(theme)
     this.keyboardRenderer.updateTheme(theme)
-    // Particle motion is intentionally theme-independent — only the color
+    // Particle motion is intentionally theme-independent 鈥?only the color
     // changes (via the caller's trackColors[0]). Behaviour stays consistent.
     this.rebuildStaticLayers()
     this.renderStaticFrame(0)
@@ -414,7 +414,7 @@ export class PianoRollRenderer {
 
   // Public reads of renderer internals for Learn-mode overlays that compute
   // their own geometry (celebration swell position, target-zone color).
-  // Kept narrow — exercises shouldn't need more than these.
+  // Kept narrow 鈥?exercises shouldn't need more than these.
   get currentTheme(): Theme {
     return this.theme
   }
@@ -434,14 +434,14 @@ export class PianoRollRenderer {
     // Skip the render pass only when there is genuinely nothing to draw.
     // An external layer registered via `addLayer` may want a per-frame
     // update (animated target zone, countdown bar, staff cursor) even when
-    // no MIDI or live notes are active — gating that out would freeze learn
+    // no MIDI or live notes are active 鈥?gating that out would freeze learn
     // overlays on the hub screen.
     if (!this.midi && !hasLive && this.externalLayers.length === 0) return
     this.renderFrame(clock.currentTime, ticker.deltaMS / 1000, clock.playing)
   }
 
   // Drives rendering during video export. `emitParticles: true` so note-on
-  // bursts appear in the captured output — the exporter steps time forward
+  // bursts appear in the captured output 鈥?the exporter steps time forward
   // monotonically from t=0, so prev/curr note tracking works just like live
   // playback.
   renderManualFrame(time: number, dt: number): void {
@@ -462,9 +462,9 @@ export class PianoRollRenderer {
     curr.clear()
     activeColors.clear()
 
-    // ── Scheduled MIDI notes ──────────────────────────────────────────────
+    // 鈹€鈹€ Scheduled MIDI notes 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     // Single pass collects active pitches and emits note-on particle bursts.
-    // `prev`/`curr` swap at the end — no per-frame Set or string allocations.
+    // `prev`/`curr` swap at the end 鈥?no per-frame Set or string allocations.
     if (this.midi) {
       const tracks = this.midi.tracks
       const prev = this.prevActive
@@ -476,13 +476,13 @@ export class PianoRollRenderer {
       eligible.clear()
       geom.clear()
       // Don't light up the keyboard for scheduled notes when the clock is
-      // paused at the very start of the timeline — nothing has actually
+      // paused at the very start of the timeline 鈥?nothing has actually
       // sounded yet. The classic case this guards against: opening a session
       // recording in file mode where the user held a key at recording start
       // (note.time === 0). Without this gate the keyboard would show that
       // key as pressed before the user has touched play.
       // Once playback has started or the playhead has moved past 0, the
-      // normal "sounds now" rule applies — pausing mid-piece still shows
+      // normal "sounds now" rule applies 鈥?pausing mid-piece still shows
       // sustained notes correctly.
       const beforeFirstPlay = !emitParticles && currentTime === 0
 
@@ -491,7 +491,7 @@ export class PianoRollRenderer {
         if (!this.visibleTrackIds.has(track.id)) continue
         const practiceInactive =
           this.practiceFocusTrackIds !== null && !this.practiceFocusTrackIds.has(track.id)
-        // Always compute the track color — we now use it for the keyboard
+        // Always compute the track color 鈥?we now use it for the keyboard
         // overlay too, not just particle bursts.
         const trackColor = getTrackColor(track, this.theme)
         const keyBase = ti * 128
@@ -551,12 +551,12 @@ export class PianoRollRenderer {
       this.noteRenderer.clear()
     }
 
-    // Swap prev ↔ curr for next frame (prev's contents are now stale)
+    // Swap prev 鈫?curr for next frame (prev's contents are now stale)
     const tmp = this.prevActive
     this.prevActive = this.currActive
     this.currActive = tmp
 
-    // ── Live MIDI keyboard notes ──────────────────────────────────────────
+    // 鈹€鈹€ Live MIDI keyboard notes 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     if (this.liveNoteStore) {
       const maxReleasedAge = this.viewport.nowLineY / this.viewport.config.pixelsPerSecond
       this.liveNoteStore.pruneInvisible(currentTime, maxReleasedAge)
@@ -573,7 +573,7 @@ export class PianoRollRenderer {
 
         const nextAt = this.liveEmitNext.get(pitch)
         if (nextAt === undefined) {
-          // First frame we see this held note — note-on was already bursted
+          // First frame we see this held note 鈥?note-on was already bursted
           // synchronously via burstParticleAt. Schedule the first sustain puff.
           this.liveEmitNext.set(pitch, currentTime + SUSTAIN_INITIAL_DELAY_SEC)
         } else if (currentTime >= nextAt) {
@@ -584,7 +584,7 @@ export class PianoRollRenderer {
         }
       }
 
-      // Loop-held notes still light up the keyboard but don't emit particles —
+      // Loop-held notes still light up the keyboard but don't emit particles 鈥?
       // keeps the "me vs my loop" visual distinction clear. Use the live color
       // unless a live note is also active on the same pitch (already set).
       if (loopHeld) {
@@ -606,7 +606,7 @@ export class PianoRollRenderer {
           this.viewport,
         )
       } else {
-        // Keyboard highlight (above) still uses `held` — we only suppress
+        // Keyboard highlight (above) still uses `held` 鈥?we only suppress
         // the floating-up sprites. Learn mode uses this so user input
         // registers on the keyboard without polluting the piano roll.
         this.liveNoteRenderer.clear()
@@ -699,7 +699,7 @@ export class PianoRollRenderer {
     this.loopNoteStore = store
   }
 
-  // Pitch → track color map of every key currently lit on the on-screen
+  // Pitch 鈫?track color map of every key currently lit on the on-screen
   // keyboard. Re-populated each frame in `renderFrame`, so callers (chord
   // overlay, MIDI exporter sidebars, etc.) can read it once per tick.
   get currentActivePitches(): ReadonlyMap<number, number> {
@@ -721,7 +721,7 @@ export class PianoRollRenderer {
       this.theme,
     )
     if (!this.midi && !(this.liveNoteStore?.hasRenderableNotes ?? false)) {
-      // No render loop is running — paint once so the hint appears immediately.
+      // No render loop is running 鈥?paint once so the hint appears immediately.
       this.renderStaticFrame(0)
     }
   }
@@ -764,7 +764,7 @@ export class PianoRollRenderer {
     }
   }
 
-  // Public resize — lets the exporter target an exact pixel size independent
+  // Public resize 鈥?lets the exporter target an exact pixel size independent
   // of the window. Pass `resolution = 1` when exporting so the canvas backing
   // store matches the requested output dimensions exactly.
   resize(width: number, height: number, resolution?: number): void {
@@ -778,7 +778,7 @@ export class PianoRollRenderer {
   }
 
   private handleResize = (): void => {
-    // Ignore viewport events during export — the exporter owns canvas size
+    // Ignore viewport events during export 鈥?the exporter owns canvas size
     // until it restores it in its own finally block.
     if (this.exportMode) return
     this.resize(window.innerWidth, window.innerHeight)

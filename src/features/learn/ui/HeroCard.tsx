@@ -1,5 +1,5 @@
 import type { JSX } from 'solid-js'
-import { cssModuleClass } from '../../ui/utils'
+import { cssModuleClass } from '@/components/common/utils'
 import styles from './HeroCard.module.css'
 
 interface HeroCardProps {

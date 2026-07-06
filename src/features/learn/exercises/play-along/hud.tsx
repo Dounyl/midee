@@ -1,9 +1,9 @@
 import { createEffect, createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js'
+import { icons } from '@/components/common/icons'
+import { FloatingHud } from '@/components/playback/FloatingHud'
+import { createMountHandle } from '@/features/learn/ui/mountComponent'
+import { t } from '@/i18n'
 import { watch } from '@/stores/app/watch'
-import { t } from '../../../i18n'
-import { FloatingHud } from '../../../ui/FloatingHud'
-import { icons } from '../../../ui/icons'
-import { createMountHandle } from '../../ui/mountComponent'
 import { DEFAULT_SPEED_PRESETS, type PlayAlongEngine } from './engine'
 import './hud.css'
 

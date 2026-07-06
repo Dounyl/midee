@@ -1,13 +1,13 @@
 import { useNavigate } from '@solidjs/router'
 import { createMemo, For, onCleanup, onMount } from 'solid-js'
+import { RecentMidiList } from '@/components/playback/RecentMidiList'
+import { createLearnProgressStore } from '@/features/learn/core/progress'
+import { LEARN_ROUTE_CATALOG, type LearnRouteEntry } from '@/features/learn/hub/catalog'
+import { ExerciseCardView } from '@/features/learn/ui/ExerciseCard'
+import { HeroCard, heroCardStyles } from '@/features/learn/ui/HeroCard'
+import { StreakRowView } from '@/features/learn/ui/StreakRow'
+import { t } from '@/i18n'
 import { useApp } from '@/stores/app/AppCtx'
-import { t } from '../../i18n'
-import { createLearnProgressStore } from '../../learn/core/progress'
-import { LEARN_ROUTE_CATALOG, type LearnRouteEntry } from '../../learn/hub/catalog'
-import { ExerciseCardView } from '../../learn/ui/ExerciseCard'
-import { HeroCard, heroCardStyles } from '../../learn/ui/HeroCard'
-import { StreakRowView } from '../../learn/ui/StreakRow'
-import { RecentMidiList } from '../../ui/RecentMidiList'
 import styles from './LearnHubPage.module.css'
 import { LearnLayout } from './LearnLayout'
 
@@ -35,10 +35,10 @@ export function LearnHubPage() {
 
   onMount(() => {
     const abort = new AbortController()
-    void actions.learn.enterRoute('hub', abort.signal)
+    void actions.learn.enterHub(abort.signal)
     onCleanup(() => {
       abort.abort()
-      actions.learn.exitRoute()
+      actions.learn.exitHub()
     })
   })
 

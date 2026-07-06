@@ -1,1 +1,1 @@
-export * from '@/routing/routerBridge'
+export * from '@/stores/routing/routerBridge'

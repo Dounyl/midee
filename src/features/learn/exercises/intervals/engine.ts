@@ -1,6 +1,6 @@
 import { batch } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
-import type { AppServices } from '../../../core/services'
+import type { AppServices } from '@/types/app/AppServices'
 import { makeQuestions, type Question } from './theory'
 
 // Runtime state for the Intervals quiz. DOM-free so it can be reasoned about

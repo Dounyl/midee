@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
-import type { MidiFile } from '../../core/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 import { createAppStore } from '../../stores/app/state'
 import {
   applyHomeRouteEntry,

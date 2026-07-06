@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MidiFile } from '../../../core/midi/types'
-import type { AppServices } from '../../../core/services'
-import { createLearnState, type LearnState } from '../../core/LearnState'
+import { createLearnState, type LearnState } from '@/features/learn/core/LearnState'
+import type { AppServices } from '@/types/app/AppServices'
+import type { MidiFile } from '@/types/midi/types'
 import { PlayAlongEngine } from './engine'
 
 // Fake clock that speaks to the same surface the engine uses. Tests tick

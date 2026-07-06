@@ -17,14 +17,6 @@ vi.mock('@/app/AppRoot', () => ({
 function makeCtx(): AppCtxValue {
   const store = createAppStore()
   return {
-    services: {
-      store,
-      clock: null as never,
-      synth: null as never,
-      metronome: null as never,
-      renderer: null as never,
-      input: null as never,
-    },
     store,
     actions: {
       navigation: { toMode: vi.fn() },
@@ -33,8 +25,10 @@ function makeCtx(): AppCtxValue {
       live: { enter: vi.fn() },
       library: { open: vi.fn() },
       learn: {
-        enterRoute: vi.fn(async () => {}),
-        exitRoute: vi.fn(),
+        enterHub: vi.fn(async () => {}),
+        exitHub: vi.fn(),
+        enterExercise: vi.fn(async () => {}),
+        exitExercise: vi.fn(),
         enter: vi.fn(),
       },
       session: {
@@ -42,7 +36,10 @@ function makeCtx(): AppCtxValue {
         primeInteractiveAudio: vi.fn(),
       },
     },
-    ensureLearnController: vi.fn(async () => null as never),
+    learnRuntime: {
+      createPlayAlongPageRuntime: vi.fn(() => null as never),
+      createExercisePageRuntime: vi.fn(() => null as never),
+    },
   }
 }
 

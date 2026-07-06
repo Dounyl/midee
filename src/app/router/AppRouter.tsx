@@ -1,9 +1,15 @@
 import { Route, Router, useLocation, useNavigate } from '@solidjs/router'
 import { createEffect, lazy, onCleanup, type ParentProps, Suspense } from 'solid-js'
+import {
+  EXERCISE_ROUTE_PATHS,
+  LEARN_HUB_PATH,
+  LEGACY_EXERCISE_ROUTE_PATHS,
+} from '@/features/routing/learnRoutes'
 import { HomePage } from '@/pages/HomePage/HomePage'
-import { resolveInitialRoutePath } from '@/routing/modeRoutes'
-import { bindAppNavigator, syncCurrentRoute } from '@/routing/routerBridge'
 import { SKIP_HOME_INTRO_STORAGE_KEY } from '@/stores/app/state'
+import { resolveInitialRoutePath } from '@/stores/routing/modeRoutes'
+import { bindAppNavigator, syncCurrentRoute } from '@/stores/routing/routerBridge'
+import { type RouteTarget, routeTargetToPath } from '@/stores/routing/routeTarget'
 
 const PlayPage = lazy(() =>
   import('@/pages/PlayPage/PlayPage').then((mod) => ({ default: mod.PlayPage })),
@@ -59,6 +65,14 @@ function LegacyHomeRedirect() {
   return null
 }
 
+function LegacyRouteRedirect(props: { target: RouteTarget }) {
+  const navigate = useNavigate()
+  createEffect(() => {
+    navigate(routeTargetToPath(props.target), { replace: true })
+  })
+  return null
+}
+
 function RootRoute() {
   const navigate = useNavigate()
   const bootPath = resolveBootPath(window.location.pathname)
@@ -85,10 +99,28 @@ export function AppRouter() {
       <Route path="/" component={RootRoute} />
       <Route path="/home" component={LegacyHomeRedirect} />
       <Route path="/play" component={PlayPage} />
-      <Route path="/learn" component={LearnHubPage} />
-      <Route path="/learn/play-along" component={LearnPlayAlongPage} />
-      <Route path="/learn/intervals" component={LearnIntervalsPage} />
-      <Route path="/learn/sight-reading" component={LearnSightReadingPage} />
+      <Route path={LEARN_HUB_PATH} component={LearnHubPage} />
+      <Route path={EXERCISE_ROUTE_PATHS['play-along']} component={LearnPlayAlongPage} />
+      <Route path={EXERCISE_ROUTE_PATHS.intervals} component={LearnIntervalsPage} />
+      <Route path={EXERCISE_ROUTE_PATHS['sight-reading']} component={LearnSightReadingPage} />
+      <Route
+        path={LEGACY_EXERCISE_ROUTE_PATHS['play-along']}
+        component={() => (
+          <LegacyRouteRedirect target={{ kind: 'exercise', routeId: 'play-along' }} />
+        )}
+      />
+      <Route
+        path={LEGACY_EXERCISE_ROUTE_PATHS.intervals}
+        component={() => (
+          <LegacyRouteRedirect target={{ kind: 'exercise', routeId: 'intervals' }} />
+        )}
+      />
+      <Route
+        path={LEGACY_EXERCISE_ROUTE_PATHS['sight-reading']}
+        component={() => (
+          <LegacyRouteRedirect target={{ kind: 'exercise', routeId: 'sight-reading' }} />
+        )}
+      />
       <Route path="/live" component={LivePage} />
       <Route path="*rest" component={UnknownRouteRedirect} />
     </Router>

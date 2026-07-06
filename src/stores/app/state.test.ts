@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MidiFile } from '../core/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 import { createEventSignal } from './eventSignal'
 import { createAppStore, resolveInitialAppMode, SKIP_HOME_INTRO_STORAGE_KEY } from './state'
 import { watch } from './watch'
