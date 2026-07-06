@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'solid-js'
 import type { AppServices } from '../core/services'
 import type { LearnController } from '../modes/LearnController'
-import type { AppMode, AppStore } from './state'
+import type { AppMode, AppPublicStore } from './state'
 
 export interface PlayRouteEnterOptions {
   skipAnalytics?: boolean
@@ -55,7 +55,7 @@ export interface AppActions {
 // decisions that make follow-up work more expensive.
 export interface AppCtxValue {
   services: AppServices
-  store: AppStore
+  store: AppPublicStore
   actions: AppActions
   ensureLearnController: () => Promise<LearnController>
 }

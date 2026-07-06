@@ -10,6 +10,10 @@ vi.mock('@/app/createApp', () => ({
   createApp: (handles: unknown) => createAppMock(handles),
 }))
 
+vi.mock('@/app/AppRoot', () => ({
+  AppRoot: () => null,
+}))
+
 function makeCtx(): AppCtxValue {
   const store = createAppStore()
   return {
@@ -51,10 +55,18 @@ describe('AppShell', () => {
   it('boots from shell refs and disposes the runtime on cleanup', async () => {
     const dispose = vi.fn()
     const onReady = vi.fn()
+    const onRuntimeReady = vi.fn()
     const ctx = makeCtx()
-    createAppMock.mockResolvedValue({ ctx, dispose })
+    createAppMock.mockResolvedValue({
+      ctx,
+      bench: {
+        prepareBenchPlayback: vi.fn(),
+        startBenchPlayback: vi.fn(),
+      },
+      dispose,
+    })
 
-    const result = render(() => <AppShell onReady={onReady} />)
+    const result = render(() => <AppShell onReady={onReady} onRuntimeReady={onRuntimeReady} />)
 
     await vi.waitFor(() => expect(createAppMock).toHaveBeenCalledOnce())
     const handles = createAppMock.mock.calls[0]?.[0] as unknown as {
@@ -65,6 +77,7 @@ describe('AppShell', () => {
     expect(handles.overlay.id).toBe('ui-overlay')
     expect(document.querySelector('#solid-root')).not.toBeNull()
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledWith(ctx))
+    await vi.waitFor(() => expect(onRuntimeReady).toHaveBeenCalledOnce())
 
     result.unmount()
     expect(dispose).toHaveBeenCalledOnce()

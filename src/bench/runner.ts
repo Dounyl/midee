@@ -1,4 +1,4 @@
-import type { AppCtxValue } from '@/stores/app/AppCtx'
+import type { BenchRuntimeDriver } from '@/app/runtime/types'
 import { fetchSampleMidi, getSample } from '../core/samples'
 
 /** Must match `FIXTURES` in `scripts/bench.mjs`. */
@@ -59,7 +59,7 @@ async function sampleRafIntervals(count: number): Promise<number[]> {
  * Load the sample MIDI into Play, start transport + clock, then measure main-thread
  * frame pacing via `requestAnimationFrame` (correlates with Pixi work while playing).
  */
-export async function runBench(fixture: string, ctx: AppCtxValue): Promise<BenchResult> {
+export async function runBench(fixture: string, runtime: BenchRuntimeDriver): Promise<BenchResult> {
   const sample = getSample(fixture)
   if (!sample) throw new Error(`unknown bench fixture: ${fixture}`)
 
@@ -67,19 +67,8 @@ export async function runBench(fixture: string, ctx: AppCtxValue): Promise<Bench
   const midi = await fetchSampleMidi(sample)
   const loadMs = performance.now() - t0
 
-  const { store, renderer, synth, clock } = ctx.services
-
-  ctx.actions.session.resetInteractionState()
-  store.beginPlayLoad()
-  renderer.clearMidi()
-  await synth.load(midi)
-  store.completePlayLoad(midi)
-  renderer.loadMidi(midi)
-  ctx.actions.play.enter({ skipAnalytics: true })
-
-  ctx.actions.session.primeInteractiveAudio()
-  clock.play()
-  store.setState('status', 'playing')
+  await runtime.prepareBenchPlayback(midi)
+  runtime.startBenchPlayback()
 
   await sampleRafIntervals(45)
   const deltas = await sampleRafIntervals(180)

@@ -1,5 +1,11 @@
 import { assertDefined, assertOnce, invariant } from '@/app/runtime/assert'
 import { createAppPreferences } from '@/app/runtime/preferences'
+import {
+  applyHomeRouteEntry,
+  applyLiveRouteEntry,
+  applyPlayRouteEntry,
+  syncLoadedMidiForCurrentRoute,
+} from '@/app/runtime/routeEntry'
 import type { AppShellHandles } from '@/app/runtime/types'
 import loadingStyles from '@/app.module.css'
 import { setNextLiveOpts } from '@/pages/LivePage/liveEnterOptions'
@@ -10,8 +16,9 @@ import type {
   LibraryOpenRequest,
   PlayRouteEnterOptions,
 } from '@/stores/app/AppCtx'
-import { type AppMode, type AppStore, resolveInitialAppMode } from '@/stores/app/state'
+import type { AppMode, AppStore } from '@/stores/app/state'
 import { watch } from '@/stores/app/watch'
+import type { MidiFile } from '@/types/midi/types'
 import { Metronome } from './audio/Metronome'
 import { SynthEngine } from './audio/SynthEngine'
 import { MasterClock } from './core/clock/MasterClock'
@@ -724,7 +731,7 @@ export class App {
       watch(
         () => this.store.state.loadedMidi,
         () => {
-          this.exportOverlay.syncConsolePanel()
+          this.handleLoadedMidiChange()
         },
       ),
       watch(
@@ -842,10 +849,6 @@ export class App {
       keyboardMode: this.keyboardModeCoordinator,
     }
 
-    const initialMode = resolveInitialAppMode()
-    if (initialMode === 'play') this.services.store.enterPlayLanding()
-    else if (initialMode === 'live') this.services.store.enterLive()
-    else this.services.store.enterHome()
     void this.autoConnectMidi()
   }
 
@@ -1016,50 +1019,64 @@ export class App {
 
   enterHomeRoute(): void {
     this.assertActionReady('enterHomeRoute')
-    this.resetInteractionState()
-    this.store.enterHome()
-    this.renderer.clearMidi()
-    this.trackPanel.close()
-    this.dropzone.show()
-    this.keyboardInput.enable()
-    document.title = t('doc.title.home')
+    applyHomeRouteEntry(this.store, {
+      renderer: this.renderer,
+      trackPanel: this.trackPanel,
+      dropzone: this.dropzone,
+      keyboardInput: this.keyboardInput,
+      resetInteractionState: () => this.resetInteractionState(),
+    })
   }
 
   enterPlayRoute(options: PlayRouteEnterOptions = {}): void {
     this.assertActionReady('enterPlayRoute')
-    const { skipAnalytics = false } = options
-    const midi = this.store.state.loadedMidi
-    const status = this.store.state.status
-    if (!midi) {
-      if (status === 'loading') return
-      this.renderer.clearMidi()
-      this.trackPanel.close()
-      this.dropzone.hide()
-      this.keyboardInput.enable()
-      document.title = `midee - ${t('topStrip.mode.play.label')}`
-      return
-    }
-
-    this.renderer.loadMidi(midi)
-    this.trackPanel.render(midi)
-    this.dropzone.hide()
-    this.keyboardInput.enable()
-    document.title = `${midi.name} - midee`
-    if (!skipAnalytics) {
-      const props = { duration_s: Math.round(midi.duration) }
-      trackEvent('play_mode_entered', props)
-      track('file_mode_entered', props)
-    }
+    applyPlayRouteEntry(
+      this.store,
+      {
+        renderer: this.renderer,
+        trackPanel: this.trackPanel,
+        dropzone: this.dropzone,
+        keyboardInput: this.keyboardInput,
+      },
+      options,
+    )
   }
 
   enterLiveRoute(): void {
     this.assertActionReady('enterLiveRoute')
+    applyLiveRouteEntry(this.store, {
+      renderer: this.renderer,
+      trackPanel: this.trackPanel,
+      dropzone: this.dropzone,
+      keyboardInput: this.keyboardInput,
+      resetInteractionState: () => this.resetInteractionState(),
+    })
+  }
+
+  async prepareBenchPlayback(midi: MidiFile): Promise<void> {
+    this.assertActionReady('prepareBenchPlayback')
     this.resetInteractionState()
+    this.store.beginPlayLoad()
     this.renderer.clearMidi()
-    this.trackPanel.close()
-    this.dropzone.hide()
-    this.keyboardInput.enable()
-    document.title = t('doc.title.live')
+    await this.synth.load(midi)
+    this.store.completePlayLoad(midi)
+    this.renderer.loadMidi(midi)
+    this.enterPlayRoute({ skipAnalytics: true })
+  }
+
+  startBenchPlayback(): void {
+    this.assertActionReady('startBenchPlayback')
+    this.primeInteractiveAudio()
+    this.clock.play()
+    this.store.setState('status', 'playing')
+  }
+
+  private handleLoadedMidiChange(): void {
+    syncLoadedMidiForCurrentRoute({
+      syncConsolePanel: () => this.exportOverlay.syncConsolePanel(),
+      currentPageMode: () => this.currentPageMode(),
+      enterPlayRoute: (options) => this.enterPlayRoute(options),
+    })
   }
 
   openLibraryRequest(request: LibraryOpenRequest): Promise<void> | void {

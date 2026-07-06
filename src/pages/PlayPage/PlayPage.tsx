@@ -1,41 +1,16 @@
-import { createEffect, createRenderEffect, onMount, Show } from 'solid-js'
+import { onMount, Show } from 'solid-js'
 import { useApp } from '@/stores/app/AppCtx'
 import { t } from '../../i18n'
-import { track, trackEvent } from '../../telemetry'
 import { icons } from '../../ui/icons'
 import { RecentMidiList } from '../../ui/RecentMidiList'
 import styles from './PlayPage.module.css'
 
 export function PlayPage() {
-  const { services, actions, store } = useApp()
-  const hasMidi = () => services.store.state.loadedMidi !== null
-
-  createRenderEffect(() => {
-    if (store.state.loadedMidi) {
-      store.enterPlay(false)
-      return
-    }
-    store.enterPlayLanding()
-  })
+  const { actions, store } = useApp()
+  const hasMidi = () => store.state.loadedMidi !== null
 
   onMount(() => {
-    const midi = services.store.state.loadedMidi
-    const status = services.store.state.status
-    if (!midi) {
-      if (status === 'loading') return
-      actions.play.enter()
-      return
-    }
-
-    const props = { duration_s: Math.round(midi.duration) }
-    trackEvent('play_mode_entered', props)
-    track('file_mode_entered', props)
-  })
-
-  createEffect(() => {
-    const midi = services.store.state.loadedMidi
-    if (!midi) return
-    actions.play.enter({ skipAnalytics: true })
+    actions.play.enter()
   })
 
   return (
@@ -80,7 +55,7 @@ export function PlayPage() {
       <RecentMidiList
         title={t('midiLibrary.homeLabel')}
         target="play"
-        currentName={services.store.state.loadedMidi?.name ?? null}
+        currentName={store.state.loadedMidi?.name ?? null}
         emptyLabel={t('midiLibrary.emptyHome')}
         onOpen={(request) => actions.library.open(request)}
       />

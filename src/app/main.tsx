@@ -17,10 +17,10 @@ import '@fontsource/jetbrains-mono/latin-500.css'
 import '@fontsource/jetbrains-mono/latin-600.css'
 import { render } from 'solid-js/web'
 import { AppShell } from '@/app/AppShell'
+import type { AppRuntimeInstance } from '@/app/runtime/types'
 import { env } from '@/env'
 import { currentLocaleNativeName, initI18n, shouldShowLocaleHint, t } from '@/i18n'
 import localeHintStyles from '@/main/LocaleHint.module.css'
-import type { AppCtxValue } from '@/stores/app/AppCtx'
 import { loadPostHog, registerAnalyticsContext } from '@/telemetry'
 import { whenIdle } from '@/whenIdle'
 
@@ -55,9 +55,11 @@ async function boot(): Promise<void> {
   render(
     () => (
       <AppShell
-        onReady={(ctx) => {
+        onReady={() => {
           if (shouldShowLocaleHint()) showLocaleHint()
-          void runBenchIfEnabled(ctx)
+        }}
+        onRuntimeReady={(runtime) => {
+          void runBenchIfEnabled(runtime)
         }}
         onError={(err) => {
           console.error('App failed to initialize:', err)
@@ -68,7 +70,7 @@ async function boot(): Promise<void> {
   )
 }
 
-async function runBenchIfEnabled(ctx: AppCtxValue): Promise<void> {
+async function runBenchIfEnabled(runtime: AppRuntimeInstance): Promise<void> {
   // Bench runner is a build-time opt-in. `npm run bench` sets
   // VITE_ENABLE_BENCH=1; public prod builds don't, so Vite constant-folds the
   // condition to `false` and tree-shakes both the dynamic import and the
@@ -80,7 +82,7 @@ async function runBenchIfEnabled(ctx: AppCtxValue): Promise<void> {
   const fixture = benchFixtureFromUrl()
   if (!fixture) return
   try {
-    window.__BENCH_RESULT = await runBench(fixture, ctx)
+    window.__BENCH_RESULT = await runBench(fixture, runtime.bench)
   } catch (err) {
     window.__BENCH_ERROR = err instanceof Error ? err.message : String(err)
     console.error('[bench]', err)

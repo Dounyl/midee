@@ -1,5 +1,5 @@
 import { createSignal, onCleanup, onMount, Show } from 'solid-js'
-import { AppRoot } from '@/app/App'
+import { AppRoot } from '@/app/AppRoot'
 import { AppShellProvider } from '@/app/AppShellContext'
 import { createApp } from '@/app/createApp'
 import { assertDefined } from '@/app/runtime/assert'
@@ -10,6 +10,7 @@ import { AppCtx, type AppCtxValue } from '@/stores/app/AppCtx'
 
 interface AppShellProps {
   onReady?: (ctx: AppCtxValue) => void | Promise<void>
+  onRuntimeReady?: (runtime: AppRuntimeInstance) => void | Promise<void>
   onError?: (error: unknown) => void
 }
 
@@ -35,6 +36,7 @@ export function AppShell(props: AppShellProps) {
         }
         setCtx(runtime.ctx)
         await props.onReady?.(runtime.ctx)
+        await props.onRuntimeReady?.(runtime)
       } catch (error) {
         if (!cancelled) props.onError?.(error)
       }

@@ -1,1 +1,1 @@
-export { AppRoot } from '@/app/App'
+export { AppRoot } from '@/app/AppRoot'

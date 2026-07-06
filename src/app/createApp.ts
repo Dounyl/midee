@@ -48,6 +48,10 @@ export async function createApp(handles: AppShellHandles): Promise<AppRuntimeIns
   }
   return {
     ctx,
+    bench: {
+      prepareBenchPlayback: (midi) => app.prepareBenchPlayback(midi),
+      startBenchPlayback: () => app.startBenchPlayback(),
+    },
     dispose: () => app.dispose(),
   }
 }

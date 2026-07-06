@@ -2,10 +2,9 @@ import { onMount } from 'solid-js'
 import { useApp } from '@/stores/app/AppCtx'
 
 export function HomePage() {
-  const { services, actions } = useApp()
+  const { actions } = useApp()
 
   onMount(() => {
-    services.store.enterHome()
     actions.home.enter()
   })
 

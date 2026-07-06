@@ -1,5 +1,5 @@
 import { batch } from 'solid-js'
-import { createStore } from 'solid-js/store'
+import { createStore, type SetStoreFunction } from 'solid-js/store'
 import type { MidiFile } from '../core/midi/types'
 import { pathToMode, resolveInitialRoutePath } from '../routing/modeRoutes'
 
@@ -15,6 +15,24 @@ export interface AppStoreState {
   duration: number
   volume: number
   speed: number
+}
+
+interface AppStoreBase {
+  state: AppStoreState
+  setState: SetStoreFunction<AppStoreState>
+  readonly hasLoadedFile: boolean
+}
+
+export interface AppPublicStore extends AppStoreBase {}
+
+export interface AppRuntimeStore extends AppStoreBase {
+  enterHome(): void
+  enterPlayLanding(): void
+  beginPlayLoad(): void
+  completePlayLoad(midi: MidiFile): void
+  replaceLoadedMidi(midi: MidiFile): void
+  enterPlay(resetTime?: boolean): boolean
+  enterLive(resetTime?: boolean): void
 }
 
 export function resolveInitialAppMode(): AppMode {
@@ -33,7 +51,7 @@ export function resolveInitialAppMode(): AppMode {
 // status, and the loaded MIDI. Consumers read `store.state.foo` (reactive
 // inside a tracking scope, raw value outside) and write either through an
 // intent method (multi-field, batched) or directly via `store.setState`.
-export function createAppStore() {
+export function createAppStore(): AppRuntimeStore {
   const [state, setState] = createStore<AppStoreState>({
     status: 'idle',
     loadedMidi: null,
@@ -118,4 +136,4 @@ export function createAppStore() {
   }
 }
 
-export type AppStore = ReturnType<typeof createAppStore>
+export type AppStore = AppRuntimeStore

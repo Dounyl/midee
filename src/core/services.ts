@@ -1,4 +1,4 @@
-import type { AppStore } from '@/stores/app/state'
+import type { AppPublicStore } from '@/stores/app/state'
 import type { Metronome } from '../audio/Metronome'
 import type { SynthEngine } from '../audio/SynthEngine'
 import type { PianoRollRenderer } from '../renderer/PianoRollRenderer'
@@ -10,7 +10,7 @@ import type { InputBus } from './input/InputBus'
 // LearnProgressStore, LearnOverlay) live inside the Learn controller and reach
 // exercises via `ExerciseContext`, not via this bag.
 export interface AppServices {
-  store: AppStore
+  store: AppPublicStore
   clock: MasterClock
   synth: SynthEngine
   metronome: Metronome

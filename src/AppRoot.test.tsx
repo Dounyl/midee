@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AppRoot } from '@/app/App'
+import { AppRoot } from '@/app/AppRoot'
 import { SKIP_HOME_INTRO_STORAGE_KEY } from '@/stores/app/state'
 import { renderWithApp } from './test/renderWithApp'
 
@@ -32,5 +32,11 @@ describe('AppRoot routing', () => {
     window.history.pushState({}, '', '/play')
     const { ctx } = renderWithApp(() => <AppRoot />)
     await vi.waitFor(() => expect(ctx.actions.play.enter).toHaveBeenCalledOnce())
+  })
+
+  it('enters the live route from the /live URL', async () => {
+    window.history.pushState({}, '', '/live')
+    const { ctx } = renderWithApp(() => <AppRoot />)
+    await vi.waitFor(() => expect(ctx.actions.live.enter).toHaveBeenCalledOnce())
   })
 })
