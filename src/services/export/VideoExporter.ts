@@ -50,12 +50,16 @@ const PROGRESS_UPDATE_EVERY_N_FRAMES = 3
 const AUDIO_CODEC_STRING = 'mp4a.40.2' // AAC-LC
 const AUDIO_BITRATE = 192_000
 // Chunk size in frames; wall duration follows `buffer.sampleRate` (offline render is 44.1 kHz).
-const AUDIO_CHUNK_FRAMES = 4096 // e.g. ~93 ms at 44.1 kHz — good encoder cadence
+const AUDIO_CHUNK_FRAMES = 4096 // e.g. ~93 ms at 44.1 kHz - good encoder cadence
 // Progress contract: each stage reports `pct` in [0, 1] relative to that stage
 // only. The UI resets the bar when the stage name changes. Stages are not
 // globally scaled against one another because their wall-clock durations vary
-// unpredictably with MIDI length, resolution, and CPU — a fixed global scale
+// unpredictably with MIDI length, resolution, and CPU - a fixed global scale
 // is always wrong for some input. Per-stage progress is always accurate.
+
+interface SchedulerLike {
+  yield(): Promise<void>
+}
 
 export class VideoExporter {
   private cancelled = false
@@ -412,10 +416,9 @@ function yieldTask(): Promise<void> {
 // on the next event loop tick without the ~4 ms setTimeout-0 clamp. Falls
 // back to setTimeout for browsers that don't support the scheduler API.
 function yieldToEventLoop(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const scheduler = (globalThis as any).scheduler
+  const scheduler = (globalThis as typeof globalThis & { scheduler?: SchedulerLike }).scheduler
   if (scheduler && typeof scheduler.yield === 'function') {
-    return scheduler.yield() as Promise<void>
+    return scheduler.yield()
   }
   return new Promise((resolve) => setTimeout(resolve, 0))
 }

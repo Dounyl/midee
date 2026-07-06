@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   bassStaffStep,
-  isAccidental,
-  isWhiteKey,
   noteName,
   noteNameInKey,
   rangeForClef,

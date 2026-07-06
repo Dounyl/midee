@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import type { MidiFile } from './midi/types'
 import {
   getCompatibleTranspositions,
   getKeyboardHeightProfile,
@@ -8,6 +7,7 @@ import {
   midiFitsKeyboardMode,
   shouldPromptKeyboardModeSuggestion,
 } from './keyboardLayout'
+import type { MidiFile } from './midi/types'
 
 function makeMidi(pitches: number[]): MidiFile {
   return {
@@ -42,7 +42,9 @@ describe('keyboardLayout', () => {
   })
 
   it('gives 61-key mode a taller height profile', () => {
-    expect(getKeyboardHeightProfile('61').desktop).toBeGreaterThan(getKeyboardHeightProfile('88').desktop)
+    expect(getKeyboardHeightProfile('61').desktop).toBeGreaterThan(
+      getKeyboardHeightProfile('88').desktop,
+    )
     expect(getKeyboardHeightProfile('61').portraitRatio).toBeGreaterThan(
       getKeyboardHeightProfile('88').portraitRatio,
     )

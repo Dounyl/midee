@@ -4,8 +4,8 @@ import { LOCALES, type LocaleCode, locale, t } from '../i18n'
 import type { ParticleStyle, ParticleStyleInfo } from '../renderer/ParticleSystem'
 import type { Theme } from '../renderer/theme'
 import { trackEvent } from '../telemetry'
-import { FEEDBACK_URL, isNarrowViewport } from './utils'
 import styles from './CustomizeMenu.module.css'
+import { FEEDBACK_URL, isNarrowViewport } from './utils'
 
 // Aesthetics popover — collapses theme, particles, and chord overlay (three
 // previously-separate topbar pills) into one trigger. Reduces topbar noise
@@ -193,10 +193,7 @@ function MenuView(props: MenuProps) {
 
         <div class={`${styles.customizeSection} ${styles.customizeSectionToggle}`}>
           <button
-            class={[
-              styles.customizeToggle,
-              props.chordOn() ? styles.customizeToggleOn : '',
-            ]
+            class={[styles.customizeToggle, props.chordOn() ? styles.customizeToggleOn : '']
               .filter(Boolean)
               .join(' ')}
             type="button"

@@ -57,6 +57,15 @@ const TAIL_SECONDS = 1.5
 // smooth bar without measurable overhead on typical MIDIs.
 const PROGRESS_STEPS = 20
 
+type TonePartLike = {
+  start(time?: number): void
+}
+
+type TonePartConstructor = new (
+  callback: (time: number, value: OfflineNoteEvent) => void,
+  events: Array<[number, OfflineNoteEvent]>,
+) => TonePartLike
+
 export async function renderAudioOffline(opts: OfflineRenderOptions): Promise<AudioBuffer> {
   const { midi, instrumentId, volume, disabledTrackIds, onProgress } = opts
   const sampleRate = opts.sampleRate ?? DEFAULT_SAMPLE_RATE
@@ -95,10 +104,10 @@ export async function renderAudioOffline(opts: OfflineRenderOptions): Promise<Au
     const transport = getTransport()
     transport.bpm.value = midi.bpm
 
-    // See SynthEngine — Tone.Part accepts tuple form at runtime, but its types
+    // See SynthEngine - Tone.Part accepts tuple form at runtime, but its types
     // only cover the object form. Narrow cast keeps the named import shakeable.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const part = new (Part as any)(
+    const TonePart = Part as unknown as TonePartConstructor
+    const part = new TonePart(
       (time: number, ev: OfflineNoteEvent) => {
         inst.triggerAttackRelease(ev.note, ev.duration, time, ev.velocity)
       },

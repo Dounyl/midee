@@ -8,9 +8,9 @@ import {
   transposeKeySignature,
 } from '../core/music/KeySignature'
 import { t } from '../i18n'
+import styles from './ConsolePanel.module.css'
 import { icons } from './icons'
 import { isNarrowViewport } from './utils'
-import styles from './ConsolePanel.module.css'
 
 interface PanelProps {
   isOpen: () => boolean
@@ -56,7 +56,11 @@ function ConsolePanelView(props: PanelProps) {
         onClick={() => props.onToggle()}
       >
         <span class={styles.consoleTriggerIcon} aria-hidden="true" innerHTML={icons.chord(14)} />
-        <span class={styles.consoleTriggerChev} aria-hidden="true" innerHTML={icons.chevronDown(11)} />
+        <span
+          class={styles.consoleTriggerChev}
+          aria-hidden="true"
+          innerHTML={icons.chevronDown(11)}
+        />
         <span class="sr-visually-hidden">{t('topStrip.console')}</span>
       </button>
       <div

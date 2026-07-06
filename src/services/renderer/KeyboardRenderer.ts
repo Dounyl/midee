@@ -351,12 +351,12 @@ export class KeyboardRenderer {
       primary.y = black
         ? keyboardHeight * getKeyboardHeightProfile(this.keyboardMode).blackPrimaryLabelYRatio
         : keyboardHeight -
-            Math.max(
-              34,
-              primaryFontSize +
-                secondaryFontSize +
-                getKeyboardHeightProfile(this.keyboardMode).whitePrimaryLabelGap,
-            )
+          Math.max(
+            34,
+            primaryFontSize +
+              secondaryFontSize +
+              getKeyboardHeightProfile(this.keyboardMode).whitePrimaryLabelGap,
+          )
       primary.alpha = black ? 0.95 : 0.98
 
       const secondary = new Text({

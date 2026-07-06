@@ -2,9 +2,9 @@ import { createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { render } from 'solid-js/web'
 import { t } from '../i18n'
 import type { MidiDeviceStatus } from '../midi/MidiInputManager'
+import styles from './DropZone.module.css'
 import { icons } from './icons'
 import { SamplesGrid } from './SamplesGrid'
-import styles from './DropZone.module.css'
 
 export type LoadSource = 'drag' | 'picker'
 type DropHandler = (file: File, source: LoadSource) => void

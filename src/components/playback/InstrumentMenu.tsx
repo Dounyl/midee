@@ -2,9 +2,9 @@ import { createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
 import { INSTRUMENTS, type InstrumentId } from '../audio/SynthEngine'
 import { t } from '../i18n'
+import styles from './InstrumentMenu.module.css'
 import { icons } from './icons'
 import { isNarrowViewport } from './utils'
-import styles from './InstrumentMenu.module.css'
 
 // Topbar instrument picker — a pill trigger + dropdown menu. Available in
 // both live and file modes so users can hear any loaded MIDI played back with
@@ -94,7 +94,11 @@ function MenuView(props: MenuProps) {
                 <span class={styles.instrumentItemName}>{t(inst.nameKey)}</span>
                 <span class={styles.instrumentItemSub}>{t(inst.descriptionKey)}</span>
               </span>
-              <span class={styles.instrumentItemCheck} aria-hidden="true" innerHTML={icons.check()} />
+              <span
+                class={styles.instrumentItemCheck}
+                aria-hidden="true"
+                innerHTML={icons.check()}
+              />
             </button>
           )}
         </For>

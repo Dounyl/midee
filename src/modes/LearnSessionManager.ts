@@ -5,12 +5,7 @@ import { transposeMidiFile } from '../core/music/KeySignature'
 import { fetchSampleMidi, getSample } from '../core/samples'
 import { t } from '../i18n'
 import type { LearnState, LearnStatus } from '../learn/core/LearnState'
-import {
-  midiLoadErrorType,
-  trackEvent,
-  trackMidiLoaded,
-  trackMidiLoadFailed,
-} from '../telemetry'
+import { midiLoadErrorType, trackEvent, trackMidiLoaded, trackMidiLoadFailed } from '../telemetry'
 import type { ModeContext } from './ModeController'
 
 export interface LearnSessionManagerDeps {
@@ -111,10 +106,16 @@ export class LearnSessionManager {
 
   isTransposeEnabled(): boolean {
     const status = this.deps.learnState.state.status
-    return this.deps.learnState.state.loadedMidi !== null && status !== 'playing' && status !== 'loading'
+    return (
+      this.deps.learnState.state.loadedMidi !== null && status !== 'playing' && status !== 'loading'
+    )
   }
 
-  setTranspose(semitones: number, status: LearnStatus, onMidiReplaced: (midi: MidiFile) => void): void {
+  setTranspose(
+    semitones: number,
+    status: LearnStatus,
+    onMidiReplaced: (midi: MidiFile) => void,
+  ): void {
     if (!this.baseMidi) return
     const next = Math.trunc(semitones)
     if (next === this.transposeSemitones) return

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   pitchClassToJianpuLabel,
-  pitchToKeyboardLabels,
   pitchToJianpuLabel,
+  pitchToKeyboardLabels,
   shouldRenderKeyboardJianpuLabels,
   tonicPitchClassForKeySignature,
 } from './jianpu'

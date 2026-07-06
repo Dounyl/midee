@@ -11,17 +11,26 @@ interface HeroCardProps {
 }
 
 export function HeroCard(props: HeroCardProps) {
+  const isInteractive = (): boolean => props.interactive || !!props.onClick
   const className = (): string => {
-    const base = cssModuleClass(styles, 'heroCard', props.interactive && 'interactive')
+    const base = cssModuleClass(styles, 'heroCard', isInteractive() && 'interactive')
     return props.class ? `${base} ${props.class}` : base
+  }
+  if (isInteractive()) {
+    return (
+      <button
+        type="button"
+        class={className()}
+        data-category={props.dataCategory}
+        onClick={props.onClick}
+      >
+        {props.children}
+      </button>
+    )
   }
 
   return (
-    <section
-      class={className()}
-      data-category={props.dataCategory}
-      onClick={props.onClick}
-    >
+    <section class={className()} data-category={props.dataCategory}>
       {props.children}
     </section>
   )

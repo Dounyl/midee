@@ -2,7 +2,7 @@ import type { MidiFile, MidiKeySignature, MidiNote } from '../midi/types'
 
 const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const
 const MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
-const MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+const MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
 
 export function inferMidiKeySignature(midi: MidiFile): MidiKeySignature | null {
   const histogram = buildPitchClassHistogram(midi)
@@ -40,7 +40,8 @@ export function inferMidiKeySignature(midi: MidiFile): MidiKeySignature | null {
     tonic: PITCH_CLASSES[bestTonic]!,
     mode: bestMode,
     source: 'inferred',
-    confidence: bestScore <= 0 ? 0 : Math.max(0, Math.min(1, (bestScore - secondScore) / bestScore)),
+    confidence:
+      bestScore <= 0 ? 0 : Math.max(0, Math.min(1, (bestScore - secondScore) / bestScore)),
   }
 }
 
@@ -128,7 +129,12 @@ function transposePitchClass(name: string, shift: number): string {
 }
 
 function pitchClassIndex(name: string): number {
-  const normalized = name.replace('Db', 'C#').replace('Eb', 'D#').replace('Gb', 'F#').replace('Ab', 'G#').replace('Bb', 'A#')
+  const normalized = name
+    .replace('Db', 'C#')
+    .replace('Eb', 'D#')
+    .replace('Gb', 'F#')
+    .replace('Ab', 'G#')
+    .replace('Bb', 'A#')
   return PITCH_CLASSES.indexOf(normalized as (typeof PITCH_CLASSES)[number])
 }
 

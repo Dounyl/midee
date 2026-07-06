@@ -31,7 +31,11 @@ function SampleCardView(props: CardProps) {
       data-sample-id={props.sample.id}
       style={{ '--sample-accent': props.sample.accent }}
     >
-      <button class={styles.sampleCardMain} type="button" onClick={() => props.onSelect(props.sample.id)}>
+      <button
+        class={styles.sampleCardMain}
+        type="button"
+        onClick={() => props.onSelect(props.sample.id)}
+      >
         <div class={styles.sampleCardViz} aria-hidden="true">
           <div class={styles.sampleCardBars}>
             <For each={props.state().bars}>
