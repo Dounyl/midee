@@ -5,7 +5,6 @@ import {
   pathToExerciseRoute,
   pathToLegacyExerciseRoute,
 } from '@/features/routing/learnRoutes'
-import type { AppMode } from '@/stores/app/state'
 
 export type RouteTarget =
   | { kind: 'home' }
@@ -33,33 +32,6 @@ export function routeTargetToPath(target: RouteTarget): string {
   }
 }
 
-export function routeTargetToMode(target: RouteTarget): AppMode {
-  switch (target.kind) {
-    case 'home':
-      return 'home'
-    case 'play':
-      return 'play'
-    case 'live':
-      return 'live'
-    case 'learn-hub':
-    case 'exercise':
-      return 'learn'
-  }
-}
-
-export function modeToRouteTarget(mode: AppMode): RouteTarget {
-  switch (mode) {
-    case 'home':
-      return { kind: 'home' }
-    case 'play':
-      return { kind: 'play' }
-    case 'live':
-      return { kind: 'live' }
-    case 'learn':
-      return { kind: 'learn-hub' }
-  }
-}
-
 export function pathToRouteTarget(pathname: string): RouteTarget | null {
   const normalized = normalizePath(pathname)
   if (normalized === '/') return { kind: 'home' }
@@ -75,4 +47,24 @@ export function pathToRouteTarget(pathname: string): RouteTarget | null {
 
 export function isLegacyRouteTargetPath(pathname: string): boolean {
   return pathToLegacyExerciseRoute(normalizePath(pathname)) !== null
+}
+
+export function isHomeRouteTarget(target: RouteTarget | null): boolean {
+  return target?.kind === 'home'
+}
+
+export function isPlayRouteTarget(target: RouteTarget | null): boolean {
+  return target?.kind === 'play'
+}
+
+export function isLiveRouteTarget(target: RouteTarget | null): boolean {
+  return target?.kind === 'live'
+}
+
+export function isLearnRouteTarget(target: RouteTarget | null): boolean {
+  return target?.kind === 'learn-hub' || target?.kind === 'exercise'
+}
+
+export function routeCapturesLive(target: RouteTarget | null): boolean {
+  return !isLearnRouteTarget(target)
 }

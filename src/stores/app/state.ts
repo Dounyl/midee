@@ -1,9 +1,7 @@
 import { batch } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
-import { pathToMode, resolveInitialRoutePath } from '@/stores/routing/modeRoutes'
 import type { MidiFile } from '@/types/midi/types'
 
-export type AppMode = 'home' | 'play' | 'live' | 'learn'
 export type PlaybackStatus = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting'
 
 export const SKIP_HOME_INTRO_STORAGE_KEY = 'midee.skipHomeIntro'
@@ -33,18 +31,6 @@ export interface AppRuntimeStore extends AppStoreBase {
   replaceLoadedMidi(midi: MidiFile): void
   enterPlay(resetTime?: boolean): boolean
   enterLive(resetTime?: boolean): void
-}
-
-export function resolveInitialAppMode(): AppMode {
-  try {
-    const initialPath = resolveInitialRoutePath(
-      window.location.pathname,
-      localStorage.getItem(SKIP_HOME_INTRO_STORAGE_KEY) === 'true',
-    )
-    return pathToMode(initialPath) ?? 'home'
-  } catch {
-    return 'home'
-  }
 }
 
 // The AppStore is the single source of truth for mode transitions, playback

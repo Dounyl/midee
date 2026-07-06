@@ -40,7 +40,7 @@ function makeFakeCtx(): AppCtxValue {
     store,
     actions: {
       navigation: {
-        toMode: vi.fn(),
+        toTarget: vi.fn(),
       },
       home: {
         enter: vi.fn(),

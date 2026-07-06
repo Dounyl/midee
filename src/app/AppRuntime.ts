@@ -71,15 +71,20 @@ import { MidiFlowCoordinator } from '@/services/runtime/MidiFlowCoordinator'
 import { PlaybackCoordinator } from '@/services/runtime/PlaybackCoordinator'
 import { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 import type { AppActions } from '@/stores/app/AppCtx'
-import type { AppMode, AppStore } from '@/stores/app/state'
+import type { AppStore } from '@/stores/app/state'
 import { watch } from '@/stores/app/watch'
-import { MODE_CAPTURES_LIVE } from '@/stores/routing/modeCapabilities'
 import {
   getCurrentRouteTarget,
   navigateToTarget,
   subscribeCurrentRoute,
 } from '@/stores/routing/routerBridge'
-import { type RouteTarget, routeTargetToMode } from '@/stores/routing/routeTarget'
+import {
+  isHomeRouteTarget,
+  isLearnRouteTarget,
+  isPlayRouteTarget,
+  type RouteTarget,
+  routeCapturesLive,
+} from '@/stores/routing/routeTarget'
 import type { AppServices } from '@/types/app/AppServices'
 import type { MidiFile } from '@/types/midi/types'
 import { whenIdle } from './whenIdle'
@@ -201,14 +206,21 @@ export class App {
     return getCurrentRouteTarget()
   }
 
-  private currentPageMode(): AppMode {
+  private currentTelemetryMode(): 'home' | 'play' | 'live' | 'learn' {
     const target = this.currentRouteTarget()
-    return target ? routeTargetToMode(target) : 'home'
+    if (!target) return 'home'
+    switch (target.kind) {
+      case 'learn-hub':
+      case 'exercise':
+        return 'learn'
+      default:
+        return target.kind
+    }
   }
 
   private currentOpenTarget(explicit?: 'play' | 'learn'): 'play' | 'learn' {
     if (explicit) return explicit
-    return this.currentPageMode() === 'learn' ? 'learn' : 'play'
+    return isLearnRouteTarget(this.currentRouteTarget()) ? 'learn' : 'play'
   }
 
   private navigateToLiveTarget(primeAudio = true): void {
@@ -594,8 +606,8 @@ export class App {
     const actions = createActions(this.appController)
 
     // Wire the LivePerformanceBus fan-out sinks. Audio and visual-key
-    // feedback fire unconditionally (every mode). Capture-mode sinks
-    // (looper + session + particles) gate on MODE_CAPTURES_LIVE.
+    // feedback fire unconditionally (every route). Capture-mode sinks
+    // (looper + session + particles) gate on route capabilities.
     this.registerUnsubs(
       'performance-bus',
       this.performanceBus.subscribeNotes(
@@ -614,7 +626,7 @@ export class App {
       this.performanceBus.subscribeNotes(
         () => {},
         (evt) => {
-          if (!MODE_CAPTURES_LIVE[this.currentPageMode()]) return
+          if (!routeCapturesLive(this.currentRouteTarget())) return
           // Synthetic pedal-up uses clockTime -1; SessionRecorder needs wall times.
           const t = evt.clockTime >= 0 ? evt.clockTime : this.clock.currentTime
           this.capture.captureNoteOff(evt.pitch, t)
@@ -638,7 +650,7 @@ export class App {
       () => this.navigateToLearnHubTarget(),
       this.preferences.stores.skipHomeIntro.load(),
       (next) => this.preferences.stores.skipHomeIntro.save(next),
-      this.currentPageMode() !== 'home',
+      !isHomeRouteTarget(this.currentRouteTarget()),
     )
 
     this.controls = new Controls({
@@ -913,7 +925,12 @@ export class App {
         for (const m of [30, 60, 120]) {
           if (t >= m && !this.playbackMilestones.has(m)) {
             this.playbackMilestones.add(m)
-            track('playback_milestone', { seconds: m, mode: this.currentPageMode() })
+            const routeTarget = this.currentRouteTarget()
+            track('playback_milestone', {
+              seconds: m,
+              mode: this.currentTelemetryMode(),
+              route_kind: routeTarget?.kind ?? 'home',
+            })
             if (m === 30) trackActivation('playback_30s')
           }
         }
@@ -929,20 +946,21 @@ export class App {
           // Drives the synth for Play/Live only. Learn runs its own status
           // signal on `LearnState` and drives the synth from `LearnController`
           // so the two modes never race for control of the scheduler.
-          const mode = this.currentPageMode()
-          if (mode === 'play' && status === 'playing') {
+          const routeTarget = this.currentRouteTarget()
+          if (isPlayRouteTarget(routeTarget) && status === 'playing') {
             void this.synth.play(this.clock.currentTime)
             if (!this.firstPlayLogged) {
               this.firstPlayLogged = true
               const midi = this.store.state.loadedMidi
               track('first_play', {
-                mode,
+                mode: this.currentTelemetryMode(),
+                route_kind: routeTarget?.kind ?? 'home',
                 duration_s: midi ? Math.round(midi.duration) : null,
               })
             }
           } else if (status === 'paused') {
             this.synth.pause()
-            if (mode === 'live') {
+            if (routeTarget?.kind === 'live') {
               this.liveNotes.releaseAll(this.clock.currentTime)
               this.synth.liveReleaseAll()
             }
@@ -1108,7 +1126,7 @@ export class App {
     if (pitch === null) return
 
     this.primeInteractiveAudio()
-    if (this.currentPageMode() === 'home') {
+    if (isHomeRouteTarget(this.currentRouteTarget())) {
       this.navigateToLiveTarget(false)
     }
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
@@ -1252,7 +1270,7 @@ export class App {
   private handleLoadedMidiChange(): void {
     syncLoadedMidiForCurrentRoute({
       syncConsolePanel: () => this.exportOverlay.syncConsolePanel(),
-      currentPageMode: () => this.currentPageMode(),
+      currentRouteTarget: () => this.currentRouteTarget(),
       enterPlayRoute: (options) => this.appController.enterPlayRoute(options),
     })
   }
@@ -1269,20 +1287,18 @@ export class App {
   }
 
   private handleKeyboardModeChange(mode: KeyboardMode): void {
-    const activeMidi =
-      this.currentPageMode() === 'learn'
-        ? (this.learnRuntimeRegistry.getMidiBackedRuntime()?.getLoadedMidi() ?? null)
-        : this.store.state.loadedMidi
+    const activeMidi = isLearnRouteTarget(this.currentRouteTarget())
+      ? (this.learnRuntimeRegistry.getMidiBackedRuntime()?.getLoadedMidi() ?? null)
+      : this.store.state.loadedMidi
     this.keyboardModeCoordinator.requestModeChange(mode, activeMidi, {
       onTranspose: (semitones) => this.exportOverlay.handleTransposeChange(semitones),
     })
   }
 
   private resolveResetToC(): number {
-    const key =
-      this.currentPageMode() === 'learn'
-        ? (this.learnRuntimeRegistry.getConsoleStateProvider()?.getConsoleState().baseKey ?? null)
-        : (this.baseMidi?.keySignature ?? null)
+    const key = isLearnRouteTarget(this.currentRouteTarget())
+      ? (this.learnRuntimeRegistry.getConsoleStateProvider()?.getConsoleState().baseKey ?? null)
+      : (this.baseMidi?.keySignature ?? null)
     return transposeDeltaToTonic(key, 'C')
   }
 

@@ -134,7 +134,7 @@ describe('route entry helpers', () => {
 
     syncLoadedMidiForCurrentRoute({
       syncConsolePanel,
-      currentPageMode: () => 'play',
+      currentRouteTarget: () => ({ kind: 'play' }),
       enterPlayRoute,
     })
 

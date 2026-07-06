@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MidiFile } from '@/types/midi/types'
 import { createEventSignal } from './eventSignal'
-import { createAppStore, resolveInitialAppMode, SKIP_HOME_INTRO_STORAGE_KEY } from './state'
+import { createAppStore } from './state'
 import { watch } from './watch'
 
 function fakeMidi(name = 'demo.mid', duration = 12.5): MidiFile {
@@ -140,29 +140,6 @@ describe('createAppStore', () => {
     stop()
     expect(snapshots.length).toBe(1)
     expect(snapshots[0]).toEqual({ hasFile: false, status: 'idle' })
-  })
-})
-
-describe('resolveInitialAppMode', () => {
-  it('prefers the current route over saved skip-home preference', () => {
-    window.history.pushState({}, '', '/learn')
-    localStorage.setItem(SKIP_HOME_INTRO_STORAGE_KEY, 'true')
-    expect(resolveInitialAppMode()).toBe('learn')
-    window.history.pushState({}, '', '/')
-  })
-
-  it('starts on play when skip-home-intro is enabled', () => {
-    window.history.pushState({}, '', '/welcome')
-    localStorage.setItem(SKIP_HOME_INTRO_STORAGE_KEY, 'true')
-    expect(resolveInitialAppMode()).toBe('play')
-    window.history.pushState({}, '', '/')
-  })
-
-  it('falls back to home when the preference is absent', () => {
-    window.history.pushState({}, '', '/welcome')
-    localStorage.removeItem(SKIP_HOME_INTRO_STORAGE_KEY)
-    expect(resolveInitialAppMode()).toBe('home')
-    window.history.pushState({}, '', '/')
   })
 })
 

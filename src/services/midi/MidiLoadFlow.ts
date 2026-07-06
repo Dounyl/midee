@@ -10,7 +10,11 @@ import type {
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
 import type { LearnEnterRequest } from '@/stores/app/AppCtx'
-import { routeTargetToMode } from '@/stores/routing/routeTarget'
+import {
+  isHomeRouteTarget,
+  isLiveRouteTarget,
+  isPlayRouteTarget,
+} from '@/stores/routing/routeTarget'
 import { parseMidiFile } from '@/types/midi/parser'
 import type { MidiFile } from '@/types/midi/types'
 import { MidiModeResolution } from './MidiModeResolution'
@@ -40,11 +44,6 @@ export class MidiLoadFlow {
       resetPlaybackTelemetry: opts.resetPlaybackTelemetry,
       resumePlaybackSoon: (delayMs) => this.resumePlaybackSoon(delayMs),
     })
-  }
-
-  private currentPageMode(): 'home' | 'play' | 'live' | 'learn' {
-    const target = this.opts.navigation.getCurrentTarget()
-    return target ? routeTargetToMode(target) : 'home'
   }
 
   async openFile(
@@ -154,7 +153,7 @@ export class MidiLoadFlow {
   }
 
   private async loadPlayFile(file: File, source: 'drag' | 'picker'): Promise<void> {
-    const previousMode = this.currentPageMode()
+    const previousTarget = this.opts.navigation.getCurrentTarget()
     const previousMidi = this.opts.playbackSession.state.loadedMidi
     this.opts.onResetInteractionState()
     this.opts.playbackSession.beginPlayLoad()
@@ -182,16 +181,16 @@ export class MidiLoadFlow {
         fileExt: file.name.split('.').pop()?.toLowerCase() ?? null,
         fileSizeKb: Math.round(file.size / 1024),
       })
-      if (previousMode === 'play' && previousMidi) {
+      if (isPlayRouteTarget(previousTarget) && previousMidi) {
         this.opts.playbackSession.enterPlay()
         this.opts.services.renderer.loadMidi(previousMidi)
         this.opts.ui.renderTrackPanel(previousMidi)
         this.opts.ui.hideDropzone()
-      } else if (previousMode === 'play') {
+      } else if (isPlayRouteTarget(previousTarget)) {
         this.opts.playbackSession.enterPlayLanding()
-      } else if (previousMode === 'live') {
+      } else if (isLiveRouteTarget(previousTarget)) {
         this.navigateLive(false)
-      } else if (previousMode === 'home') {
+      } else if (isHomeRouteTarget(previousTarget)) {
         this.opts.navigation.navigate({ kind: 'home' })
       } else {
         this.opts.playbackSession.setStatus('ready')
@@ -209,7 +208,7 @@ export class MidiLoadFlow {
   private resumePlaybackSoon(delayMs: number): void {
     setTimeout(() => {
       if (
-        this.currentPageMode() === 'play' &&
+        isPlayRouteTarget(this.opts.navigation.getCurrentTarget()) &&
         this.opts.playbackSession.state.status !== 'playing'
       ) {
         this.opts.services.clock.play()

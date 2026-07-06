@@ -17,7 +17,7 @@ import type {
   RuntimeServicesCtx,
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
-import { routeTargetToMode } from '@/stores/routing/routeTarget'
+import { isPlayRouteTarget } from '@/stores/routing/routeTarget'
 
 interface ExportFlowServiceOptions {
   services: RuntimeServicesCtx
@@ -37,18 +37,13 @@ function sanitiseFilename(name: string): string {
 export class ExportFlowService {
   constructor(private readonly opts: ExportFlowServiceOptions) {}
 
-  private currentPageMode() {
-    const target = this.opts.navigation.getCurrentTarget()
-    return target ? routeTargetToMode(target) : 'home'
-  }
-
   openModal(): void {
     void this.opts.ui.openExportModal()
   }
 
   async startExport(settings: ExportSettings): Promise<void> {
     const midi = this.opts.playbackSession.state.loadedMidi
-    if (!midi || this.currentPageMode() !== 'play') return
+    if (!midi || !isPlayRouteTarget(this.opts.navigation.getCurrentTarget())) return
     const exportModal = this.opts.ui.peekExportModal()
     if (!exportModal) return
 

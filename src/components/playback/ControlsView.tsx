@@ -1,6 +1,11 @@
 import type { LiveLooperState } from '@/services/midi/LiveLooper'
 import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
-import type { AppMode } from '@/stores/app/state'
+import type { RouteTarget } from '@/stores/routing/routeTarget'
+import {
+  isLearnRouteTarget,
+  isLiveRouteTarget,
+  isPlayRouteTarget,
+} from '@/stores/routing/routeTarget'
 import { t } from '../i18n'
 import { FloatingHud } from './FloatingHud'
 import { icons } from './icons'
@@ -10,10 +15,12 @@ export const ZOOM_MIN = 80
 export const ZOOM_MAX = 600
 export const ZOOM_DEFAULT = 200
 
+type TopStripSelection = 'play' | 'live' | 'learn'
+
 // ── View component interfaces ────────────────────────────────────────────
 
 export interface TopStripProps {
-  mode: () => AppMode
+  routeTarget: () => RouteTarget | null
   status: () => string
   hasFile: () => boolean
   isLoadingFile: () => boolean
@@ -24,7 +31,7 @@ export interface TopStripProps {
   midiMenuLabel: () => string
   dim: () => boolean
   onHome: () => void
-  onMode: (m: Exclude<AppMode, 'home'>) => void
+  onMode: (selection: TopStripSelection) => void
   onOpenFile: () => void
   onTracks: () => void
   onMidi: () => void
@@ -35,7 +42,7 @@ export interface TopStripProps {
 }
 
 export interface HudProps {
-  mode: () => AppMode
+  routeTarget: () => RouteTarget | null
   status: () => string
   showPlayHud: () => boolean
   showLiveHud: () => boolean
@@ -99,8 +106,10 @@ export interface KeyHintProps {
 
 export function TopStripView(props: TopStripProps) {
   const activeMode = (): string => {
-    const m = props.mode()
-    if (m === 'play' || m === 'live' || m === 'learn') return m
+    const target = props.routeTarget()
+    if (isPlayRouteTarget(target)) return 'play'
+    if (isLiveRouteTarget(target)) return 'live'
+    if (isLearnRouteTarget(target)) return 'learn'
     return 'none'
   }
   return (
@@ -109,11 +118,11 @@ export function TopStripView(props: TopStripProps) {
       ref={(el) => props.registerEl(el)}
       class="strip--active"
       classList={{
-        'strip--playing': props.mode() === 'play' && props.status() === 'playing',
+        'strip--playing': isPlayRouteTarget(props.routeTarget()) && props.status() === 'playing',
         'strip--exporting': props.status() === 'exporting',
         'strip--dim': props.dim(),
       }}
-      data-mode={props.mode()}
+      data-mode={activeMode()}
       data-has-file={props.hasFile() ? 'true' : 'false'}
       data-midi-status={props.midiStatus()}
     >
@@ -135,11 +144,11 @@ export function TopStripView(props: TopStripProps) {
       >
         <button
           class="ts-mode-seg"
-          classList={{ 'is-active': props.mode() === 'play' }}
+          classList={{ 'is-active': isPlayRouteTarget(props.routeTarget()) }}
           id="ts-mode-play"
           type="button"
           role="tab"
-          aria-selected={props.mode() === 'play' ? 'true' : 'false'}
+          aria-selected={isPlayRouteTarget(props.routeTarget()) ? 'true' : 'false'}
           data-tip={t('topStrip.modePlay')}
           onClick={() => props.onMode('play')}
         >
@@ -148,11 +157,11 @@ export function TopStripView(props: TopStripProps) {
         </button>
         <button
           class="ts-mode-seg"
-          classList={{ 'is-active': props.mode() === 'live' }}
+          classList={{ 'is-active': isLiveRouteTarget(props.routeTarget()) }}
           id="ts-mode-live"
           type="button"
           role="tab"
-          aria-selected={props.mode() === 'live' ? 'true' : 'false'}
+          aria-selected={isLiveRouteTarget(props.routeTarget()) ? 'true' : 'false'}
           data-tip={t('topStrip.modeLive')}
           onClick={() => props.onMode('live')}
         >
@@ -161,11 +170,11 @@ export function TopStripView(props: TopStripProps) {
         </button>
         <button
           class="ts-mode-seg"
-          classList={{ 'is-active': props.mode() === 'learn' }}
+          classList={{ 'is-active': isLearnRouteTarget(props.routeTarget()) }}
           id="ts-mode-learn"
           type="button"
           role="tab"
-          aria-selected={props.mode() === 'learn' ? 'true' : 'false'}
+          aria-selected={isLearnRouteTarget(props.routeTarget()) ? 'true' : 'false'}
           data-tip={t('topStrip.modeLearn')}
           onClick={() => props.onMode('learn')}
         >
@@ -210,7 +219,11 @@ export function TopStripView(props: TopStripProps) {
           ref={(el) => props.registerTracksBtn(el)}
           class="ts-pill ts-pill--file"
           classList={{
-            hidden: !(props.mode() === 'play' && props.hasFile() && !props.isLoadingFile()),
+            hidden: !(
+              isPlayRouteTarget(props.routeTarget()) &&
+              props.hasFile() &&
+              !props.isLoadingFile()
+            ),
           }}
           id="ts-tracks"
           type="button"
@@ -224,7 +237,11 @@ export function TopStripView(props: TopStripProps) {
         <button
           class="ts-pill ts-pill--file"
           classList={{
-            hidden: !(props.mode() === 'play' && props.hasFile() && !props.isLoadingFile()),
+            hidden: !(
+              isPlayRouteTarget(props.routeTarget()) &&
+              props.hasFile() &&
+              !props.isLoadingFile()
+            ),
           }}
           id="ts-learn-this"
           type="button"
@@ -256,7 +273,11 @@ export function TopStripView(props: TopStripProps) {
         <button
           class="ts-record-btn"
           classList={{
-            hidden: !(props.mode() === 'play' && props.hasFile() && !props.isLoadingFile()),
+            hidden: !(
+              isPlayRouteTarget(props.routeTarget()) &&
+              props.hasFile() &&
+              !props.isLoadingFile()
+            ),
           }}
           id="ts-record"
           type="button"
@@ -280,7 +301,7 @@ export function HudView(props: HudProps) {
       storageKey="midee.hud"
       classList={() => ({
         'hud--active': props.showPlayHud() || props.showLiveHud(),
-        'hud--playing': props.mode() === 'play' && props.status() === 'playing',
+        'hud--playing': isPlayRouteTarget(props.routeTarget()) && props.status() === 'playing',
         'hud--exporting': props.status() === 'exporting',
         'hud--live': props.showLiveHud(),
         'hud--play': props.showPlayHud(),

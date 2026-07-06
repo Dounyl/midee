@@ -1,5 +1,4 @@
 import type { PostHog, PostHogConfig } from 'posthog-js'
-import type { AppMode } from '@/stores/app/state'
 
 // Thin wrapper around posthog-js + a typed event registry. Kept as a single
 // flat file (not `src/analytics/*`) because common ad blockers treat
@@ -229,7 +228,7 @@ type EventMap = {
   // Mode transitions
   play_mode_entered: { duration_s: number }
   live_mode_entered: { midi_connected: boolean }
-  learn_mode_entered: { from: AppMode }
+  learn_mode_entered: { from_route_kind: 'home' | 'play' | 'live' | 'learn-hub' | 'exercise' }
 
   // Exercise lifecycle
   exercise_started: {

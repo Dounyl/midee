@@ -5,7 +5,8 @@ import type {
   PlayAlongPageRuntimeHandle,
 } from '@/features/learn/runtime/types'
 import type { ExerciseRouteId } from '@/features/routing/learnRoutes'
-import type { AppMode, AppPublicStore } from './state'
+import type { RouteTarget } from '@/stores/routing/routeTarget'
+import type { AppPublicStore } from './state'
 
 export interface PlayRouteEnterOptions {
   skipAnalytics?: boolean
@@ -25,7 +26,7 @@ export type LearnEnterRequest =
 
 export interface AppActions {
   navigation: {
-    toMode(mode: AppMode): void
+    toTarget(target: RouteTarget): void
   }
   home: {
     enter(): void

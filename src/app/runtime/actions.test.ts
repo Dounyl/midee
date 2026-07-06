@@ -22,11 +22,11 @@ function createDriver(): AppIntentDriver {
 }
 
 describe('createAppActions', () => {
-  it('maps mode navigation to canonical route targets', () => {
+  it('maps target navigation straight through the intent driver', () => {
     const driver = createDriver()
     const actions = createAppActions(driver)
 
-    actions.navigation.toMode('learn')
+    actions.navigation.toTarget({ kind: 'learn-hub' })
 
     expect(driver.navigate).toHaveBeenCalledWith({ kind: 'learn-hub' }, undefined)
   })

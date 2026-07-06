@@ -4,9 +4,14 @@ import { render } from 'solid-js/web'
 import type { LiveLooperState } from '@/services/midi/LiveLooper'
 import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
 import type { AppActions } from '@/stores/app/AppCtx'
-import type { AppMode } from '@/stores/app/state'
 import { watch } from '@/stores/app/watch'
-import { getCurrentRouteMode, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
+import { getCurrentRouteTarget, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
+import {
+  isLearnRouteTarget,
+  isLiveRouteTarget,
+  isPlayRouteTarget,
+  type RouteTarget,
+} from '@/stores/routing/routeTarget'
 import type { AppServices } from '@/types/app/AppServices'
 import { t } from '../i18n'
 import { trackEvent, trackEventSettled } from '../telemetry'
@@ -115,21 +120,23 @@ export class Controls {
   private readonly setSpeed: (v: number) => void
   private readonly setZoom: (v: number) => void
 
-  private currentPageMode(): AppMode {
-    return getCurrentRouteMode() ?? 'home'
+  private currentRouteTarget(): RouteTarget | null {
+    return getCurrentRouteTarget()
   }
 
   // Document-level listeners bound at construction.
   private onMouseMoveDoc = (): void => {
-    const m = this.currentPageMode()
-    if (m === 'play' || m === 'live') this.wakeUp()
+    const target = this.currentRouteTarget()
+    if (isPlayRouteTarget(target) || isLiveRouteTarget(target)) this.wakeUp()
   }
   private onKeyDownDoc = (e: KeyboardEvent): void => this.handleKey(e)
 
   constructor(private opts: ControlsOptions) {
     const { store } = opts.services
 
-    const [mode, setMode] = createSignal<AppMode>(this.currentPageMode())
+    const [routeTarget, setRouteTarget] = createSignal<RouteTarget | null>(
+      this.currentRouteTarget(),
+    )
     const [status, setStatus] = createSignal<string>(store.state.status)
     const [hasFile, setHasFile] = createSignal<boolean>(store.state.loadedMidi !== null)
     const [dimTopStrip, setDimTopStrip] = createSignal(false)
@@ -159,7 +166,7 @@ export class Controls {
     this.uiStore = uiStore
     this.setUi = setUi
 
-    void mode
+    void routeTarget
     this.setDimTopStrip = setDimTopStrip
     this.setHudIdle = setHudIdle
     this.setHudHasDragged = setHudHasDragged
@@ -181,18 +188,26 @@ export class Controls {
       () => (
         <>
           <TopStripView
-            mode={mode}
+            routeTarget={routeTarget}
             status={status}
             hasFile={hasFile}
-            isLoadingFile={() => mode() === 'play' && status() === 'loading'}
+            isLoadingFile={() => isPlayRouteTarget(routeTarget()) && status() === 'loading'}
             context={() => uiStore.context}
             midiStatus={() => uiStore.midi.status}
             midiDeviceName={() => uiStore.midi.deviceName}
             midiPillLabel={() => getMidiPillLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             midiMenuLabel={() => getMidiMenuLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             dim={dimTopStrip}
-            onHome={() => opts.actions.navigation.toMode('home')}
-            onMode={(m) => opts.actions.navigation.toMode(m)}
+            onHome={() => opts.actions.navigation.toTarget({ kind: 'home' })}
+            onMode={(selection) =>
+              opts.actions.navigation.toTarget(
+                selection === 'learn'
+                  ? { kind: 'learn-hub' }
+                  : selection === 'live'
+                    ? { kind: 'live' }
+                    : { kind: 'play' },
+              )
+            }
             onOpenFile={() => void opts.actions.library.open({ kind: 'picker' })}
             onTracks={() => opts.onOpenTracks?.()}
             onMidi={() => opts.onMidiConnect?.()}
@@ -208,15 +223,20 @@ export class Controls {
           />
           <LearnCoachmark
             eligible={() =>
-              mode() === 'play' && hasFile() && status() !== 'loading' && status() !== 'exporting'
+              isPlayRouteTarget(routeTarget()) &&
+              hasFile() &&
+              status() !== 'loading' &&
+              status() !== 'exporting'
             }
             onShow={() => setLearnCoachmarkSeen(true)}
           />
           <HudView
-            mode={mode}
+            routeTarget={routeTarget}
             status={status}
-            showPlayHud={() => mode() === 'play' && hasFile() && status() !== 'loading'}
-            showLiveHud={() => mode() === 'live'}
+            showPlayHud={() =>
+              isPlayRouteTarget(routeTarget()) && hasFile() && status() !== 'loading'
+            }
+            showLiveHud={() => isLiveRouteTarget(routeTarget())}
             playing={() => status() === 'playing'}
             instrumentLoading={instrumentLoading}
             sessionRecording={() => uiStore.session.recording}
@@ -342,13 +362,13 @@ export class Controls {
               hasFile() &&
               status() !== 'loading' &&
               status() !== 'exporting' &&
-              (mode() === 'play' || mode() === 'live') &&
+              (isPlayRouteTarget(routeTarget()) || isLiveRouteTarget(routeTarget())) &&
               !hudIdle()
             }
             hasDragged={hudHasDragged}
           />
           <KeyHintView
-            visible={() => mode() === 'live'}
+            visible={() => isLiveRouteTarget(routeTarget())}
             idle={hudIdle}
             collapsed={keyHintCollapsed}
             octave={octave}
@@ -370,8 +390,8 @@ export class Controls {
 
     // Sync store → reactive signals.
     this.unsubs.push(
-      subscribeCurrentRoute((mode) => {
-        setMode(mode ?? 'home')
+      subscribeCurrentRoute((target) => {
+        setRouteTarget(target)
         this.refreshUi()
       }),
       watch(
@@ -400,7 +420,7 @@ export class Controls {
     // 60Hz clock tick — imperative per §2 rule 4.
     this.unsubs.push(
       opts.services.clock.subscribe((t) => {
-        if (this.currentPageMode() !== 'play' || this.isScrubbing) return
+        if (!isPlayRouteTarget(this.currentRouteTarget()) || this.isScrubbing) return
         // Skip UI updates during export — frame-by-frame seeks would thrash the
         // scrubber behind the export modal and compete with the encoder.
         if (store.state.status === 'exporting') return
@@ -571,7 +591,7 @@ export class Controls {
 
   private handlePlayClick(): void {
     const { store, clock } = this.opts.services
-    if (this.currentPageMode() !== 'play') return
+    if (!isPlayRouteTarget(this.currentRouteTarget())) return
     const s = store.state.status
     if (s === 'playing') {
       clock.pause()
@@ -589,7 +609,7 @@ export class Controls {
 
   private handleSkip(delta: number): void {
     const { store, clock } = this.opts.services
-    if (this.currentPageMode() !== 'play') return
+    if (!isPlayRouteTarget(this.currentRouteTarget())) return
     const from = clock.currentTime
     const next =
       delta < 0
@@ -604,7 +624,7 @@ export class Controls {
   private handleKey(e: KeyboardEvent): void {
     const target = e.target as HTMLElement
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
-    const mode = this.currentPageMode()
+    const routeTarget = this.currentRouteTarget()
 
     if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.code === 'KeyP') {
       e.preventDefault()
@@ -612,7 +632,7 @@ export class Controls {
       return
     }
 
-    if (mode === 'play') {
+    if (isPlayRouteTarget(routeTarget)) {
       if (e.code === 'Space') {
         e.preventDefault()
         this.handlePlayClick()
@@ -634,7 +654,7 @@ export class Controls {
       return
     }
 
-    if (mode === 'live') {
+    if (isLiveRouteTarget(routeTarget)) {
       if (e.code === 'Tab') {
         e.preventDefault()
         this.opts.onSessionToggle?.()
@@ -682,14 +702,13 @@ export class Controls {
 
   private refreshUi(): void {
     const { store } = this.opts.services
-    const mode = this.currentPageMode()
-    this.renderContext(mode, store.state.loadedMidi?.name ?? null)
+    this.renderContext(this.currentRouteTarget(), store.state.loadedMidi?.name ?? null)
   }
 
-  private renderContext(mode: AppMode, fileName: string | null): void {
+  private renderContext(routeTarget: RouteTarget | null, fileName: string | null): void {
     const midi = this.uiStore.midi
 
-    if (mode === 'play' && this.opts.services.store.state.status === 'loading') {
+    if (isPlayRouteTarget(routeTarget) && this.opts.services.store.state.status === 'loading') {
       this.setUi('context', {
         kicker: t('topStrip.context.loading.kicker'),
         title: t('topStrip.context.loading.title'),
@@ -697,7 +716,7 @@ export class Controls {
       return
     }
 
-    if (mode === 'live') {
+    if (isLiveRouteTarget(routeTarget)) {
       this.setUi('context', {
         kicker: t('topStrip.context.live.kicker'),
         title:
@@ -708,7 +727,7 @@ export class Controls {
       return
     }
 
-    if (mode === 'play') {
+    if (isPlayRouteTarget(routeTarget)) {
       this.setUi('context', {
         kicker: t('topStrip.context.play.kicker'),
         title: fileName ?? t('topStrip.context.play.fallback'),
@@ -716,7 +735,7 @@ export class Controls {
       return
     }
 
-    if (mode === 'learn') {
+    if (isLearnRouteTarget(routeTarget)) {
       // Show the loaded song name when an exercise is using one, otherwise
       // fall back to the generic Learn label.
       if (this.learnFileName) {

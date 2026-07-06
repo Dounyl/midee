@@ -21,7 +21,7 @@ import type {
   PlayRouteEnterOptions,
 } from '@/stores/app/AppCtx'
 import type { AppStore } from '@/stores/app/state'
-import { routeTargetToMode } from '@/stores/routing/routeTarget'
+import { isLearnRouteTarget } from '@/stores/routing/routeTarget'
 import type { MidiFile } from '@/types/midi/types'
 
 interface AppApplicationControllerOptions {
@@ -162,11 +162,6 @@ export class AppApplicationController implements AppIntentDriver {
     this.opts.services.primeInteractiveAudio()
   }
 
-  private currentPageMode(): 'home' | 'play' | 'live' | 'learn' {
-    const target = this.opts.navigation.getCurrentTarget()
-    return target ? routeTargetToMode(target) : 'home'
-  }
-
   private enterLearnShell(target: 'hub' | ExerciseRouteId): void {
     this.opts.resetInteractionState()
     this.opts.ui.closeTransientOverlays()
@@ -193,7 +188,7 @@ export class AppApplicationController implements AppIntentDriver {
 
   currentOpenTarget(explicit?: MidiOpenTarget): MidiOpenTarget {
     if (explicit) return explicit
-    return this.currentPageMode() === 'learn' ? 'learn' : 'play'
+    return isLearnRouteTarget(this.opts.navigation.getCurrentTarget()) ? 'learn' : 'play'
   }
 
   private routeEntryStore(): AppStore {

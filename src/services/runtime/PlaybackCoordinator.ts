@@ -4,9 +4,12 @@ import type { LiveLooper, LiveLooperState } from '@/services/midi/LiveLooper'
 import type { LiveNoteStore } from '@/services/midi/LiveNoteStore'
 import type { SessionRecorder } from '@/services/midi/SessionRecorder'
 import type { LivePerformanceBus } from '@/services/performance/LivePerformanceBus'
-import type { AppMode } from '@/stores/app/state'
-import { MODE_CAPTURES_LIVE } from '@/stores/routing/modeCapabilities'
-import { type RouteTarget, routeTargetToMode } from '@/stores/routing/routeTarget'
+import {
+  isHomeRouteTarget,
+  isLiveRouteTarget,
+  type RouteTarget,
+  routeCapturesLive,
+} from '@/stores/routing/routeTarget'
 
 interface PlaybackCoordinatorOptions {
   store: {
@@ -62,11 +65,6 @@ export class PlaybackCoordinator {
 
   constructor(private readonly opts: PlaybackCoordinatorOptions) {}
 
-  private currentPageMode(): AppMode {
-    const target = this.opts.getCurrentTarget()
-    return target ? routeTargetToMode(target) : 'home'
-  }
-
   releaseAllLiveNotes(): void {
     const now = this.opts.clock.currentTime
     this.opts.liveNotes.releaseAll(now)
@@ -106,9 +104,9 @@ export class PlaybackCoordinator {
 
   handleLiveNoteOn(evt: BusNoteEvent): void {
     if (this.opts.store.state.status === 'exporting') return
-    const mode = this.currentPageMode()
-    const captures = MODE_CAPTURES_LIVE[mode]
-    if (mode === 'home') this.opts.enterLiveMode(false)
+    const target = this.opts.getCurrentTarget()
+    const captures = routeCapturesLive(target)
+    if (isHomeRouteTarget(target)) this.opts.enterLiveMode(false)
 
     if (!this.firstLiveNoteLogged) {
       this.firstLiveNoteLogged = true
@@ -123,7 +121,7 @@ export class PlaybackCoordinator {
       this.opts.capture.captureNoteOn(evt.pitch, evt.velocity, evt.clockTime)
     }
 
-    if (mode === 'live') {
+    if (isLiveRouteTarget(target)) {
       const status = this.opts.store.state.status
       if (status === 'idle' || status === 'ready' || status === 'paused') {
         this.opts.clock.play()
@@ -133,8 +131,7 @@ export class PlaybackCoordinator {
   }
 
   handleLiveNoteOff(evt: BusNoteEvent): void {
-    const mode = this.currentPageMode()
-    if (mode === 'home') return
+    if (isHomeRouteTarget(this.opts.getCurrentTarget())) return
     this.opts.liveNotes.release(evt.pitch, evt.clockTime)
     this.opts.performanceBus.routeNoteOff(evt)
   }

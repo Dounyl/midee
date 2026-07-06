@@ -1,15 +1,14 @@
 import { AppIntentDispatcher, type AppIntentDriver } from '@/app/runtime/AppIntentDispatcher'
 import type { AppActions } from '@/stores/app/AppCtx'
-import { modeToRouteTarget } from '@/stores/routing/routeTarget'
 
 export function createAppActions(driver: AppIntentDriver): AppActions {
   const dispatcher = new AppIntentDispatcher(driver)
   return {
     navigation: {
-      toMode: (mode) => {
+      toTarget: (target) => {
         dispatcher.dispatch({
           kind: 'navigation.navigate',
-          target: modeToRouteTarget(mode),
+          target,
         })
       },
     },

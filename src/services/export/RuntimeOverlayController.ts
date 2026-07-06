@@ -18,7 +18,12 @@ import type {
   RuntimeServicesCtx,
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
-import { routeTargetToMode } from '@/stores/routing/routeTarget'
+import {
+  isHomeRouteTarget,
+  isLearnRouteTarget,
+  isLiveRouteTarget,
+  isPlayRouteTarget,
+} from '@/stores/routing/routeTarget'
 import type { MidiFile } from '@/types/midi/types'
 
 interface RuntimeOverlayControllerOptions {
@@ -48,11 +53,6 @@ export class RuntimeOverlayController {
   private chordLastSig = ''
 
   constructor(private readonly opts: RuntimeOverlayControllerOptions) {}
-
-  private currentPageMode() {
-    const target = this.opts.navigation.getCurrentTarget()
-    return target ? routeTargetToMode(target) : 'home'
-  }
 
   getState(): DisplayPrefsState {
     return this.opts.displayPrefs
@@ -132,7 +132,7 @@ export class RuntimeOverlayController {
   }
 
   handleTransposeChange(semitones: number): void {
-    if (this.currentPageMode() === 'learn') {
+    if (isLearnRouteTarget(this.opts.navigation.getCurrentTarget())) {
       this.opts.learnRuntimeRegistry.getTransposeAwareRuntime()?.setTranspose(semitones)
       return
     }
@@ -157,7 +157,7 @@ export class RuntimeOverlayController {
   }
 
   syncConsolePanel(): void {
-    if (this.currentPageMode() === 'learn') {
+    if (isLearnRouteTarget(this.opts.navigation.getCurrentTarget())) {
       const state = this.opts.learnRuntimeRegistry.getConsoleStateProvider()?.getConsoleState() ?? {
         enabled: false,
         baseKey: null,
@@ -173,10 +173,9 @@ export class RuntimeOverlayController {
       return
     }
 
-    const baseKey =
-      this.currentPageMode() === 'play'
-        ? (this.opts.displayPrefs.baseMidi?.keySignature ?? null)
-        : null
+    const baseKey = isPlayRouteTarget(this.opts.navigation.getCurrentTarget())
+      ? (this.opts.displayPrefs.baseMidi?.keySignature ?? null)
+      : null
     this.opts.ui.updateConsoleState(
       this.isTransposeEnabled(),
       baseKey,
@@ -208,7 +207,7 @@ export class RuntimeOverlayController {
   }
 
   applyChordOverlayVisibility(): void {
-    const allowedHere = this.currentPageMode() !== 'play'
+    const allowedHere = !isPlayRouteTarget(this.opts.navigation.getCurrentTarget())
     this.opts.ui.setChordVisible(this.opts.displayPrefs.chordOverlayOn && allowedHere)
   }
 
@@ -306,15 +305,15 @@ export class RuntimeOverlayController {
 
   private collectActivePitches(currentTime: number): Set<number> {
     const pitches = new Set<number>()
-    const mode = this.currentPageMode()
+    const target = this.opts.navigation.getCurrentTarget()
 
-    if (mode === 'live' || mode === 'home') {
+    if (isLiveRouteTarget(target) || isHomeRouteTarget(target)) {
       for (const [pitch] of this.opts.liveNotes.heldNotes) pitches.add(pitch)
       for (const [pitch] of this.opts.loopNotes.heldNotes) pitches.add(pitch)
       return pitches
     }
 
-    if (mode === 'play') {
+    if (isPlayRouteTarget(target)) {
       const midi = this.opts.playbackSession.state.loadedMidi
       if (midi) {
         for (const track of midi.tracks) {
@@ -334,7 +333,7 @@ export class RuntimeOverlayController {
 
   private isTransposeEnabled(): boolean {
     return (
-      this.currentPageMode() === 'play' &&
+      isPlayRouteTarget(this.opts.navigation.getCurrentTarget()) &&
       this.opts.displayPrefs.baseMidi !== null &&
       this.opts.playbackSession.state.status !== 'playing' &&
       this.opts.playbackSession.state.status !== 'loading' &&

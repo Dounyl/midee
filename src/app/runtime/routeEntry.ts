@@ -1,7 +1,9 @@
 import { track, trackEvent } from '@/features/telemetry'
 import { t } from '@/i18n'
 import type { PlayRouteEnterOptions } from '@/stores/app/AppCtx'
-import type { AppMode, AppStore } from '@/stores/app/state'
+import type { AppStore } from '@/stores/app/state'
+import type { RouteTarget } from '@/stores/routing/routeTarget'
+import { isPlayRouteTarget } from '@/stores/routing/routeTarget'
 
 interface RouteEntryShell {
   renderer: {
@@ -24,7 +26,7 @@ interface RouteEntryShell {
 
 interface RouteSyncShell {
   syncConsolePanel(): void
-  currentPageMode(): AppMode
+  currentRouteTarget(): RouteTarget | null
   enterPlayRoute(options?: PlayRouteEnterOptions): void
 }
 
@@ -82,6 +84,6 @@ export function applyLiveRouteEntry(store: AppStore, shell: RouteEntryShell): vo
 
 export function syncLoadedMidiForCurrentRoute(shell: RouteSyncShell): void {
   shell.syncConsolePanel()
-  if (shell.currentPageMode() !== 'play') return
+  if (!isPlayRouteTarget(shell.currentRouteTarget())) return
   shell.enterPlayRoute({ skipAnalytics: true })
 }

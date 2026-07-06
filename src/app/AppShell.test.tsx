@@ -19,7 +19,7 @@ function makeCtx(): AppCtxValue {
   return {
     store,
     actions: {
-      navigation: { toMode: vi.fn() },
+      navigation: { toTarget: vi.fn() },
       home: { enter: vi.fn() },
       play: { enter: vi.fn() },
       live: { enter: vi.fn() },
