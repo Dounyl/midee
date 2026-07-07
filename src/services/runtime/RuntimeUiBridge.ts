@@ -79,6 +79,10 @@ export class RuntimeUiBridge {
     this.controls.setInstrumentLoading(id !== null)
   }
 
+  toggleTrackPanel(): void {
+    this.trackPanel.toggle()
+  }
+
   setInstrumentLabel(name: string): void {
     this.controls.updateInstrument(name)
   }
@@ -89,6 +93,10 @@ export class RuntimeUiBridge {
 
   renderTrackPanel(midi: MidiFile): void {
     this.trackPanel.render(midi)
+  }
+
+  closeTrackPanel(): void {
+    this.trackPanel.close()
   }
 
   hideDropzone(): void {
