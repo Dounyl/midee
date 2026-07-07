@@ -233,6 +233,13 @@ export const icons = {
       1.8,
     ),
 
+  // Simple beamed eighth-note pair — reads clearly as "music library".
+  note: (size: Size = 16): string =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+    `<path d="M9 6v10.5a2.5 2.5 0 1 1-1.6-2.34V8.2l8-1.7v8a2.5 2.5 0 1 1-1.6-2.34V5.9L9 6z"/>` +
+    `<path d="M9 8.2 13.8 7"/><path d="M9 11.6 13.8 10.4"/>` +
+    `</svg>`,
+
   // Forward chevron — used by the intervals quiz next/finish button.
   next: (size: Size = 12): string => svgStroke(size, `<polyline points="9 6 15 12 9 18"/>`, 1.8),
 }

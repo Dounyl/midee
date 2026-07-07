@@ -52,7 +52,7 @@ function buildSampleEntries(): RecentMidiEntry[] {
 
 export function RecentMidiList(props: RecentMidiListProps) {
   const inline = (): boolean => props.variant === 'inline'
-  const toggleEmoji = (): string => (props.target === 'learn' ? '🎼' : '🎵')
+  const toggleIcon = (): string => (props.target === 'learn' ? icons.note(18) : icons.tracks(18))
   const primaryLabel = (): string =>
     props.target === 'learn' ? t('midiLibrary.practice') : t('midiLibrary.play')
   const primaryIcon = (): string => (props.target === 'learn' ? icons.practice(10) : icons.play(10))
@@ -181,9 +181,7 @@ export function RecentMidiList(props: RecentMidiListProps) {
           aria-label={props.title}
           title={props.title}
         >
-          <span class={styles.recentMidiFabEmoji} aria-hidden="true">
-            {toggleEmoji()}
-          </span>
+          <span class={styles.recentMidiFabEmoji} aria-hidden="true" innerHTML={toggleIcon()} />
         </button>
       </Show>
 

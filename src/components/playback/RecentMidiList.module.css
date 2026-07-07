@@ -7,7 +7,7 @@
   right: calc(14px + env(safe-area-inset-right));
   bottom: calc(var(--keyboard-h) + env(safe-area-inset-bottom));
   z-index: 18;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .recent-midi-fab--inline {
@@ -17,6 +17,7 @@
   min-height: 0;
   flex: 1 1 auto;
   height: calc(100vh - 500px);
+  pointer-events: auto;
 }
 
 .recent-midi-fab--inline .recent-midi-fab__panel {
@@ -34,6 +35,8 @@
 }
 
 .recent-midi-fab__toggle {
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -47,6 +50,7 @@
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(16px);
   cursor: pointer;
+  pointer-events: auto;
   transition:
     transform 0.18s var(--ease-spring),
     border-color 0.18s,
@@ -64,8 +68,16 @@
 }
 
 .recent-midi-fab__emoji {
-  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
+}
+
+.recent-midi-fab__emoji svg {
+  display: block;
+  width: 18px;
+  height: 18px;
 }
 
 .recent-midi-fab__panel {
@@ -164,6 +176,9 @@
 }
 
 .recent-midi-fab__item {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) auto;
   align-items: center;

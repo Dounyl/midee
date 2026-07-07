@@ -1,8 +1,12 @@
 .heroCard {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 60px 1fr auto;
   align-items: center;
   gap: 20px;
+  width: 100%;
   padding: 22px 24px;
   border-radius: 18px;
   border: 1px solid var(--border);
