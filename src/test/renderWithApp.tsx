@@ -42,9 +42,6 @@ function makeFakeCtx(): AppCtxValue {
       navigation: {
         toTarget: vi.fn(),
       },
-      home: {
-        enter: vi.fn(),
-      },
       play: {
         enter: vi.fn(),
       },
@@ -84,7 +81,6 @@ function applyOverrides(base: AppCtxValue, overrides?: DeepPartialCtx): AppCtxVa
       ...base.actions,
       ...actionOverrides,
       navigation: { ...base.actions.navigation, ...actionOverrides.navigation },
-      home: { ...base.actions.home, ...actionOverrides.home },
       play: { ...base.actions.play, ...actionOverrides.play },
       live: { ...base.actions.live, ...actionOverrides.live },
       library: { ...base.actions.library, ...actionOverrides.library },
@@ -101,7 +97,6 @@ function applyOverrides(base: AppCtxValue, overrides?: DeepPartialCtx): AppCtxVa
 export type DeepPartialCtx = Partial<Omit<AppCtxValue, 'actions' | 'learnRuntime'>> & {
   actions?: Partial<AppCtxValue['actions']> & {
     navigation?: Partial<AppCtxValue['actions']['navigation']>
-    home?: Partial<AppCtxValue['actions']['home']>
     play?: Partial<AppCtxValue['actions']['play']>
     live?: Partial<AppCtxValue['actions']['live']>
     library?: Partial<AppCtxValue['actions']['library']>

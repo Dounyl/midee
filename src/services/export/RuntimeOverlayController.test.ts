@@ -94,7 +94,6 @@ describe('RuntimeOverlayController', () => {
         setLearnFileName: vi.fn(),
         updateConsoleState: vi.fn(),
         closeConsole: vi.fn(),
-        closeKeyboardModeModal: vi.fn(),
         setChord: vi.fn(),
         setChordVisible: vi.fn(),
         updateChord: vi.fn(),

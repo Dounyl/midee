@@ -12,7 +12,6 @@ import { Controls } from '@/components/playback/Controls'
 import { CustomizeMenu } from '@/components/playback/CustomizeMenu'
 import { DropZone } from '@/components/playback/DropZone'
 import { InstrumentMenu } from '@/components/playback/InstrumentMenu'
-import { KeyboardModeSuggestionModal } from '@/components/playback/KeyboardModeSuggestionModal'
 import { TrackPanel } from '@/components/playback/TrackPanel'
 import { ActiveLearnRuntimeRegistry } from '@/features/learn/runtime/ActiveLearnRuntimeRegistry'
 import { ExercisePageRuntime } from '@/features/learn/runtime/ExercisePageRuntime'
@@ -79,7 +78,6 @@ import {
   subscribeCurrentRoute,
 } from '@/stores/routing/routerBridge'
 import {
-  isHomeRouteTarget,
   isLearnRouteTarget,
   isPlayRouteTarget,
   type RouteTarget,
@@ -138,7 +136,6 @@ export class App {
   )
   private controls!: Controls
   private consolePanel!: ConsolePanel
-  private keyboardModeModal!: KeyboardModeSuggestionModal
   trackPanel!: TrackPanel
   private exportHandle = lazyHandle(() =>
     import('@/components/export/ExportModal').then(({ ExportModal }) => {
@@ -206,9 +203,9 @@ export class App {
     return getCurrentRouteTarget()
   }
 
-  private currentTelemetryMode(): 'home' | 'play' | 'live' | 'learn' {
+  private currentTelemetryMode(): 'play' | 'live' | 'learn' {
     const target = this.currentRouteTarget()
-    if (!target) return 'home'
+    if (!target) return 'play'
     switch (target.kind) {
       case 'learn-hub':
       case 'exercise':
@@ -226,10 +223,6 @@ export class App {
   private navigateToLiveTarget(primeAudio = true): void {
     setNextLiveOpts({ primeAudio })
     navigateToTarget({ kind: 'live' })
-  }
-
-  private navigateToLearnHubTarget(): void {
-    navigateToTarget({ kind: 'learn-hub' })
   }
 
   private createRuntimeServicesCtx(): RuntimeServicesCtx {
@@ -318,9 +311,6 @@ export class App {
       },
       closeConsole() {
         app.ui.closeConsole()
-      },
-      closeKeyboardModeModal() {
-        app.keyboardModeModal.close()
       },
       setTheme(theme, index) {
         app.ui.setTheme(theme, index)
@@ -450,9 +440,6 @@ export class App {
       },
       get hasLoadedFile() {
         return app.store.hasLoadedFile
-      },
-      enterHome() {
-        app.store.enterHome()
       },
       enterPlayLanding() {
         app.store.enterPlayLanding()
@@ -642,15 +629,7 @@ export class App {
         const target = this.currentOpenTarget()
         void this.midiFlow.openFile(file, source, target)
       },
-      () => this.navigateToLiveTarget(true),
-      (sampleId) => {
-        void this.openSample(sampleId, this.currentOpenTarget())
-      },
-      (sampleId) => void this.appController.enterLearnRequest({ kind: 'sample', sampleId }),
-      () => this.navigateToLearnHubTarget(),
-      this.preferences.stores.skipHomeIntro.load(),
-      (next) => this.preferences.stores.skipHomeIntro.save(next),
-      !isHomeRouteTarget(this.currentRouteTarget()),
+      true,
     )
 
     this.controls = new Controls({
@@ -721,10 +700,8 @@ export class App {
       (mode) => this.handleKeyboardModeChange(mode),
       (visible) => this.exportOverlay.setPitchLabelsVisible(visible),
     )
-    this.keyboardModeModal = new KeyboardModeSuggestionModal(overlay)
     this.keyboardModeCoordinator = new KeyboardModeCoordinator({
       initialMode: this.preferences.stores.keyboardMode61.load() ? '61' : '88',
-      modal: this.keyboardModeModal,
       persistMode: (mode) => this.preferences.stores.keyboardMode61.save(mode === '61'),
       applyMode: (mode) => this.renderer.setKeyboardMode(mode),
       syncConsolePanel: () => this.exportOverlay?.syncConsolePanel(),
@@ -929,7 +906,7 @@ export class App {
             track('playback_milestone', {
               seconds: m,
               mode: this.currentTelemetryMode(),
-              route_kind: routeTarget?.kind ?? 'home',
+              route_kind: routeTarget?.kind ?? 'play',
             })
             if (m === 30) trackActivation('playback_30s')
           }
@@ -954,7 +931,7 @@ export class App {
               const midi = this.store.state.loadedMidi
               track('first_play', {
                 mode: this.currentTelemetryMode(),
-                route_kind: routeTarget?.kind ?? 'home',
+                route_kind: routeTarget?.kind ?? 'play',
                 duration_s: midi ? Math.round(midi.duration) : null,
               })
             }
@@ -1126,9 +1103,6 @@ export class App {
     if (pitch === null) return
 
     this.primeInteractiveAudio()
-    if (isHomeRouteTarget(this.currentRouteTarget())) {
-      this.navigateToLiveTarget(false)
-    }
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
     e.preventDefault()
 
@@ -1389,7 +1363,6 @@ export class App {
     this.liveLooper.dispose()
     this.sessionRec.dispose()
     this.metronome.dispose()
-    this.keyboardModeModal.dispose()
     this.ui.dispose()
     this.clock.dispose()
     this.renderer.destroy()

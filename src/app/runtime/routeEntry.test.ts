@@ -3,7 +3,6 @@ import { t } from '@/i18n'
 import type { MidiFile } from '@/types/midi/types'
 import { createAppStore } from '../../stores/app/state'
 import {
-  applyHomeRouteEntry,
   applyLiveRouteEntry,
   applyPlayRouteEntry,
   syncLoadedMidiForCurrentRoute,
@@ -14,7 +13,7 @@ const telemetryMocks = vi.hoisted(() => ({
   trackEvent: vi.fn(),
 }))
 
-vi.mock('@/telemetry', () => ({
+vi.mock('@/features/telemetry', () => ({
   track: telemetryMocks.track,
   trackEvent: telemetryMocks.trackEvent,
 }))
@@ -38,29 +37,6 @@ describe('route entry helpers', () => {
     telemetryMocks.track.mockReset()
     telemetryMocks.trackEvent.mockReset()
     document.title = ''
-  })
-
-  it('applyHomeRouteEntry resets state and syncs the home shell', () => {
-    const store = createAppStore()
-    const shell = makeRouteEntryShell()
-    store.completePlayLoad(fakeMidi())
-    store.setState('currentTime', 4.2)
-    store.setState('status', 'playing')
-
-    expect(() => {
-      applyHomeRouteEntry(store, shell)
-      applyHomeRouteEntry(store, shell)
-    }).not.toThrow()
-
-    expect(shell.resetInteractionState).toHaveBeenCalledTimes(2)
-    expect(store.state.loadedMidi).toBeNull()
-    expect(store.state.currentTime).toBe(0)
-    expect(store.state.status).toBe('idle')
-    expect(shell.renderer.clearMidi).toHaveBeenCalledTimes(2)
-    expect(shell.trackPanel.close).toHaveBeenCalledTimes(2)
-    expect(shell.dropzone.show).toHaveBeenCalledTimes(2)
-    expect(shell.keyboardInput.enable).toHaveBeenCalledTimes(2)
-    expect(document.title).toBe(t('doc.title.home'))
   })
 
   it('applyLiveRouteEntry marks the store ready and syncs the live shell', () => {

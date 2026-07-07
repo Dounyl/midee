@@ -6,7 +6,6 @@ import type { MidiFile } from '@/types/midi/types'
 function createDriver(): AppIntentDriver {
   return {
     navigate: vi.fn(),
-    enterHomeRoute: vi.fn(),
     enterPlayRoute: vi.fn(),
     enterLiveRoute: vi.fn(),
     openLibraryRequest: vi.fn(),

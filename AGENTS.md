@@ -2,16 +2,18 @@
 
 ## Commands (from `package.json`, repo root)
 
+This repo is on `pnpm` (`package.json` → `"packageManager": "pnpm@11.7.0"`).
+
 ```bash
-npm install
-npm run dev          # vite → default http://localhost:5173
-npm run check        # typecheck && biome check src && vitest run
-npm run typecheck    # tsc --noEmit  (see tsconfig: include is src/** only)
-npm run lint         # biome check src
-npm run lint:fix     # biome check --write src
-npm run format       # biome format --write src
-npm run test         # vitest run  (jsdom; see vite.config.ts test.*)
-npm run build        # tsc && vite build
+pnpm install
+pnpm run dev         # vite → default http://localhost:5173
+pnpm run check       # typecheck && biome check src && vitest run
+pnpm run typecheck   # tsc --noEmit  (see tsconfig: include is src/** only)
+pnpm run lint        # biome check src
+pnpm run lint:fix    # biome check --write src
+pnpm run format      # biome format --write src
+pnpm run test        # vitest run  (jsdom; see vite.config.ts test.*)
+pnpm run build       # tsc && vite build
 # postbuild (automatic after build): node scripts/build-content.mjs, build-og.mjs,
 # stamp-sitemap.mjs, check-links.mjs — static content / SEO, not runtime app logic
 ```

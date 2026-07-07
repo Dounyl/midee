@@ -1,370 +1,40 @@
 @layer components {
   .dropzone {
-    position: absolute;
+    position: fixed;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
-    opacity: 1;
     pointer-events: none;
-    transition:
-      opacity 0.45s var(--ease-out),
-      transform 0.45s var(--ease-out);
     padding: 28px;
   }
 
-  .dropzone:not(.hidden) .homeCard,
-  .dropzone:not(.hidden) .homePrimaryBtn,
-  .dropzone:not(.hidden) .homeSecondaryBtn,
-  .dropzone:not(.hidden) input {
-    pointer-events: auto;
-  }
-
-  .hidden {
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.97);
-    visibility: hidden;
-    transition:
-      opacity 0.45s var(--ease-out),
-      transform 0.45s var(--ease-out),
-      visibility 0s linear 0.45s;
-  }
-
-  .dropzone::before {
-    content: "";
-    position: absolute;
-    width: min(86vw, 920px);
-    height: min(86vw, 920px);
-    border-radius: 50%;
-    background:
-      radial-gradient(circle at 35% 35%, var(--accent-soft), transparent 34%),
-      radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.04), transparent 42%);
-    pointer-events: none;
-  }
-
-  .homeCard {
-    position: relative;
-    z-index: 1;
+  .dropzoneBackdrop {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-    width: min(620px, calc(100vw - 48px));
-    padding: 44px 44px 30px;
-    background:
-      linear-gradient(145deg, rgba(12, 15, 28, 0.94), rgba(7, 8, 18, 0.9)), rgba(6, 6, 14, 0.84);
-    backdrop-filter: blur(34px) saturate(132%);
-    -webkit-backdrop-filter: blur(34px) saturate(132%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 28px;
+    align-items: center;
+    justify-content: center;
+    width: min(560px, calc(100vw - 48px));
+    min-height: 220px;
+    padding: 32px;
+    border-radius: 24px;
+    border: 2px dashed var(--accent);
+    background: rgba(6, 8, 18, 0.72);
+    backdrop-filter: blur(20px) saturate(130%);
+    -webkit-backdrop-filter: blur(20px) saturate(130%);
     box-shadow:
-      0 28px 72px rgba(0, 0, 0, 0.68),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      inset 0 0 48px rgba(255, 255, 255, 0.015);
-    transition:
-      border-color 0.3s,
-      box-shadow 0.3s,
-      transform 0.3s var(--ease-spring);
+      0 24px 80px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   }
 
-  .dragOver .homeCard {
-    border-color: var(--accent);
-    box-shadow:
-      0 0 0 1px var(--accent),
-      0 0 80px var(--accent-glow),
-      0 40px 100px rgba(0, 0, 0, 0.7),
-      inset 0 0 48px var(--accent-soft);
-    transform: scale(1.015);
-  }
-
-  .homeTitle {
+  .dropzonePrompt {
+    color: var(--text);
     font-family: var(--font-display);
-    font-size: clamp(44px, 6vw, 76px);
-    line-height: 0.94;
-    font-weight: 400;
-    color: var(--text);
+    font-size: clamp(24px, 4vw, 40px);
+    line-height: 1.05;
     letter-spacing: -0.02em;
-  }
-
-  .homeTitle em {
-    font-style: italic;
-    color: var(--accent);
-    font-weight: 400;
-  }
-
-  .homeKicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--r-pill);
-    color: var(--text-muted);
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .homeKicker::before {
-    content: "";
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent-glow);
-    animation: pulse-dot 2.4s ease-in-out infinite;
-  }
-
-  @keyframes pulse-dot {
-    0%,
-    100% {
-      opacity: 0.5;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-
-  .homeSub {
-    font-size: 15px;
-    line-height: 1.5;
-    color: var(--text-muted);
-    max-width: 38ch;
-    margin-top: 2px;
-  }
-
-  .homeActions,
-  .homeFootnotes {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .homeFootnotes {
-    gap: 10px;
-    margin-top: 6px;
-  }
-
-  .homeSamples {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-    width: 100%;
-  }
-
-  .homeSamplesLabel {
-    font-size: 10.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-dim);
-  }
-
-  .homePrimaryBtn,
-  .homeSecondaryBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    min-height: 46px;
-    padding: 0 18px;
-    border-radius: 14px;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    cursor: pointer;
-    transition:
-      transform 0.16s var(--ease-spring),
-      color 0.16s,
-      background 0.16s,
-      border-color 0.16s,
-      box-shadow 0.16s;
-  }
-
-  .homePrimaryBtn {
-    background: var(--accent);
-    color: #f8f8ff;
-    border: 1px solid transparent;
-    box-shadow: 0 10px 28px var(--accent-glow);
-  }
-
-  .homePrimaryBtn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 34px var(--accent-glow);
-  }
-
-  .homeSecondaryBtn {
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .homeSecondaryBtn:hover {
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.14);
-  }
-
-  .homeSecondaryBtnLearn {
-    position: relative;
-  }
-
-  .homeLearnBadge {
-    position: absolute;
-    top: -7px;
-    right: -4px;
-    font-size: 8.5px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: #fff;
-    background: var(--accent);
-    border-radius: 4px;
-    padding: 2px 6px;
-    line-height: 1.5;
-    box-shadow: 0 2px 8px var(--accent-glow);
-    pointer-events: none;
-  }
-
-  .homeMidiStatus {
-    display: inline-flex;
-    align-items: center;
-    min-height: 36px;
-    padding: 0 14px;
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: var(--r-pill);
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  .homeMidiStatus[data-midi-status="connected"] {
-    color: var(--accent);
-    border-color: var(--accent-glow);
-    background: var(--accent-soft);
-  }
-
-  .homeMidiStatus[data-midi-status="blocked"] {
-    color: #ffd89c;
-    border-color: rgba(255, 197, 94, 0.28);
-    background: rgba(255, 197, 94, 0.1);
-  }
-
-  .homeDropHint {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11.5px;
-    color: var(--text-dim);
-    flex-wrap: wrap;
-  }
-
-  .homeDropHint code,
-  .homeDropHint kbd {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 500;
-    color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 1px 5px;
-    border-radius: 5px;
-  }
-
-  .homeDropHint kbd {
-    min-width: 18px;
     text-align: center;
-    margin: 0 1px;
-  }
-
-  .homePref {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: -2px;
-    color: var(--text-muted);
-    font-size: 12px;
-    line-height: 1.4;
-    cursor: pointer;
-  }
-
-  .homePref input {
-    width: 15px;
-    height: 15px;
-    margin: 0;
-    accent-color: var(--accent);
-  }
-
-  .homeMetaLinks {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    margin: 2px auto 0;
-  }
-
-  .homeMetaLink {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    color: var(--text-muted);
-    opacity: 0.72;
-    transition:
-      opacity 0.2s ease,
-      color 0.2s ease,
-      background 0.2s ease;
-  }
-
-  .homeMetaLink:hover,
-  .homeMetaLink:focus-visible {
-    color: var(--text);
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.05);
-    outline: none;
-  }
-
-  .touch .homeMetaLinks {
-    margin-top: 0;
-  }
-
-  .touch .homeDropHint {
-    display: none;
-  }
-
-  .touch .homeKicker {
-    font-size: 10px;
-  }
-
-  .touch .homePrimaryBtn {
-    min-height: 52px;
-    font-size: 14px;
-  }
-
-  .touch .homeSecondaryBtn {
-    display: none;
-  }
-
-  .touch .homeFootnotes {
-    margin-top: 2px;
-  }
-
-  @media (max-width: 1120px) {
-    .homeCard {
-      width: min(100%, calc(100vw - 32px));
-      padding: 32px 26px 22px;
-      gap: 14px;
-    }
+    text-wrap: balance;
   }
 
   @media (max-width: 640px) {
@@ -372,28 +42,9 @@
       padding: 16px;
     }
 
-    .homeCard {
-      padding: 26px 20px 18px;
-      border-radius: 24px;
-    }
-
-    .homeTitle {
-      font-size: 28px;
-    }
-
-    .homeSub {
-      font-size: 14px;
-    }
-
-    .homeActions {
-      width: 100%;
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .homePrimaryBtn,
-    .homeSecondaryBtn {
-      width: 100%;
+    .dropzoneBackdrop {
+      min-height: 180px;
+      padding: 24px;
     }
   }
 }

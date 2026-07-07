@@ -198,7 +198,7 @@ export class Controls {
             midiPillLabel={() => getMidiPillLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             midiMenuLabel={() => getMidiMenuLabel(uiStore.midi.status, uiStore.midi.deviceName)}
             dim={dimTopStrip}
-            onHome={() => opts.actions.navigation.toTarget({ kind: 'home' })}
+            onHome={() => opts.actions.navigation.toTarget({ kind: 'play' })}
             onMode={(selection) =>
               opts.actions.navigation.toTarget(
                 selection === 'learn'

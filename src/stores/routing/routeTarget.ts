@@ -7,7 +7,6 @@ import {
 } from '@/features/routing/learnRoutes'
 
 export type RouteTarget =
-  | { kind: 'home' }
   | { kind: 'play' }
   | { kind: 'live' }
   | { kind: 'learn-hub' }
@@ -19,8 +18,6 @@ function normalizePath(pathname: string): string {
 
 export function routeTargetToPath(target: RouteTarget): string {
   switch (target.kind) {
-    case 'home':
-      return '/'
     case 'play':
       return '/play'
     case 'live':
@@ -34,7 +31,7 @@ export function routeTargetToPath(target: RouteTarget): string {
 
 export function pathToRouteTarget(pathname: string): RouteTarget | null {
   const normalized = normalizePath(pathname)
-  if (normalized === '/') return { kind: 'home' }
+  if (normalized === '/') return { kind: 'play' }
   if (normalized === '/play') return { kind: 'play' }
   if (normalized === '/live') return { kind: 'live' }
   if (isLearnHubPath(normalized)) return { kind: 'learn-hub' }
@@ -47,10 +44,6 @@ export function pathToRouteTarget(pathname: string): RouteTarget | null {
 
 export function isLegacyRouteTargetPath(pathname: string): boolean {
   return pathToLegacyExerciseRoute(normalizePath(pathname)) !== null
-}
-
-export function isHomeRouteTarget(target: RouteTarget | null): boolean {
-  return target?.kind === 'home'
 }
 
 export function isPlayRouteTarget(target: RouteTarget | null): boolean {

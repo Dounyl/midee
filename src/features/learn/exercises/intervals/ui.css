@@ -1,7 +1,9 @@
 .iv-card {
   --iv-top-gap: calc(90px + env(safe-area-inset-top));
   --iv-bottom-gap: calc(
-    var(--keyboard-h, 120px) + var(--hud-gap, 16px) + env(safe-area-inset-bottom)
+    var(--keyboard-h, 120px) +
+    var(--hud-gap, 16px) +
+    env(safe-area-inset-bottom)
   );
   position: absolute;
   inset: var(--iv-top-gap) 20px var(--iv-bottom-gap) 20px;

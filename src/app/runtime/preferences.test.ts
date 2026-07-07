@@ -13,7 +13,6 @@ describe('createAppPreferences', () => {
       chordOverlay: true,
       pitchLabels: false,
       keyboardMode61: false,
-      skipHomeIntro: false,
     })
   })
 
@@ -26,7 +25,6 @@ describe('createAppPreferences', () => {
     prefs.stores.chordOverlay.save(false)
     prefs.stores.pitchLabels.save(true)
     prefs.stores.keyboardMode61.save(true)
-    prefs.stores.skipHomeIntro.save(true)
 
     expect(prefs.hydrate()).toMatchObject({
       themeIndex: 1,
@@ -36,7 +34,6 @@ describe('createAppPreferences', () => {
       chordOverlay: false,
       pitchLabels: true,
       keyboardMode61: true,
-      skipHomeIntro: true,
     })
   })
 

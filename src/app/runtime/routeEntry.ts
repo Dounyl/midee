@@ -30,16 +30,6 @@ interface RouteSyncShell {
   enterPlayRoute(options?: PlayRouteEnterOptions): void
 }
 
-export function applyHomeRouteEntry(store: AppStore, shell: RouteEntryShell): void {
-  shell.resetInteractionState()
-  store.enterHome()
-  shell.renderer.clearMidi()
-  shell.trackPanel.close()
-  shell.dropzone.show()
-  shell.keyboardInput.enable()
-  document.title = t('doc.title.home')
-}
-
 export function applyPlayRouteEntry(
   store: AppStore,
   shell: Omit<RouteEntryShell, 'resetInteractionState'>,

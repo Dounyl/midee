@@ -228,7 +228,7 @@ type EventMap = {
   // Mode transitions
   play_mode_entered: { duration_s: number }
   live_mode_entered: { midi_connected: boolean }
-  learn_mode_entered: { from_route_kind: 'home' | 'play' | 'live' | 'learn-hub' | 'exercise' }
+  learn_mode_entered: { from_route_kind: 'play' | 'live' | 'learn-hub' | 'exercise' }
 
   // Exercise lifecycle
   exercise_started: {

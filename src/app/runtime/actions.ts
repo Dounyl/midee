@@ -12,9 +12,6 @@ export function createAppActions(driver: AppIntentDriver): AppActions {
         })
       },
     },
-    home: {
-      enter: () => dispatcher.dispatch({ kind: 'route.home.enter' }),
-    },
     play: {
       enter: (options) =>
         dispatcher.dispatch(

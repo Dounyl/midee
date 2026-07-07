@@ -1,9 +1,5 @@
 import type { AppIntentDriver } from '@/app/runtime/AppIntentDispatcher'
-import {
-  applyHomeRouteEntry,
-  applyLiveRouteEntry,
-  applyPlayRouteEntry,
-} from '@/app/runtime/routeEntry'
+import { applyLiveRouteEntry, applyPlayRouteEntry } from '@/app/runtime/routeEntry'
 import type { ExerciseRouteId } from '@/features/routing/learnRoutes'
 import { t } from '@/i18n'
 import type {
@@ -50,22 +46,6 @@ export class AppApplicationController implements AppIntentDriver {
     options?: { replace?: boolean },
   ): void {
     this.opts.navigation.navigate(target, options)
-  }
-
-  enterHomeRoute(): void {
-    applyHomeRouteEntry(this.routeEntryStore(), {
-      renderer: this.opts.services.renderer,
-      trackPanel: {
-        close: () => this.opts.ui.closeTrackPanel(),
-        render: (midi) => this.opts.ui.renderTrackPanel(midi),
-      },
-      dropzone: {
-        show: () => this.opts.ui.showDropzone(),
-        hide: () => this.opts.ui.hideDropzone(),
-      },
-      keyboardInput: this.opts.keyboardInput,
-      resetInteractionState: () => this.opts.resetInteractionState(),
-    })
   }
 
   enterPlayRoute(options: PlayRouteEnterOptions = {}): void {
@@ -166,7 +146,6 @@ export class AppApplicationController implements AppIntentDriver {
     this.opts.resetInteractionState()
     this.opts.ui.closeTransientOverlays()
     this.opts.ui.closeConsole()
-    this.opts.ui.closeKeyboardModeModal()
     this.opts.services.clock.pause()
     this.opts.services.clock.seek(0)
     this.opts.services.renderer.clearMidi()

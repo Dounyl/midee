@@ -5,8 +5,6 @@ import {
   LEARN_HUB_PATH,
   LEGACY_EXERCISE_ROUTE_PATHS,
 } from '@/features/routing/learnRoutes'
-import { HomePage } from '@/pages/HomePage/HomePage'
-import { SKIP_HOME_INTRO_STORAGE_KEY } from '@/stores/app/state'
 import { resolveInitialRoutePath } from '@/stores/routing/modeRoutes'
 import { bindAppNavigator, syncCurrentRoute } from '@/stores/routing/routerBridge'
 import { type RouteTarget, routeTargetToPath } from '@/stores/routing/routeTarget'
@@ -37,10 +35,7 @@ const LivePage = lazy(() =>
 )
 
 function resolveBootPath(pathname: string): string {
-  return resolveInitialRoutePath(
-    pathname,
-    localStorage.getItem(SKIP_HOME_INTRO_STORAGE_KEY) === 'true',
-  )
+  return resolveInitialRoutePath(pathname)
 }
 
 function AppRouterRoot(props: ParentProps) {
@@ -78,11 +73,10 @@ function RootRoute() {
   const bootPath = resolveBootPath(window.location.pathname)
 
   createEffect(() => {
-    if (bootPath !== '/') navigate(bootPath, { replace: true })
+    navigate(bootPath, { replace: true })
   })
 
-  if (bootPath !== '/') return null
-  return <HomePage />
+  return null
 }
 
 function UnknownRouteRedirect() {

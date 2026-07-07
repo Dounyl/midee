@@ -19,7 +19,6 @@ import type {
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
 import {
-  isHomeRouteTarget,
   isLearnRouteTarget,
   isLiveRouteTarget,
   isPlayRouteTarget,
@@ -307,7 +306,7 @@ export class RuntimeOverlayController {
     const pitches = new Set<number>()
     const target = this.opts.navigation.getCurrentTarget()
 
-    if (isLiveRouteTarget(target) || isHomeRouteTarget(target)) {
+    if (isLiveRouteTarget(target)) {
       for (const [pitch] of this.opts.liveNotes.heldNotes) pitches.add(pitch)
       for (const [pitch] of this.opts.loopNotes.heldNotes) pitches.add(pitch)
       return pitches

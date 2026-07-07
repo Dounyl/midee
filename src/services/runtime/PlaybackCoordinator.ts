@@ -5,7 +5,6 @@ import type { LiveNoteStore } from '@/services/midi/LiveNoteStore'
 import type { SessionRecorder } from '@/services/midi/SessionRecorder'
 import type { LivePerformanceBus } from '@/services/performance/LivePerformanceBus'
 import {
-  isHomeRouteTarget,
   isLiveRouteTarget,
   type RouteTarget,
   routeCapturesLive,
@@ -106,7 +105,6 @@ export class PlaybackCoordinator {
     if (this.opts.store.state.status === 'exporting') return
     const target = this.opts.getCurrentTarget()
     const captures = routeCapturesLive(target)
-    if (isHomeRouteTarget(target)) this.opts.enterLiveMode(false)
 
     if (!this.firstLiveNoteLogged) {
       this.firstLiveNoteLogged = true
@@ -131,7 +129,6 @@ export class PlaybackCoordinator {
   }
 
   handleLiveNoteOff(evt: BusNoteEvent): void {
-    if (isHomeRouteTarget(this.opts.getCurrentTarget())) return
     this.opts.liveNotes.release(evt.pitch, evt.clockTime)
     this.opts.performanceBus.routeNoteOff(evt)
   }

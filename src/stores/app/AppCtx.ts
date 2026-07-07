@@ -28,9 +28,6 @@ export interface AppActions {
   navigation: {
     toTarget(target: RouteTarget): void
   }
-  home: {
-    enter(): void
-  }
   play: {
     enter(options?: PlayRouteEnterOptions): void
   }

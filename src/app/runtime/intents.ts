@@ -9,7 +9,6 @@ import type { MidiFile } from '@/types/midi/types'
 
 export type AppIntent =
   | { kind: 'navigation.navigate'; target: RouteTarget; options?: { replace?: boolean } }
-  | { kind: 'route.home.enter' }
   | { kind: 'route.play.enter'; options?: PlayRouteEnterOptions }
   | { kind: 'route.live.enter' }
   | { kind: 'library.open'; request: LibraryOpenRequest }

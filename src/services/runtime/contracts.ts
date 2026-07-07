@@ -69,7 +69,6 @@ export interface RuntimeUiPort {
     pitchLabelsVisible: boolean,
   ): void
   closeConsole(): void
-  closeKeyboardModeModal(): void
   setTheme(theme: Theme, index: number): void
   setParticle(index: number): void
   setChord(on: boolean): void
@@ -124,7 +123,6 @@ export interface PlaybackSessionState {
   }
   setState(key: 'status', value: PlaybackStatus): void
   readonly hasLoadedFile: boolean
-  enterHome(): void
   enterPlayLanding(): void
   beginPlayLoad(): void
   completePlayLoad(midi: MidiFile): void

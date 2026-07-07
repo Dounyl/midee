@@ -1,7 +1,6 @@
 import { booleanPersisted, indexPersisted, numberPersisted } from '@/lib/persistence'
 import { PARTICLE_STYLES } from '@/services/renderer/ParticleSystem'
 import { THEMES } from '@/services/renderer/theme'
-import { SKIP_HOME_INTRO_STORAGE_KEY } from '@/stores/app/state'
 
 export interface AppPreferenceStores {
   themeIndex: { load(): number; save(value: number): void }
@@ -11,7 +10,6 @@ export interface AppPreferenceStores {
   chordOverlay: { load(): boolean; save(value: boolean): void }
   pitchLabels: { load(): boolean; save(value: boolean): void }
   keyboardMode61: { load(): boolean; save(value: boolean): void }
-  skipHomeIntro: { load(): boolean; save(value: boolean): void }
 }
 
 export interface HydratedAppPreferences {
@@ -22,7 +20,6 @@ export interface HydratedAppPreferences {
   chordOverlay: boolean
   pitchLabels: boolean
   keyboardMode61: boolean
-  skipHomeIntro: boolean
 }
 
 export function createAppPreferences(): {
@@ -71,7 +68,6 @@ export function createAppPreferences(): {
     chordOverlay: booleanPersisted('midee.chordOverlay', true),
     pitchLabels: booleanPersisted('midee.pitchLabels', false),
     keyboardMode61: booleanPersisted('midee.keyboardMode61', false),
-    skipHomeIntro: booleanPersisted(SKIP_HOME_INTRO_STORAGE_KEY, false),
   }
 
   return {
@@ -85,7 +81,6 @@ export function createAppPreferences(): {
         chordOverlay: stores.chordOverlay.load(),
         pitchLabels: stores.pitchLabels.load(),
         keyboardMode61: stores.keyboardMode61.load(),
-        skipHomeIntro: stores.skipHomeIntro.load(),
       }
     },
   }

@@ -44,18 +44,6 @@ describe('createAppStore', () => {
     expect(store.state.currentTime).toBe(0)
   })
 
-  it('enterHome clears the loaded MIDI and resets the transport', () => {
-    const store = createAppStore()
-    store.completePlayLoad(fakeMidi())
-    store.setState('currentTime', 4.2)
-    store.setState('status', 'playing')
-    store.enterHome()
-    expect(store.state.loadedMidi).toBeNull()
-    expect(store.state.duration).toBe(0)
-    expect(store.state.currentTime).toBe(0)
-    expect(store.state.status).toBe('idle')
-  })
-
   it('enterPlayLanding opens the play surface without requiring a MIDI', () => {
     const store = createAppStore()
     store.enterPlayLanding()
@@ -136,7 +124,7 @@ describe('createAppStore', () => {
       () => [store.state.loadedMidi !== null, store.state.status] as const,
       ([hasFile, status]) => snapshots.push({ hasFile, status }),
     )
-    store.enterHome()
+    store.enterPlayLanding()
     stop()
     expect(snapshots.length).toBe(1)
     expect(snapshots[0]).toEqual({ hasFile: false, status: 'idle' })

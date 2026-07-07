@@ -10,7 +10,6 @@ import type { MidiFile } from '@/types/midi/types'
 
 export interface AppIntentDriver {
   navigate(target: RouteTarget, options?: { replace?: boolean }): void
-  enterHomeRoute(): void
   enterPlayRoute(options?: PlayRouteEnterOptions): void
   enterLiveRoute(): void
   openLibraryRequest(request: LibraryOpenRequest): Promise<void> | void
@@ -31,9 +30,6 @@ export class AppIntentDispatcher {
     switch (intent.kind) {
       case 'navigation.navigate':
         this.driver.navigate(intent.target, intent.options)
-        return
-      case 'route.home.enter':
-        this.driver.enterHomeRoute()
         return
       case 'route.play.enter':
         this.driver.enterPlayRoute(intent.options)

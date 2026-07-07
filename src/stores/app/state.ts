@@ -4,8 +4,6 @@ import type { MidiFile } from '@/types/midi/types'
 
 export type PlaybackStatus = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting'
 
-export const SKIP_HOME_INTRO_STORAGE_KEY = 'midee.skipHomeIntro'
-
 export interface AppStoreState {
   status: PlaybackStatus
   loadedMidi: MidiFile | null
@@ -24,7 +22,6 @@ interface AppStoreBase {
 export interface AppPublicStore extends AppStoreBase {}
 
 export interface AppRuntimeStore extends AppStoreBase {
-  enterHome(): void
   enterPlayLanding(): void
   beginPlayLoad(): void
   completePlayLoad(midi: MidiFile): void
@@ -51,16 +48,6 @@ export function createAppStore(): AppRuntimeStore {
     state,
     setState,
     // Multi-field transitions only — single-field writes go through setState.
-    enterHome() {
-      batch(() => {
-        setState({
-          status: 'idle',
-          loadedMidi: null,
-          duration: 0,
-          currentTime: 0,
-        })
-      })
-    },
     enterPlayLanding() {
       batch(() => {
         setState({

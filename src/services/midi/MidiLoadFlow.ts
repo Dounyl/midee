@@ -10,11 +10,7 @@ import type {
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
 import type { LearnEnterRequest } from '@/stores/app/AppCtx'
-import {
-  isHomeRouteTarget,
-  isLiveRouteTarget,
-  isPlayRouteTarget,
-} from '@/stores/routing/routeTarget'
+import { isLiveRouteTarget, isPlayRouteTarget } from '@/stores/routing/routeTarget'
 import { parseMidiFile } from '@/types/midi/parser'
 import type { MidiFile } from '@/types/midi/types'
 import { MidiModeResolution } from './MidiModeResolution'
@@ -190,8 +186,6 @@ export class MidiLoadFlow {
         this.opts.playbackSession.enterPlayLanding()
       } else if (isLiveRouteTarget(previousTarget)) {
         this.navigateLive(false)
-      } else if (isHomeRouteTarget(previousTarget)) {
-        this.opts.navigation.navigate({ kind: 'home' })
       } else {
         this.opts.playbackSession.setStatus('ready')
       }
