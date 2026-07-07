@@ -1,4 +1,4 @@
-import { inferMidiKeySignature } from '../music/KeySignature'
+import { inferMidiKeySignature } from '@/lib/music/KeySignature'
 import type { MidiFile, MidiKeySignature, MidiNote, MidiTrack } from './types'
 
 // `@tonejs/midi` is ~25 KB gz and only used inside this module + MidiEncoding.

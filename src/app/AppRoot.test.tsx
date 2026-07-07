@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AppRoot } from '@/app/AppRoot'
-import { renderWithApp } from './test/renderWithApp'
+import { renderWithApp } from '@/test/renderWithApp'
+import { AppRoot } from './AppRoot'
 
 describe('AppRoot routing', () => {
   afterEach(() => {

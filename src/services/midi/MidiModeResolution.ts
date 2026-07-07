@@ -1,5 +1,5 @@
-import { trackMidiLoaded } from '@/features/telemetry'
 import { transposeMidiFile } from '@/lib/music/KeySignature'
+import { trackMidiLoaded } from '@/services/telemetry'
 import type { MidiFile } from '@/types/midi/types'
 import type { KeyboardModeCoordinator } from './KeyboardModeCoordinator'
 

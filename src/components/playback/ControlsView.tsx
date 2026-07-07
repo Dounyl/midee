@@ -1,3 +1,5 @@
+import { icons } from '@/components/common/icons'
+import { t } from '@/i18n'
 import type { LiveLooperState } from '@/services/midi/LiveLooper'
 import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
 import type { RouteTarget } from '@/stores/routing/routeTarget'
@@ -6,9 +8,7 @@ import {
   isLiveRouteTarget,
   isPlayRouteTarget,
 } from '@/stores/routing/routeTarget'
-import { t } from '../i18n'
 import { FloatingHud } from './FloatingHud'
-import { icons } from './icons'
 import './ControlsView.css'
 
 export const ZOOM_MIN = 80

@@ -1,5 +1,5 @@
+import type { MasterClock } from '@/lib/core/MasterClock'
 import { createEventSignal } from '@/stores/app/eventSignal'
-import type { MasterClock } from '@/types/clock/MasterClock'
 import type { MidiFile } from '@/types/midi/types'
 
 // Minimum gap between two consecutive note-onsets to consider them a *new*

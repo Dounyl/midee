@@ -1,9 +1,9 @@
-import { track, trackActivation } from '@/features/telemetry'
 import type { BusNoteEvent } from '@/services/input/InputBus'
 import type { LiveLooper, LiveLooperState } from '@/services/midi/LiveLooper'
 import type { LiveNoteStore } from '@/services/midi/LiveNoteStore'
 import type { SessionRecorder } from '@/services/midi/SessionRecorder'
 import type { LivePerformanceBus } from '@/services/performance/LivePerformanceBus'
+import { track, trackActivation } from '@/services/telemetry'
 import {
   isLiveRouteTarget,
   type RouteTarget,

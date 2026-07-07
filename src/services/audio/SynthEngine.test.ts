@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fakeAudioContext } from '@/test/fakeAudioContext'
 import type { MidiFile, MidiNote, MidiTrack } from '@/types/midi/types'
-import { fakeAudioContext } from '../test/fakeAudioContext'
 
 // 鈹€鈹€ Tone + instruments module mocks 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 //

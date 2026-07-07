@@ -1,12 +1,12 @@
 import { createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
+import { icons } from '@/components/common/icons'
+import { hexToCSS, isNarrowViewport } from '@/components/common/utils'
+import { t, tn } from '@/i18n'
 import type { PianoRollRenderer } from '@/services/renderer/PianoRollRenderer'
 import { getTrackColor, type Theme } from '@/services/renderer/theme'
 import type { MidiFile, MidiTrack } from '@/types/midi/types'
-import { t, tn } from '../i18n'
-import { icons } from './icons'
 import styles from './TrackPanel.module.css'
-import { hexToCSS, isNarrowViewport } from './utils'
 
 // Popover dropdown anchored under the Tracks button in the top strip.
 // Each track has a mute toggle; a "Load new file" footer reopens the Open

@@ -20,19 +20,13 @@ import type {
   CreateExercisePageRuntimeOptions,
   LearnRuntimeHandle,
 } from '@/features/learn/runtime/types'
-import {
-  categorizeMidiDevice,
-  track,
-  trackActivation,
-  trackEvent,
-  trackEventSettled,
-} from '@/features/telemetry'
 import { setLocale, t } from '@/i18n'
 import { assertDefined, assertOnce, invariant } from '@/lib/assert'
 import type { KeyboardMode } from '@/lib/core/keyboardLayout'
 import { MasterClock } from '@/lib/core/MasterClock'
 import { lazyHandle } from '@/lib/lazyHandle'
 import { transposeDeltaToTonic } from '@/lib/music/KeySignature'
+import { whenIdle } from '@/lib/whenIdle'
 import { setNextLiveOpts } from '@/pages/LivePage/liveEnterOptions'
 import { Metronome } from '@/services/audio/Metronome'
 import { SynthEngine } from '@/services/audio/SynthEngine'
@@ -69,6 +63,13 @@ import { ExportAndOverlayCoordinator } from '@/services/runtime/ExportAndOverlay
 import { MidiFlowCoordinator } from '@/services/runtime/MidiFlowCoordinator'
 import { PlaybackCoordinator } from '@/services/runtime/PlaybackCoordinator'
 import { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
+import {
+  categorizeMidiDevice,
+  track,
+  trackActivation,
+  trackEvent,
+  trackEventSettled,
+} from '@/services/telemetry'
 import type { AppActions } from '@/stores/app/AppCtx'
 import type { AppStore } from '@/stores/app/state'
 import { watch } from '@/stores/app/watch'
@@ -85,7 +86,6 @@ import {
 } from '@/stores/routing/routeTarget'
 import type { AppServices } from '@/types/app/AppServices'
 import type { MidiFile } from '@/types/midi/types'
-import { whenIdle } from './whenIdle'
 
 // Total note count across all tracks 锟?the content-size signal attached to
 // midi_loaded so we can tie which pieces drive retention. Structurally typed

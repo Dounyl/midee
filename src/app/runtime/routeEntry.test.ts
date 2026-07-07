@@ -13,7 +13,7 @@ const telemetryMocks = vi.hoisted(() => ({
   trackEvent: vi.fn(),
 }))
 
-vi.mock('@/features/telemetry', () => ({
+vi.mock('@/services/telemetry', () => ({
   track: telemetryMocks.track,
   trackEvent: telemetryMocks.trackEvent,
 }))

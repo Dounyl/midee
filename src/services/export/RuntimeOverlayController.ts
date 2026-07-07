@@ -1,5 +1,4 @@
 import type { SessionAction } from '@/components/export/PostSessionModal'
-import { track, trackEvent } from '@/features/telemetry'
 import { t } from '@/i18n'
 import { detectChord } from '@/lib/music/ChordDetector'
 import { transposeMidiFile } from '@/lib/music/KeySignature'
@@ -18,6 +17,7 @@ import type {
   RuntimeServicesCtx,
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
+import { track, trackEvent } from '@/services/telemetry'
 import {
   isLearnRouteTarget,
   isLiveRouteTarget,

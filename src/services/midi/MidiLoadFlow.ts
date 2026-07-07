@@ -1,4 +1,3 @@
-import { midiLoadErrorType, track, trackEvent, trackMidiLoadFailed } from '@/features/telemetry'
 import { t } from '@/i18n'
 import type {
   DisplayPrefsState,
@@ -9,6 +8,7 @@ import type {
   RuntimeServicesCtx,
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
+import { midiLoadErrorType, track, trackEvent, trackMidiLoadFailed } from '@/services/telemetry'
 import type { LearnEnterRequest } from '@/stores/app/AppCtx'
 import { isLiveRouteTarget, isPlayRouteTarget } from '@/stores/routing/routeTarget'
 import { parseMidiFile } from '@/types/midi/parser'

@@ -1,5 +1,8 @@
 import { createEffect, createMemo, createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
+import { icons } from '@/components/common/icons'
+import { isNarrowViewport } from '@/components/common/utils'
+import { t } from '@/i18n'
 import type { KeyboardMode } from '@/lib/core/keyboardLayout'
 import {
   buildTransposeOptions,
@@ -7,10 +10,7 @@ import {
   transposeKeySignature,
 } from '@/lib/music/KeySignature'
 import type { MidiKeySignature } from '@/types/midi/types'
-import { t } from '../i18n'
 import styles from './ConsolePanel.module.css'
-import { icons } from './icons'
-import { isNarrowViewport } from './utils'
 
 interface PanelProps {
   isOpen: () => boolean

@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
-import { t } from '../i18n'
-import { icons } from './icons'
+import { icons } from '@/components/common/icons'
+import { t } from '@/i18n'
 import styles from './KeyboardModeSuggestionModal.module.css'
 
 interface TransposeOption {

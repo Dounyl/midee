@@ -1,5 +1,4 @@
 import type { ExportSettings } from '@/components/export/ExportModal'
-import { track, trackActivation, trackEvent } from '@/features/telemetry'
 import { t } from '@/i18n'
 import { INSTRUMENTS } from '@/services/audio/SynthEngine'
 import {
@@ -17,6 +16,7 @@ import type {
   RuntimeServicesCtx,
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
+import { track, trackActivation, trackEvent } from '@/services/telemetry'
 import { isPlayRouteTarget } from '@/stores/routing/routeTarget'
 
 interface ExportFlowServiceOptions {

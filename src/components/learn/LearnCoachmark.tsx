@@ -1,4 +1,4 @@
-import { Coachmark } from './Coachmark'
+import { Coachmark } from '@/components/common/Coachmark'
 
 // First-encounter coachmark anchored to the topbar's "Learn" pill. Surfaces
 // once per browser profile, the first time a user lands in Play mode with a

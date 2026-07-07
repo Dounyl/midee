@@ -18,10 +18,6 @@ let ph: PostHog | null = null
 let phLoadFailed = false
 const queue: Array<(client: PostHog) => void> = []
 
-// Drain any calls made while the SDK was still loading. Order matters —
-// `register*` should land before any `capture` that depends on those props.
-// If the SDK never loads (CSP, ad-blocker, offline), we drop the call rather
-// than grow the queue unbounded.
 function enqueue(fn: (client: PostHog) => void): void {
   if (ph) fn(ph)
   else if (!phLoadFailed) queue.push(fn)
@@ -35,27 +31,16 @@ export async function loadPostHog(key: string, config: Partial<PostHogConfig>): 
     for (const fn of queue) fn(ph)
     queue.length = 0
   } catch (err) {
-    // Likely CSP / ad-blocker / offline. Mark failed so the queue stops
-    // growing; existing entries are dropped to free memory.
     phLoadFailed = true
     queue.length = 0
     console.warn('[telemetry] posthog-js failed to load', err)
   }
 }
 
-// Fired at key funnel points: midi_loaded → first_play → playback_milestone
-// → export_opened → export_started → export_completed. The live funnel runs
-// in parallel: live_mode_entered → first_live_note → loop_saved /
-// session_recorded. Keep names stable — they're the join key between product
-// and analytics.
 export function track(event: string, properties?: Record<string, unknown>): void {
   enqueue((client) => client.capture(event, properties))
 }
 
-// High-frequency controls (volume/speed/zoom/bpm sliders) would otherwise fire
-// one event per tick of a drag. Coalesce per event name: only the final value
-// after the user stops moving is sent. Keyed by event name, so distinct
-// controls don't cancel each other.
 const settleTimers = new Map<string, ReturnType<typeof setTimeout>>()
 export function trackSettled(event: string, properties: Record<string, unknown>, ms = 600): void {
   const prev = settleTimers.get(event)
@@ -69,12 +54,6 @@ export function trackSettled(event: string, properties: Record<string, unknown>,
   )
 }
 
-// ── midi_loaded / midi_load_failed normalisation ───────────────────────────
-// midi_loaded fires from 4 call sites (play file/sample, learn file/sample)
-// that historically diverged in shape. Funnel them through one helper so every
-// dashboard sees the same keys. `note_count` is the content signal that lets
-// us tie which pieces drive retention; nullable fields are always present so
-// the schema never varies.
 export function trackMidiLoaded(p: {
   source: 'drag' | 'picker' | 'sample'
   target?: 'play' | 'learn'
@@ -97,18 +76,12 @@ export function trackMidiLoaded(p: {
 
 export type MidiLoadErrorType = 'empty' | 'not_midi' | 'parse'
 
-// Classify a load failure so we can see WHICH files break — today every
-// failure is bucketed 'parse', so we're blind to the cause. Sniffs the header:
-// a real Standard MIDI File starts with the magic bytes 'MThd'; a non-MIDI
-// file dropped in (mp3, musicxml, …) is the common real-world case.
 export async function midiLoadErrorType(err: unknown, file: File): Promise<MidiLoadErrorType> {
   if (err instanceof Error && err.name === 'EmptyMidiError') return 'empty'
   try {
     const head = new Uint8Array(await file.slice(0, 4).arrayBuffer())
     if (String.fromCharCode(...head) !== 'MThd') return 'not_midi'
-  } catch {
-    // Couldn't read the slice — fall through to the generic bucket.
-  }
+  } catch {}
   return 'parse'
 }
 
@@ -128,16 +101,7 @@ export function trackMidiLoadFailed(p: {
   })
 }
 
-// Set once at boot. These attach to *every* subsequent event so we can
-// slice any funnel by device/pointer/orientation without re-sending them.
-// Landing path/referrer/utm are registered with `register_once` so the
-// FIRST-seen values persist across the whole user's history — PostHog's
-// built-in $referrer captures the referrer at each event, which isn't the
-// same thing and doesn't answer "where did this user originally come from?"
 export function registerAnalyticsContext(): void {
-  // Snapshot DOM/window reads NOW (not inside the deferred closure) — the
-  // viewport state at boot is what we want to attach to events, even if the
-  // user resizes before the SDK loads.
   const w = window.innerWidth
   const h = window.innerHeight
   const deviceType = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop'
@@ -172,29 +136,15 @@ export function registerAnalyticsContext(): void {
   })
 }
 
-// Fire exactly once per distinct_id when the user crosses any meaningful
-// engagement threshold (watched 30s / played a live note / started an
-// export). Gives PostHog cohorts a single clean "real user" definition
-// instead of OR-ing three events together on every query.
 const ACTIVATED_KEY = 'midee.activated'
 export function trackActivation(trigger: 'playback_30s' | 'live_note' | 'export_started'): void {
-  // Dedupe synchronously against localStorage — we want this to no-op on the
-  // 2nd-and-later calls regardless of whether the SDK has loaded yet.
   try {
     if (localStorage.getItem(ACTIVATED_KEY)) return
     localStorage.setItem(ACTIVATED_KEY, '1')
-  } catch {
-    // localStorage disabled (private mode / quota) — dedupe won't survive
-    // reloads, but firing the event multiple times is still better than
-    // missing it entirely.
-  }
+  } catch {}
   enqueue((client) => client.capture('user_activated', { trigger }))
 }
 
-// Bucket MIDI device names into a short vendor enum. The raw device name
-// can be unique per user (e.g. "Dev's Korg microKEY 25") — bad for
-// cardinality and occasionally PII. Enum is stable, queryable, and
-// covers the long tail with 'other'.
 const MIDI_VENDORS = [
   'korg',
   'akai',
@@ -215,27 +165,11 @@ export function categorizeMidiDevice(name: string): string {
   return 'other'
 }
 
-// ── Typed event registry ──────────────────────────────────────────────────
-// New code should emit events through `trackEvent` so the name and property
-// shape stay in lockstep. Free-form `track()` stays for one-offs and legacy
-// callsites during migration. Additive-only: removing an entry here is a
-// breaking change for any PostHog dashboard keyed on it.
-
-// Add new entries here only when wiring the firing site in the same change —
-// a declared-but-never-fired event is dashboard debt. Planned-but-unwired
-// events live in docs/LEARN_MODE_PLAN_V2.md until they're actually emitted.
 type EventMap = {
-  // Mode transitions
   play_mode_entered: { duration_s: number }
   live_mode_entered: { midi_connected: boolean }
   learn_mode_entered: { from_route_kind: 'play' | 'live' | 'learn-hub' | 'exercise' }
-
-  // Exercise lifecycle
-  exercise_started: {
-    exercise_id: string
-    category: string
-    difficulty: string
-  }
+  exercise_started: { exercise_id: string; category: string; difficulty: string }
   exercise_completed: {
     exercise_id: string
     duration_s: number
@@ -244,20 +178,11 @@ type EventMap = {
     completed: boolean
   }
   exercise_abandoned: { exercise_id: string; duration_s: number }
-  // What the user chose at the post-exercise summary — the practice-retention
-  // loop. 'dismissed' is the auto-fade / no-action path (see SessionSummary).
   exercise_summary_action: {
     exercise_id: string
     action: 'again' | 'next' | 'dismissed'
   }
-
-  // Feedback portal (self-hosted Fider) outbound clicks. `source` identifies
-  // which surface drove the click.
   feedback_clicked: { source: 'customize_menu' | 'post_session' }
-
-  // Transport / playback controls. seeked fires on commit (not per scrub
-  // frame); the slider-driven *_changed events fire via trackEventSettled so a
-  // single drag yields one event with the final value.
   seeked: { from_s: number; to_s: number; method: 'scrub' | 'skip' }
   playback_paused: { position_s: number; position_pct: number }
   speed_changed: { speed: number }
@@ -265,33 +190,22 @@ type EventMap = {
   zoom_changed: { zoom: number }
   tempo_changed: { bpm: number }
   metronome_toggled: { on: boolean }
-
-  // Customization. instrument_changed now carries `method` so cycle-button and
-  // menu-pick paths are distinguishable (cycling was previously untracked).
   theme_changed: { theme: string }
   particle_changed: { style: string }
   instrument_changed: { from: string | undefined; to: string; method: 'cycle' | 'menu' }
   track_toggled: { enabled: boolean }
-
-  // Previously-silent failure paths now surfaced as first-class events.
   synth_load_failed: { source: string }
   sample_load_failed: { sample_id: string; target: 'play' | 'learn' }
-  // A non-fatal export degradation: audio render failed but the (video-only /
-  // av) export continued without sound. Distinct from export_failed.
   export_degraded: { stage: 'audio_render'; output: string }
 }
 
 export type EventName = keyof EventMap
 export type EventProps<K extends EventName> = EventMap[K]
 
-// Typed wrapper over `track`. A rename here cascades through TS rather than
-// silently breaking a dashboard.
 export function trackEvent<K extends EventName>(name: K, props: EventProps<K>): void {
   track(name, props as Record<string, unknown>)
 }
 
-// Typed + coalesced. For high-frequency controls whose name/shape should still
-// stay in lockstep with EventMap. See trackSettled for the debounce semantics.
 export function trackEventSettled<K extends EventName>(
   name: K,
   props: EventProps<K>,

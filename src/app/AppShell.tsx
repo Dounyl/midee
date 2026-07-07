@@ -1,9 +1,9 @@
 import { createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { AppRoot } from '@/app/AppRoot'
 import { createApp } from '@/app/createApp'
+import { SHOW_FPS } from '@/app/env'
 import type { AppRuntimeInstance } from '@/app/runtime/types'
 import { FpsOverlay } from '@/components/common/FpsOverlay'
-import { SHOW_FPS } from '@/env'
 import { assertDefined } from '@/lib/assert'
 import { AppCtx, type AppCtxValue } from '@/stores/app/AppCtx'
 

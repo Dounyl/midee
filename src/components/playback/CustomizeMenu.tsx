@@ -1,11 +1,11 @@
 import { createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
+import { FEEDBACK_URL, isNarrowViewport } from '@/components/common/utils'
+import { LOCALES, type LocaleCode, locale, t } from '@/i18n'
 import type { ParticleStyle, ParticleStyleInfo } from '@/services/renderer/ParticleSystem'
 import type { Theme } from '@/services/renderer/theme'
-import { LOCALES, type LocaleCode, locale, t } from '../i18n'
-import { trackEvent } from '../telemetry'
+import { trackEvent } from '@/services/telemetry'
 import styles from './CustomizeMenu.module.css'
-import { FEEDBACK_URL, isNarrowViewport } from './utils'
 
 // Aesthetics popover — collapses theme, particles, and chord overlay (three
 // previously-separate topbar pills) into one trigger. Reduces topbar noise

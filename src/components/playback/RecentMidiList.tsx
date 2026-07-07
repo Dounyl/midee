@@ -1,4 +1,6 @@
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js'
+import { icons } from '@/components/common/icons'
+import { t } from '@/i18n'
 import {
   listLocalMidiEntries,
   loadSamplePlaybackHistory,
@@ -6,8 +8,6 @@ import {
 } from '@/services/midi/midiLibrary'
 import { SAMPLES } from '@/services/midi/samples'
 import type { LibraryOpenRequest } from '@/stores/app/AppCtx'
-import { t } from '../i18n'
-import { icons } from './icons'
 import styles from './RecentMidiList.module.css'
 
 interface RecentMidiEntry {

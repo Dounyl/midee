@@ -1,5 +1,5 @@
 import { Route, Router, useLocation, useNavigate } from '@solidjs/router'
-import { createEffect, lazy, onCleanup, type ParentProps, Suspense } from 'solid-js'
+import { createEffect, lazy, onCleanup, onMount, type ParentProps, Suspense } from 'solid-js'
 import {
   EXERCISE_ROUTE_PATHS,
   LEARN_HUB_PATH,
@@ -54,7 +54,7 @@ function AppRouterRoot(props: ParentProps) {
 
 function LegacyHomeRedirect() {
   const navigate = useNavigate()
-  createEffect(() => {
+  onMount(() => {
     navigate('/', { replace: true })
   })
   return null
@@ -62,7 +62,7 @@ function LegacyHomeRedirect() {
 
 function LegacyRouteRedirect(props: { target: RouteTarget }) {
   const navigate = useNavigate()
-  createEffect(() => {
+  onMount(() => {
     navigate(routeTargetToPath(props.target), { replace: true })
   })
   return null
@@ -72,7 +72,7 @@ function RootRoute() {
   const navigate = useNavigate()
   const bootPath = resolveBootPath(window.location.pathname)
 
-  createEffect(() => {
+  onMount(() => {
     navigate(bootPath, { replace: true })
   })
 
@@ -81,7 +81,7 @@ function RootRoute() {
 
 function UnknownRouteRedirect() {
   const navigate = useNavigate()
-  createEffect(() => {
+  onMount(() => {
     navigate(resolveBootPath(window.location.pathname), { replace: true })
   })
   return null

@@ -1,10 +1,10 @@
 import { createSignal, For, Show } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
+import { icons } from '@/components/common/icons'
+import { cssModuleClass } from '@/components/common/utils'
+import { t } from '@/i18n'
 import type { ExportStage } from '@/services/export/VideoExporter'
-import { t } from '../i18n'
 import styles from './ExportModal.module.css'
-import { icons } from './icons'
-import { cssModuleClass } from './utils'
 
 // Supported export resolution presets. `match` keeps the current canvas size
 // (whatever the user's window is) — useful for already-well-sized displays or

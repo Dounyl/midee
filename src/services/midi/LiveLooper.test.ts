@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MasterClock } from '@/lib/core/MasterClock'
-import { fakeAudioContext } from '../test/fakeAudioContext'
+import { fakeAudioContext } from '@/test/fakeAudioContext'
 import { LiveLooper, LOOKAHEAD_SEC, type LoopCallbacks, POLL_INTERVAL_MS } from './LiveLooper'
 
 // LiveLooper sources ALL of its time from Tone's `getContext().currentTime`

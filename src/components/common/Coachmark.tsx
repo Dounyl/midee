@@ -1,6 +1,6 @@
 import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { Portal } from 'solid-js/web'
-import { type MessageKey, t } from '../i18n'
+import { type MessageKey, t } from '@/i18n'
 import styles from './Coachmark.module.css'
 
 // Generic first-encounter coachmark anchored to a DOM element by id. Surfaces

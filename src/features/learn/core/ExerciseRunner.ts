@@ -9,7 +9,7 @@ import type { LearnProgressStore } from '@/features/learn/core/progress'
 import type { ExerciseResult } from '@/features/learn/core/Result'
 import { Session } from '@/features/learn/core/Session'
 import type { LearnOverlay } from '@/features/learn/overlays/LearnOverlay'
-import { track, trackEvent } from '@/features/telemetry'
+import { track, trackEvent } from '@/services/telemetry'
 import type { AppServices } from '@/types/app/AppServices'
 import type { MidiFile } from '@/types/midi/types'
 

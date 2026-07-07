@@ -6,11 +6,11 @@
 
 import { createSignal, onCleanup, onMount } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
-import { t } from '../i18n'
-import { icons } from './icons'
+import { icons } from '@/components/common/icons'
+import { cssModuleClass } from '@/components/common/utils'
+import { SamplesGrid } from '@/components/playback/SamplesGrid'
+import { t } from '@/i18n'
 import styles from './MidiPickerModal.module.css'
-import { SamplesGrid } from './SamplesGrid'
-import { cssModuleClass } from './utils'
 
 interface OpenOpts {
   onFile: (file: File) => void

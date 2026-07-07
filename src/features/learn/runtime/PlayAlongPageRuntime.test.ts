@@ -65,7 +65,7 @@ vi.mock('@/features/learn/ui/SessionSummary', () => ({
   createSessionSummary: () => ({ show: sessionSummaryShow, dismiss: () => {} }),
 }))
 
-vi.mock('@/features/telemetry', () => ({
+vi.mock('@/services/telemetry', () => ({
   track: vi.fn(),
   trackEvent: vi.fn(),
 }))

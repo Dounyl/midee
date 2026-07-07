@@ -1,10 +1,10 @@
 import { createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
+import { icons } from '@/components/common/icons'
+import { isNarrowViewport } from '@/components/common/utils'
+import { t } from '@/i18n'
 import { INSTRUMENTS, type InstrumentId } from '@/services/audio/SynthEngine'
-import { t } from '../i18n'
 import styles from './InstrumentMenu.module.css'
-import { icons } from './icons'
-import { isNarrowViewport } from './utils'
 
 // Topbar instrument picker — a pill trigger + dropdown menu. Available in
 // both live and file modes so users can hear any loaded MIDI played back with

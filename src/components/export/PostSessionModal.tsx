@@ -4,11 +4,11 @@
 
 import { createSignal } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
-import { t, tn } from '../i18n'
-import { trackEvent } from '../telemetry'
-import { icons } from './icons'
+import { icons } from '@/components/common/icons'
+import { cssModuleClass, FEEDBACK_URL } from '@/components/common/utils'
+import { t, tn } from '@/i18n'
+import { trackEvent } from '@/services/telemetry'
 import styles from './PostSessionModal.module.css'
-import { cssModuleClass, FEEDBACK_URL } from './utils'
 
 export type SessionAction = 'open-in-file' | 'download' | 'discard'
 

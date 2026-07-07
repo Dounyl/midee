@@ -1,7 +1,7 @@
 import { createSignal, Show } from 'solid-js'
 import { render } from 'solid-js/web'
+import { t } from '@/i18n'
 import type { ChordReading } from '@/lib/music/ChordDetector'
-import { t } from '../i18n'
 import styles from './ChordOverlay.module.css'
 
 // Inline chord readout — lives in the top strip rather than as a floating

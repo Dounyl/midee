@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MasterClock } from '@/types/clock/MasterClock'
+import type { MasterClock } from '@/lib/core/MasterClock'
 import type { MidiFile } from '@/types/midi/types'
 import { PracticeEngine } from './PracticeEngine'
 

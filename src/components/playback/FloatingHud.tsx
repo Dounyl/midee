@@ -15,8 +15,8 @@
 // to the child content or caller-supplied CSS class.
 
 import { createEffect, createSignal, type JSX, onCleanup, onMount } from 'solid-js'
-import { t } from '../i18n'
-import { icons } from './icons'
+import { icons } from '@/components/common/icons'
+import { t } from '@/i18n'
 import './FloatingHud.css'
 
 export interface FloatingHudProps {

@@ -1,7 +1,7 @@
 import { Midi } from '@tonejs/midi'
 import { describe, expect, it, vi } from 'vitest'
 import { PracticeEngine } from '@/features/learn/engines/PracticeEngine'
-import type { MasterClock } from '../clock/MasterClock'
+import type { MasterClock } from '@/lib/core/MasterClock'
 import { EmptyMidiError, parseMidiFile } from './parser'
 
 // 鈹€鈹€ Helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€

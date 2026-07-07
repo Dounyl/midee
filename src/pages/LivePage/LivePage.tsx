@@ -1,5 +1,5 @@
 import { onMount } from 'solid-js'
-import { trackEvent } from '@/features/telemetry'
+import { trackEvent } from '@/services/telemetry'
 import { useApp } from '@/stores/app/AppCtx'
 import { consumeNextLiveOpts } from './liveEnterOptions'
 

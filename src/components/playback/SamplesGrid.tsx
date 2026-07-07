@@ -1,8 +1,8 @@
 import { createSignal, For, onMount } from 'solid-js'
 import { render } from 'solid-js/web'
+import { icons } from '@/components/common/icons'
+import { t } from '@/i18n'
 import { computeSparkline, fetchSampleMidi, SAMPLES, type Sample } from '@/services/midi/samples'
-import { t } from '../i18n'
-import { icons } from './icons'
 import styles from './SamplesGrid.module.css'
 
 // Row of sample cards. Each card shows a pitch-density sparkline pulled from

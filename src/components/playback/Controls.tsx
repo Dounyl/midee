@@ -1,8 +1,12 @@
 import { createSignal } from 'solid-js'
 import { createStore, type SetStoreFunction } from 'solid-js/store'
 import { render } from 'solid-js/web'
+import { DragCoachmark } from '@/components/common/DragCoachmark'
+import { isLearnCoachmarkSeen, LearnCoachmark } from '@/components/learn/LearnCoachmark'
+import { t } from '@/i18n'
 import type { LiveLooperState } from '@/services/midi/LiveLooper'
 import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
+import { trackEvent, trackEventSettled } from '@/services/telemetry'
 import type { AppActions } from '@/stores/app/AppCtx'
 import { watch } from '@/stores/app/watch'
 import { getCurrentRouteTarget, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
@@ -13,8 +17,6 @@ import {
   type RouteTarget,
 } from '@/stores/routing/routeTarget'
 import type { AppServices } from '@/types/app/AppServices'
-import { t } from '../i18n'
-import { trackEvent, trackEventSettled } from '../telemetry'
 import {
   formatMMSS,
   formatSpeed,
@@ -31,8 +33,6 @@ import {
   TopStripView,
   ZOOM_DEFAULT,
 } from './ControlsView'
-import { DragCoachmark } from './DragCoachmark'
-import { isLearnCoachmarkSeen, LearnCoachmark } from './LearnCoachmark'
 
 const SKIP_SECONDS = 10
 

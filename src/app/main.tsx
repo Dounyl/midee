@@ -17,12 +17,12 @@ import '@fontsource/jetbrains-mono/latin-500.css'
 import '@fontsource/jetbrains-mono/latin-600.css'
 import { render } from 'solid-js/web'
 import { AppShell } from '@/app/AppShell'
+import { env } from '@/app/env'
 import type { AppRuntimeInstance } from '@/app/runtime/types'
-import { env } from '@/env'
 import { currentLocaleNativeName, initI18n, shouldShowLocaleHint, t } from '@/i18n'
+import { whenIdle } from '@/lib/whenIdle'
 import localeHintStyles from '@/main/LocaleHint.module.css'
-import { loadPostHog, registerAnalyticsContext } from '@/telemetry'
-import { whenIdle } from '@/whenIdle'
+import { loadPostHog, registerAnalyticsContext } from '@/services/telemetry'
 
 // Both analytics SDKs are loaded on idle so they don't sit in the initial
 // bundle. PostHog alone is ~70 KB gz with autocapture / session_recording /

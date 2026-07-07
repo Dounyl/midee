@@ -1,5 +1,5 @@
-import { track, trackEvent } from '@/features/telemetry'
 import { t } from '@/i18n'
+import { track, trackEvent } from '@/services/telemetry'
 import type { PlayRouteEnterOptions } from '@/stores/app/AppCtx'
 import type { AppStore } from '@/stores/app/state'
 import type { RouteTarget } from '@/stores/routing/routeTarget'

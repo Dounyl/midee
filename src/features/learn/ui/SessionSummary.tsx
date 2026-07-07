@@ -1,7 +1,7 @@
 import { onCleanup, Show } from 'solid-js'
 import type { ExerciseResult } from '@/features/learn/core/Result'
-import { trackEvent } from '@/features/telemetry'
 import { t } from '@/i18n'
+import { trackEvent } from '@/services/telemetry'
 import { createMountHandle } from './mountComponent'
 import styles from './SessionSummary.module.css'
 

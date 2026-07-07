@@ -12,7 +12,7 @@ import {
   Sampler,
   Synth,
 } from 'tone'
-import type { MessageKey } from '../i18n'
+import type { MessageKey } from '@/i18n'
 
 export type InstrumentId =
   | 'piano'
