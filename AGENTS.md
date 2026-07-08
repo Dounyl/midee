@@ -1,5 +1,15 @@
 **Reality:** The product is **midee** (`package.json` → `"name": "midee"`). The repo directory on disk is often **`pianoroll`** — same codebase. Everything user-facing is a **static Vite SPA**: MIDI, audio, Pixi canvas, and MP4 export run in the **browser only**; there is no app server for core features (deploy is static assets + optional analytics keys).
 
+## CodeGraph
+
+**Use CodeGraph first** for code exploration. In repos with `.codegraph/` directory:
+
+```bash
+codegraph explore "symbol names or question"
+```
+
+Provides: verbatim source + line numbers + call paths (including dynamic dispatch). Faster and more accurate than grep/read loops. Skip if no `.codegraph/` directory.
+
 ## Commands (from `package.json`, repo root)
 
 This repo is on `pnpm` (`package.json` → `"packageManager": "pnpm@11.7.0"`).
@@ -75,9 +85,58 @@ The following directories may still exist during migration, but they are compati
 - Prefer moving or adding real code under `app/components/features/stores/services/lib/types`.
 - Avoid creating new compatibility shims unless needed to keep the build green during migration.
 
+### File Size Limits
+
+**Why**: Large files are hard to understand, test, and review. They often signal mixed responsibilities.
+
+**Limits**:
+- Component/Service files: <400 lines (soft), <600 lines (hard)
+- Runtime/Orchestration files: <500 lines (soft), <700 lines (hard)
+- Single function/method: <100 lines
+- Constructor: <50 lines
+
+**When**: Refactor immediately when hitting hard limits. Plan refactor within 1 sprint when hitting soft limits.
+
+**How to verify**:
+```bash
+find src -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -20
+```
+
+### Naming Conventions
+
+**Why**: Consistent naming reduces cognitive load and signals architectural patterns.
+
+**Anti-patterns**:
+- `*And*` in class names → signals mixed responsibility, split into separate classes
+- `*Manager`, `*Helper`, `*Util` → too generic, find specific role name
+
+**Patterns**:
+- `*Coordinator` - orchestrates multiple services
+- `*Factory` - creates instances
+- `*Bridge` - adapts between interfaces
+- `*Registry` - manages collection
+- `Runtime*` prefix - runtime-scoped modules
+- `create*` functions - factory functions
+- `bootstrap*` functions - initialization with side effects
+- `wire*` functions - event/handler binding
+
+**How to verify**:
+```bash
+grep -rn "class.*And" src --include="*.ts"
+grep -rn "class.*Manager\|class.*Helper\|class.*Util" src --include="*.ts"
+```
+
 ## Runtime Boundaries
 
-- Treat the app as 4 layers: `Intent`, `Navigation/Application`, `Domain Runtime`, `Infrastructure`.
+**Why**: Clear boundaries prevent feature state from leaking into shared runtime, keeping the codebase maintainable as it scales.
+
+**How**: Treat the app as 4 layers: `Intent`, `Navigation/Application`, `Domain Runtime`, `Infrastructure`.
+
+**How to verify**:
+```bash
+# Check for upward imports (services/features should not import from app/)
+grep -rn "from '@/app" src/services src/features src/components
+```
 - Keep responsibilities narrow; do not let route parsing, business branching, and runtime state ownership collapse back into one class.
 
 ### Routing Rules
@@ -108,6 +167,18 @@ The following directories may still exist during migration, but they are compati
 
 ### Composition Rules
 
+**Why**: AppRuntime is a composition root, not a data owner. Keeping it narrow prevents it from becoming a God object.
+
+**When to refactor**: If AppRuntime has fields named `*State`, `current*`, or holds feature-specific data, extract to specialized modules.
+
 - `AppRuntime` is a composition root and wiring boundary, not the owner of ad-hoc learn state.
 - Do not reintroduce feature-owned runtime state into `AppRuntime`.
 - Do not keep widening shared dependency bags such as `AppRuntimeDeps`; prefer narrow ports grouped by responsibility.
+
+**How to verify**:
+```bash
+# Check AppRuntime for state ownership violations
+grep -n "private.*State\|private current" src/app/AppRuntime.ts
+# Check for overly wide dependency bags (>10 properties)
+grep -A 20 "interface.*Deps\|interface.*Options" src/app/runtime/*.ts | grep -c "^\s*[a-z]"
+```
