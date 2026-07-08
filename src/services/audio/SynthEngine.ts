@@ -68,11 +68,7 @@ export class SynthEngine implements AudioEngine {
     // Loading a different file must invalidate any paused transport snapshot
     // from the previous one; otherwise play() can hit the paused-resume fast
     // path and revive the old Part instead of building the new song.
-    this.playGeneration++
-    this.clearScheduled()
-    getTransport().stop()
-    this.releaseAllInstruments()
-    this.scheduledFromTime = 0
+    this.resetTransport()
     if (!(source instanceof AudioBuffer)) {
       this.midi = source as MidiFile
     }
@@ -151,7 +147,11 @@ export class SynthEngine implements AudioEngine {
     if (gen !== this.playGeneration) return
 
     const transport = getTransport()
-    if (transport.state === 'paused' && Math.abs(fromTime - this.scheduledFromTime) < 0.05) {
+    if (
+      transport.state === 'paused' &&
+      this.scheduledPart &&
+      Math.abs(fromTime - this.scheduledFromTime) < 0.05
+    ) {
       transport.start()
       return
     }
@@ -225,6 +225,16 @@ export class SynthEngine implements AudioEngine {
     this.playGeneration++
     getTransport().pause()
     this.releaseAllInstruments()
+  }
+
+  resetTransport(): void {
+    this.playGeneration++
+    this.clearScheduled()
+    const transport = getTransport()
+    transport.stop()
+    transport.position = 0
+    this.releaseAllInstruments()
+    this.scheduledFromTime = 0
   }
 
   seek(time: number): void {

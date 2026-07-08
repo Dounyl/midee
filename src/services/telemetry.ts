@@ -180,7 +180,7 @@ type EventMap = {
   exercise_abandoned: { exercise_id: string; duration_s: number }
   exercise_summary_action: {
     exercise_id: string
-    action: 'again' | 'next' | 'dismissed'
+    action: 'again' | 'next' | 'dismissed' | 'cancel' | 'continue_practice'
   }
   feedback_clicked: { source: 'customize_menu' | 'post_session' }
   seeked: { from_s: number; to_s: number; method: 'scrub' | 'skip' }

@@ -4,6 +4,8 @@ import { render } from 'solid-js/web'
 import { DragCoachmark } from '@/components/common/DragCoachmark'
 import { isLearnCoachmarkSeen, LearnCoachmark } from '@/components/learn/LearnCoachmark'
 import { t } from '@/i18n'
+import type { LiveLooperState } from '@/services/midi/LiveLooper'
+import type { MidiDeviceStatus } from '@/services/midi/MidiInputCoordinator'
 import { trackEvent, trackEventSettled } from '@/services/telemetry'
 import type { AppActions } from '@/stores/app/AppCtx'
 import { watch } from '@/stores/app/watch'
@@ -89,12 +91,12 @@ export function createControls(
   instrumentSlot: HTMLElement
   chordSlot: HTMLElement
   customizeSlot: HTMLElement
-  updateLoopState: (state: string, layerCount: number) => void
+  updateLoopState: (state: LiveLooperState, layerCount: number) => void
   updateLoopProgress: (progress: number) => void
   updateMetronome: (running: boolean, bpm: number) => void
   pulseMetronomeBeat: (isDownbeat: boolean) => void
   updateSessionRecording: (recording: boolean, elapsed: number) => void
-  updateMidiStatus: (status: string, deviceName: string) => void
+  updateMidiStatus: (status: MidiDeviceStatus, deviceName: string) => void
   updateOctave: (octave: number) => void
   setInstrumentLoading: (loading: boolean) => void
   updateInstrument: (name: string) => void
@@ -158,10 +160,10 @@ export function createControls(
     },
 
     // Imperative API methods (for RuntimeUiBridge compatibility)
-    updateLoopState: (state: string, layerCount: number) => {
+    updateLoopState: (state: LiveLooperState, layerCount: number) => {
       setUiStoreFn?.((prev) => ({
         ...prev,
-        loop: { ...prev.loop, state: state as any, layerCount },
+        loop: { ...prev.loop, state, layerCount },
       }))
     },
     updateLoopProgress: (progress: number) => {
@@ -180,8 +182,8 @@ export function createControls(
     updateSessionRecording: (recording: boolean, elapsed: number) => {
       setUiStoreFn?.((prev) => ({ ...prev, session: { recording, elapsed } }))
     },
-    updateMidiStatus: (status: string, deviceName: string) => {
-      setUiStoreFn?.((prev) => ({ ...prev, midi: { status: status as any, deviceName } }))
+    updateMidiStatus: (status: MidiDeviceStatus, deviceName: string) => {
+      setUiStoreFn?.((prev) => ({ ...prev, midi: { status, deviceName } }))
     },
     updateOctave: (_octave: number) => {
       // Handled via setOctave signal exposure if needed
@@ -271,7 +273,7 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
     learnFileName = name
     updateContext(name)
   })
-  hooks?.onSetUiStore?.((setter) => setUi(setter as any))
+  hooks?.onSetUiStore?.((setter) => setUi((prev) => setter(prev)))
 
   // Lifecycle: Setup subscriptions
   onMount(() => {
@@ -424,7 +426,9 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
 
     // Cleanup
     onCleanup(() => {
-      unsubs.forEach((u) => u())
+      unsubs.forEach((u) => {
+        u()
+      })
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('keydown', handleKeyDown)
     })

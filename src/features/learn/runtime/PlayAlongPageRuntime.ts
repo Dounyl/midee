@@ -8,6 +8,8 @@ import {
 } from '@/features/learn/core/LearnState'
 import { createLearnProgressStore, type LearnProgressStore } from '@/features/learn/core/progress'
 import { playAlongDescriptor } from '@/features/learn/exercises/play-along'
+import { createPlayAlongSummary } from '@/features/learn/exercises/play-along/PlayAlongSummary'
+import { stagePlayAlongReplayState } from '@/features/learn/exercises/play-along/state'
 import { findExercise } from '@/features/learn/hub/registry'
 import { LearnOverlay } from '@/features/learn/overlays/LearnOverlay'
 import learnHostStyles from '@/features/learn/ui/LearnHost.module.css'
@@ -57,6 +59,8 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
       onMidiReady: async () => {
         if (this.runner?.isActive) this.runner.close('abandoned')
         this.hideSummaryHost()
+        this.deps.services.synth.resetTransport()
+        this.primeInteractiveAudio()
         await this.launchExercise(playAlongDescriptor)
       },
     })
@@ -94,7 +98,25 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
   async startPlayAlong(): Promise<void> {
     if (!this.learnState.state.loadedMidi || this.runner?.isActive) return
     this.hideSummaryHost()
+    this.deps.services.synth.resetTransport()
+    this.primeInteractiveAudio()
     await this.launchExercise(playAlongDescriptor)
+  }
+
+  returnToList(): void {
+    if (this.runner?.isActive) {
+      this.closeActiveExercise('abandoned')
+      return
+    }
+    if (this.summaryAutoHide) {
+      clearTimeout(this.summaryAutoHide)
+      this.summaryAutoHide = null
+    }
+    this.hideSummaryHost()
+    this.deps.services.renderer.clearMidi()
+    this.deps.services.renderer.setVisible(false)
+    this.session.clearSession()
+    this.view.set('page')
   }
 
   exit(): void {
@@ -135,44 +157,131 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
 
   private closeActiveExercise(reason: 'completed' | 'abandoned' = 'abandoned'): void {
     if (!this.runner?.isActive) return
+    if (this.summaryAutoHide) {
+      clearTimeout(this.summaryAutoHide)
+      this.summaryAutoHide = null
+    }
 
     const lastDescriptor = this.runner.activeId
     const lastMidi = this.learnState.state.loadedMidi
     const xpBefore = this.progress.xp
     const streakBefore = this.progress.streakDays
     const result = this.runner.close(reason)
+    const exitToList = () => {
+      this.deps.services.renderer.clearMidi()
+      this.deps.services.renderer.setVisible(false)
+      this.deps.services.synth.resetTransport()
+      this.session.clearSession()
+      this.view.set('page')
+    }
+    const restartCurrentPlayAlong = () => {
+      if (!result) {
+        exitToList()
+        return
+      }
+      if (!lastMidi || lastDescriptor !== playAlongDescriptor.id) {
+        if (lastDescriptor) this.relaunchById(lastDescriptor)
+        else exitToList()
+        return
+      }
+      const restartTime =
+        result.summary?.kind === 'play-along' && result.summary.completionTarget === 'loop-end'
+          ? (result.summary.loopRegion?.start ?? 0)
+          : 0
+      if (result.summary?.kind === 'play-along' && result.summary.completionTarget === 'loop-end') {
+        const loopRegion = result.summary.loopRegion
+        if (loopRegion) {
+          stagePlayAlongReplayState({
+            loopRegion,
+            startTime: loopRegion.start,
+            autoplay: false,
+          })
+        }
+      } else {
+        stagePlayAlongReplayState({
+          loopRegion: null,
+          startTime: restartTime,
+          autoplay: false,
+        })
+        this.deps.services.synth.resetTransport()
+        this.deps.services.clock.seek(0)
+        this.deps.services.synth.seek(0)
+        this.learnState.setState('currentTime', 0)
+      }
+      void this.launchExercise(playAlongDescriptor)
+    }
 
-    this.deps.services.renderer.clearMidi()
-    this.deps.services.renderer.setVisible(false)
-    this.session.clearSession()
-    this.view.set('page')
-
-    if (result && lastDescriptor && this.summaryHost) {
+    if (reason === 'completed' && result && lastDescriptor && this.summaryHost) {
       this.summaryHost.classList.remove(learnHostStyles.learnHostHidden!)
+      const summaryExtras = {
+        streakExtended: this.progress.streakDays > streakBefore,
+        xpGained: Math.max(0, this.progress.xp - xpBefore),
+      }
+      const replay = () => {
+        if (
+          result.summary?.kind === 'play-along' &&
+          result.summary.completionTarget === 'loop-end'
+        ) {
+          const loopRegion = result.summary.loopRegion
+          if (loopRegion) {
+            stagePlayAlongReplayState({
+              loopRegion,
+              startTime: loopRegion.start,
+              autoplay: false,
+            })
+          }
+        }
+        if (lastMidi && lastDescriptor === playAlongDescriptor.id) {
+          void this.session.loadPreparedMidi(lastMidi)
+        } else {
+          this.relaunchById(lastDescriptor)
+        }
+      }
+      const dismiss = () => {
+        this.hideSummaryHost()
+      }
+
+      if (result.summary?.kind === 'play-along') {
+        const summary = createPlayAlongSummary({
+          onContinuePractice: () => {
+            summary.dismiss()
+            dismiss()
+            restartCurrentPlayAlong()
+          },
+          onCancel: () => {
+            summary.dismiss()
+            dismiss()
+            exitToList()
+          },
+        })
+        summary.show(this.summaryHost, result, summaryExtras, result.summary)
+        return
+      }
+
+      this.deps.services.renderer.clearMidi()
+      this.deps.services.renderer.setVisible(false)
+      this.session.clearSession()
+
       const summary = createSessionSummary({
         onAgain: () => {
           summary.dismiss()
-          this.hideSummaryHost()
-          if (lastMidi && lastDescriptor === playAlongDescriptor.id) {
-            void this.session.loadPreparedMidi(lastMidi)
-          } else {
-            this.relaunchById(lastDescriptor)
-          }
+          dismiss()
+          replay()
         },
         onNext: () => {
           summary.dismiss()
-          this.hideSummaryHost()
+          dismiss()
         },
       })
-      summary.show(this.summaryHost, result, {
-        streakExtended: this.progress.streakDays > streakBefore,
-        xpGained: Math.max(0, this.progress.xp - xpBefore),
-      })
+      summary.show(this.summaryHost, result, summaryExtras)
       this.summaryAutoHide = setTimeout(() => {
         this.summaryAutoHide = null
-        this.hideSummaryHost()
+        dismiss()
       }, 4100)
+      return
     }
+
+    exitToList()
   }
 
   private async launchExercise(descriptor: ExerciseDescriptor): Promise<void> {
@@ -196,6 +305,11 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
   private relaunchById(id: string): void {
     const descriptor = findExercise(id)
     if (descriptor) void this.launchExercise(descriptor)
+  }
+
+  private primeInteractiveAudio(): void {
+    this.deps.services.clock.prime()
+    this.deps.services.synth.primeLiveInput()
   }
 
   private onStatusChange(status: LearnStatus): void {

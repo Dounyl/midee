@@ -1,11 +1,22 @@
 import { describe, expect, it, vi } from 'vitest'
 
-const controlsInstances: any[] = []
-const dropZoneInstances: any[] = []
-const trackPanelInstances: any[] = []
-const instrumentMenuInstances: any[] = []
-const customizeMenuInstances: any[] = []
-const chordOverlayInstances: any[] = []
+const controlsInstances: Array<{
+  instrumentSlot: HTMLDivElement
+  tracksButton: HTMLButtonElement
+  customizeSlot: HTMLDivElement
+  chordSlot: HTMLDivElement
+  options: unknown
+}> = []
+const dropZoneInstances: Array<{ onDrop: (file: File, source: string) => void }> = []
+const trackPanelInstances: Array<{ trigger: HTMLElement | null; args: unknown[] }> = []
+const instrumentMenuInstances: Array<{ onSelect: ((id: string) => void) | null; args: unknown[] }> =
+  []
+const customizeMenuInstances: Array<{
+  chord: boolean
+  args: unknown[]
+  setChord(value: boolean): void
+}> = []
+const chordOverlayInstances: Array<{ host: HTMLElement }> = []
 
 vi.mock('@/components/playback/Controls', () => ({
   createControls: (_overlay: HTMLElement, options: unknown) => {

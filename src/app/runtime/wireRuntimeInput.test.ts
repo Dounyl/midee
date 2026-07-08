@@ -173,7 +173,9 @@ describe('wireRuntimeInput', () => {
     expect(liveNotes.press).toHaveBeenCalledWith(60, 0.8, undefined)
     expect(capture.captureNoteOff).toHaveBeenCalledWith(60, 42)
 
-    groups.flatMap((group) => group.unsubs).forEach((unsub) => unsub())
+    for (const unsub of groups.flatMap((group) => group.unsubs)) {
+      unsub()
+    }
 
     expect(canvasPointerHandlers.has('pointerdown')).toBe(true)
     expect(canvasPointerHandlers.has('pointermove')).toBe(true)

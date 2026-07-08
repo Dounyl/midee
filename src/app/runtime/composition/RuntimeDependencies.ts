@@ -1,5 +1,6 @@
 import { ActiveLearnRuntimeRegistry } from '@/features/learn/runtime/ActiveLearnRuntimeRegistry'
 import { MasterClock } from '@/lib/core/MasterClock'
+import type { LazyHandle } from '@/lib/lazyHandle'
 import { Metronome } from '@/services/audio/Metronome'
 import { SynthEngine } from '@/services/audio/SynthEngine'
 import type { ExportFlowService } from '@/services/export/ExportFlowService'
@@ -20,11 +21,22 @@ import {
   type LivePerformanceBus,
 } from '@/services/performance/LivePerformanceBus'
 import { PianoRollRenderer } from '@/services/renderer/PianoRollRenderer'
+import type { ExportModalPort, MidiPickerOpenOptions } from '@/services/runtime/contracts'
 import type { MidiFlowCoordinator } from '@/services/runtime/MidiFlowCoordinator'
 import type { PlaybackCoordinator } from '@/services/runtime/PlaybackCoordinator'
 import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 import type { AppStore } from '@/stores/app/state'
 import type { AppApplicationController } from '../AppApplicationController'
+
+interface PostSessionModalPort {
+  open(durationSec: number, noteCount: number): void
+  close(): void
+}
+
+interface MidiPickerModalPort {
+  open(options: MidiPickerOpenOptions): void
+  close(): void
+}
 
 /**
  * RuntimeDependencies
@@ -70,9 +82,9 @@ export class RuntimeDependencies {
   appController!: AppApplicationController
 
   // ========== Lazy Handles（在 AppRuntime 中创建，这里只保存引用） ==========
-  postSessionHandle: any = null
-  midiPickerHandle: any = null
-  exportHandle: any = null
+  postSessionHandle: LazyHandle<PostSessionModalPort> | null = null
+  midiPickerHandle: LazyHandle<MidiPickerModalPort> | null = null
+  exportHandle: LazyHandle<ExportModalPort & { open(): void }> | null = null
 
   constructor(store: AppStore) {
     this.store = store
@@ -151,7 +163,11 @@ export class RuntimeDependencies {
   /**
    * 设置 lazy handles（从 AppRuntime 传入）
    */
-  setLazyHandles(handles: { postSessionHandle: any; midiPickerHandle: any; exportHandle: any }) {
+  setLazyHandles(handles: {
+    postSessionHandle: LazyHandle<PostSessionModalPort>
+    midiPickerHandle: LazyHandle<MidiPickerModalPort>
+    exportHandle: LazyHandle<ExportModalPort & { open(): void }>
+  }) {
     this.postSessionHandle = handles.postSessionHandle
     this.midiPickerHandle = handles.midiPickerHandle
     this.exportHandle = handles.exportHandle

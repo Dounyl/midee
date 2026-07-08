@@ -30,6 +30,9 @@ export class RuntimePortsFactory {
     const deps = this.deps
     const _state = this.state
     const uiShell = this.uiShell
+    const exportHandle = deps.exportHandle!
+    const postSessionHandle = deps.postSessionHandle!
+    const midiPickerHandle = deps.midiPickerHandle!
 
     return createAppRuntimePortBundle({
       services: {
@@ -48,23 +51,23 @@ export class RuntimePortsFactory {
       showSuccess: (message) => uiShell.showSuccess(message),
       closeTransientOverlays: () => uiShell.closeTransientOverlays(),
       openExportModal: async () => {
-        const modal = await deps.exportHandle.get()
+        const modal = await exportHandle.get()
         modal.open()
       },
-      peekExportModal: () => deps.exportHandle.peek(),
+      peekExportModal: () => exportHandle.peek(),
       openPostSession: async (duration, noteCount) => {
-        const modal = await deps.postSessionHandle.get()
+        const modal = await postSessionHandle.get()
         modal.open(duration, noteCount)
       },
       closePostSession: () => {
-        deps.postSessionHandle.peek()?.close()
+        postSessionHandle.peek()?.close()
       },
       openMidiPicker: async (options) => {
-        const modal = await deps.midiPickerHandle.get()
+        const modal = await midiPickerHandle.get()
         modal.open(options)
       },
       closeMidiPicker: () => {
-        deps.midiPickerHandle.peek()?.close()
+        midiPickerHandle.peek()?.close()
       },
       getCurrentTarget: (): RouteTarget | null => getCurrentRouteTarget(),
       navigate: (target, options) => {

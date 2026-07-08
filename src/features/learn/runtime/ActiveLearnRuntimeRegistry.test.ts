@@ -26,6 +26,7 @@ function createPlayAlongRuntime(): PlayAlongPageRuntimeHandle {
     enter: vi.fn(),
     exit: vi.fn(),
     startPlayAlong: vi.fn(async () => {}),
+    returnToList: vi.fn(),
     loadPreparedMidi: vi.fn(async () => {}),
     getConsoleState: vi.fn(() => ({ enabled: true, baseKey: null, current: 2 })),
     setTranspose: vi.fn(),

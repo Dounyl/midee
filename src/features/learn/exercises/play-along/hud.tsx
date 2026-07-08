@@ -1,15 +1,10 @@
-import { createEffect, createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js'
-import { icons } from '@/components/common/icons'
+import { createEffect, createMemo, onCleanup, onMount, Show } from 'solid-js'
 import { FloatingHud } from '@/components/playback/FloatingHud'
 import { createMountHandle } from '@/features/learn/ui/mountComponent'
 import { t } from '@/i18n'
 import { watch } from '@/stores/app/watch'
 import { DEFAULT_SPEED_PRESETS, type PlayAlongEngine } from './engine'
 import './hud.css'
-
-// Streak ≥ this is "hot" — saturated chip background. Below is "warm"
-// (visible but quieter). Below 1 the chip is hidden entirely.
-const STREAK_HOT_THRESHOLD = 5
 
 function fmtTime(t: number): string {
   const s = Math.max(0, Math.floor(t))
@@ -33,81 +28,17 @@ const RAMP_GLYPH =
 
 export interface PlayAlongHudOptions {
   engine: PlayAlongEngine
-  onCloseExercise: () => void
   onMarkLoop: () => void
   onClearLoop: () => void
 }
 
-// Always-visible score panel.
-function LiveStats(props: { engine: PlayAlongEngine }) {
-  const { engine } = props
-  const accuracyPct = createMemo(() => {
-    const hits = engine.state.perfect + engine.state.good
-    const attempts = hits + engine.state.errors
-    return attempts === 0 ? 100 : Math.round((100 * hits) / attempts)
-  })
-  const streakHot = () => engine.state.streak >= STREAK_HOT_THRESHOLD
-  const streakWarm = () => engine.state.streak >= 1 && engine.state.streak < STREAK_HOT_THRESHOLD
-  return (
-    <div class="pa-hud__stats" role="status" aria-label={t('learn.pa.score')}>
-      <Show when={engine.state.streak > 0}>
-        <span
-          class="pa-hud__stat pa-hud__stat--streak"
-          classList={{
-            'pa-hud__stat--streak-warm': streakWarm(),
-            'pa-hud__stat--streak-hot': streakHot(),
-          }}
-          data-tip={t('learn.pa.streak.tip')}
-        >
-          <span class="pa-hud__stat-glyph" aria-hidden="true">
-            🔥
-          </span>
-          <span class="pa-hud__stat-num">{engine.state.streak}</span>
-        </span>
-      </Show>
-      <span class="pa-hud__stat pa-hud__stat--accuracy" data-tip={t('learn.pa.accuracy.tip')}>
-        <span class="pa-hud__stat-num">{accuracyPct()}</span>
-        <span class="pa-hud__stat-unit">%</span>
-      </span>
-      <span class="pa-hud__stats-breakdown" aria-hidden="true">
-        <span
-          class="pa-hud__stat pa-hud__stat--perfect"
-          classList={{ 'is-zero': engine.state.perfect === 0 }}
-          data-tip={t('learn.pa.perfect.tip')}
-        >
-          <span class="pa-hud__stat-glyph">✓</span>
-          <span class="pa-hud__stat-num">{engine.state.perfect}</span>
-        </span>
-        <span
-          class="pa-hud__stat pa-hud__stat--good"
-          classList={{ 'is-zero': engine.state.good === 0 }}
-          data-tip={t('learn.pa.good.tip')}
-        >
-          <span class="pa-hud__stat-glyph">◌</span>
-          <span class="pa-hud__stat-num">{engine.state.good}</span>
-        </span>
-        <span
-          class="pa-hud__stat pa-hud__stat--error"
-          classList={{ 'is-zero': engine.state.errors === 0 }}
-          data-tip={t('learn.pa.error.tip')}
-        >
-          <span class="pa-hud__stat-glyph">×</span>
-          <span class="pa-hud__stat-num">{engine.state.errors}</span>
-        </span>
-      </span>
-    </div>
-  )
-}
-
-function PlayAlongHudView(props: PlayAlongHudOptions) {
+export function PlayAlongHudView(props: PlayAlongHudOptions) {
   const engine = props.engine
 
   let scrubberEl!: HTMLInputElement
   let timeEl!: HTMLSpanElement
 
   let scrubbing = false
-
-  // Wake the HUD out of idle whenever transport state changes.
   let hudWake: (() => void) | null = null
 
   onMount(() => {
@@ -118,14 +49,11 @@ function PlayAlongHudView(props: PlayAlongHudOptions) {
     onCleanup(stop)
   })
 
-  // Scrubber max reacts to duration change only (rare event).
   createEffect(() => {
     const d = engine.state.duration
     if (scrubberEl) scrubberEl.max = String(d || 1)
   })
 
-  // Scrubber value + time label driven by 60 Hz MasterClock directly.
-  // @reactive-scrubber-forbidden — see docs/done/SOLID_MIGRATION_PLAN.md §2 rule 4
   const tickUnsub = engine.services.clock.subscribe((t) => {
     if (!scrubbing && scrubberEl) {
       scrubberEl.value = String(t)
@@ -136,13 +64,7 @@ function PlayAlongHudView(props: PlayAlongHudOptions) {
   })
   onCleanup(tickUnsub)
 
-  const [practiceStatus, setPracticeStatus] = createSignal(engine.practice.status.value)
-  onMount(() => {
-    const off = engine.practice.status.subscribe((status) => setPracticeStatus(status))
-    onCleanup(off)
-  })
-
-  const isWaitOn = () => practiceStatus().enabled
+  const isWaitOn = () => engine.state.waitEnabled
   const isRampOn = () => engine.state.tempoRampEnabled
 
   const loopBandStyle = createMemo<Record<string, string>>(() => {
@@ -215,9 +137,10 @@ function PlayAlongHudView(props: PlayAlongHudOptions) {
                 }}
                 onInput={(e) => {
                   const el = e.currentTarget
+                  const nextTime = Number(el.value)
                   const pct = (Number(el.value) / (Number(el.max) || 1)) * 100
                   el.style.setProperty('--pct', `${pct.toFixed(1)}%`)
-                  engine.seek(Number(el.value))
+                  if (timeEl) timeEl.textContent = fmtTime(nextTime)
                 }}
                 onPointerUp={() => {
                   scrubbing = false
@@ -225,25 +148,14 @@ function PlayAlongHudView(props: PlayAlongHudOptions) {
                 onPointerCancel={() => {
                   scrubbing = false
                 }}
-                onChange={() => {
+                onChange={(e) => {
                   scrubbing = false
+                  engine.seek(Number(e.currentTarget.value))
                 }}
               />
             </div>
             <span class="pa-hud__time pa-hud__time--muted">{fmtTime(engine.state.duration)}</span>
           </div>
-        </div>
-
-        <div class="pa-hud__meta">
-          <LiveStats engine={engine} />
-          <button
-            class="pa-hud__icon-btn pa-hud__close"
-            type="button"
-            aria-label={t('learn.pa.backAria')}
-            data-tip={t('learn.pa.backTip')}
-            onClick={() => props.onCloseExercise()}
-            innerHTML={icons.close(14)}
-          />
         </div>
 
         <div class="pa-hud__options">
@@ -348,7 +260,7 @@ function PlayAlongHudView(props: PlayAlongHudOptions) {
               <Show when={engine.state.loopRegion}>
                 {(region) => (
                   <span class="pa-hud__pill-sub">
-                    · {(region().end - region().start).toFixed(1)}s
+                    {(region().end - region().start).toFixed(1)}s
                   </span>
                 )}
               </Show>
