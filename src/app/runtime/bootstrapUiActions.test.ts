@@ -122,6 +122,7 @@ describe('bootstrapUiActions', () => {
       getLearnBaseKey: () =>
         ({ tonic: 'D', mode: 'major', source: 'midi', confidence: 1 }) as never,
       getPlayBaseKey: () => ({ tonic: 'G', mode: 'major', source: 'midi', confidence: 1 }) as never,
+      getCurrentTranspose: () => 2,
       includeLearnBaseKey: () => true,
       requestKeyboardModeChange,
       getActiveMidi: () => ({ id: 'midi' }) as never,
@@ -137,6 +138,7 @@ describe('bootstrapUiActions', () => {
     expect(handleTransposeChange).toHaveBeenCalledTimes(2)
     expect(requestKeyboardModeChange).toHaveBeenCalledWith('61', {
       activeMidi: { id: 'midi' },
+      currentTranspose: 2,
       onTranspose: expect.any(Function),
     })
     expect(setPitchLabelsVisible).toHaveBeenCalledWith(true)

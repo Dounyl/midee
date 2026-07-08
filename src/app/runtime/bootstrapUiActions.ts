@@ -164,11 +164,13 @@ export interface CreateBootstrapRuntimeUiConsoleOptions {
   handleTransposeChange(semitones: number): void
   getLearnBaseKey(): MidiKeySignature | null
   getPlayBaseKey(): MidiKeySignature | null
+  getCurrentTranspose(): number
   includeLearnBaseKey(): boolean
   requestKeyboardModeChange(
     mode: KeyboardMode,
     options: {
       activeMidi: MidiFile | null
+      currentTranspose: number
       onTranspose(semitones: number): void
     },
   ): void
@@ -195,6 +197,7 @@ export function createBootstrapRuntimeUiConsole(
       onKeyboardModeChange: (mode) => {
         options.requestKeyboardModeChange(mode, {
           activeMidi: options.getActiveMidi(),
+          currentTranspose: options.getCurrentTranspose(),
           onTranspose: (semitones) => options.handleTransposeChange(semitones),
         })
       },

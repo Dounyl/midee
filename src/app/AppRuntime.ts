@@ -93,6 +93,11 @@ export class App {
       return m
     }),
   )
+  private keyboardModeSuggestionHandle = lazyHandle(() =>
+    import('@/components/playback/KeyboardModeSuggestionModal').then(
+      ({ KeyboardModeSuggestionModal }) => new KeyboardModeSuggestionModal(this.overlay!),
+    ),
+  )
 
   private overlay!: HTMLElement
   private onVisibilityChange = () => {
@@ -191,6 +196,16 @@ export class App {
       persistKeyboardMode: (m) => this.preferences.stores.keyboardMode61.save(m === '61'),
       applyKeyboardMode: (m) => this.dependencies.renderer.setKeyboardMode(m),
       getSyncConsolePanel: () => () => this.dependencies.runtimeOverlay?.syncConsolePanel(),
+      promptKeyboardModeSuggestion: (request) => {
+        void this.keyboardModeSuggestionHandle
+          .get()
+          .then((modal) => {
+            modal.open(request)
+          })
+          .catch((error) => {
+            console.error('[AppRuntime] Failed to open keyboard mode suggestion modal:', error)
+          })
+      },
       getLooperCallbacks: () => ({
         onPlaybackNoteOn: (pitch, velocity, ctxTime) => {
           this.dependencies.synth.scheduleNoteOn(pitch, velocity, ctxTime)
@@ -560,12 +575,18 @@ export class App {
         this.dependencies.learnRuntimeRegistry.getConsoleStateProvider()?.getConsoleState()
           .baseKey ?? null,
       getPlayBaseKey: () => this.state.baseMidi?.keySignature ?? null,
+      getCurrentTranspose: () =>
+        isLearnRouteTarget(getCurrentRouteTarget())
+          ? (this.dependencies.learnRuntimeRegistry.getConsoleStateProvider()?.getConsoleState()
+              .current ?? 0)
+          : this.state.transposeSemitones,
       includeLearnBaseKey: () => isLearnRouteTarget(getCurrentRouteTarget()),
       requestKeyboardModeChange: (mode, options) => {
         requestConsoleKeyboardModeChange({
           mode,
           coordinator: this.dependencies.keyboardModeCoordinator,
           activeMidi: options.activeMidi,
+          currentTranspose: options.currentTranspose,
           onTranspose: options.onTranspose,
         })
       },

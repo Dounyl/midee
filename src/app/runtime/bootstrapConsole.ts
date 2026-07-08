@@ -18,6 +18,7 @@ export interface RequestConsoleKeyboardModeChangeOptions {
   coordinator: KeyboardModeCoordinator
   activeMidi: MidiFile | null
   onTranspose(semitones: number): void
+  currentTranspose: number
 }
 
 export function requestConsoleKeyboardModeChange(
@@ -25,7 +26,7 @@ export function requestConsoleKeyboardModeChange(
 ): void {
   options.coordinator.requestModeChange(options.mode, options.activeMidi, {
     onTranspose: options.onTranspose,
-  })
+  }, options.currentTranspose)
 }
 
 export interface CreateConsolePanelOptions {

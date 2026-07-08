@@ -49,6 +49,7 @@ describe('requestConsoleKeyboardModeChange', () => {
       mode: '61',
       coordinator: { requestModeChange } as unknown as KeyboardModeCoordinator,
       activeMidi: midi,
+      currentTranspose: 2,
       onTranspose,
     })
 
@@ -56,6 +57,7 @@ describe('requestConsoleKeyboardModeChange', () => {
       '61',
       midi,
       expect.objectContaining({ onTranspose }),
+      2,
     )
   })
 })

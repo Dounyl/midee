@@ -1,4 +1,9 @@
-import { type KeyboardMode, shouldPromptKeyboardModeSuggestion } from '@/lib/core/keyboardLayout'
+import {
+  getCompatibleTranspositions,
+  type KeyboardMode,
+  type KeyboardTransposeSuggestion,
+  shouldPromptKeyboardModeSuggestion,
+} from '@/lib/core/keyboardLayout'
 import type { MidiFile } from '@/types/midi/types'
 
 interface KeyboardModeCoordinatorOptions {
@@ -6,11 +11,19 @@ interface KeyboardModeCoordinatorOptions {
   persistMode: (mode: KeyboardMode) => void
   applyMode: (mode: KeyboardMode) => void
   syncConsolePanel: () => void
+  promptSuggestion: (request: KeyboardModeSuggestionRequest) => void
 }
 
 interface KeyboardModeResolutionHandlers {
   onTranspose: (semitones: number) => void | Promise<void>
   onSwitchTo88?: () => void | Promise<void>
+}
+
+export interface KeyboardModeSuggestionRequest {
+  options: readonly KeyboardTransposeSuggestion[]
+  onTranspose: (semitones: number) => void | Promise<void>
+  onSwitchTo88: () => void | Promise<void>
+  onClose?: () => void | Promise<void>
 }
 
 export class KeyboardModeCoordinator {
@@ -36,10 +49,17 @@ export class KeyboardModeCoordinator {
     nextMode: KeyboardMode,
     activeMidi: MidiFile | null,
     handlers: KeyboardModeResolutionHandlers,
+    currentTranspose = 0,
   ): void {
     if (nextMode === this.mode) return
     if (nextMode === '61' && activeMidi && shouldPromptKeyboardModeSuggestion(activeMidi, '61')) {
-      void handlers.onSwitchTo88?.()
+      this.promptSuggestion(activeMidi, currentTranspose, {
+        onTranspose: (semitones) => {
+          this.setMode('61')
+          return handlers.onTranspose(semitones)
+        },
+        onSwitchTo88: () => handlers.onSwitchTo88?.(),
+      })
       return
     }
     this.setMode(nextMode)
@@ -47,12 +67,33 @@ export class KeyboardModeCoordinator {
 
   ensureMidiFitsCurrentMode(
     midi: MidiFile,
-    _sourceMidi: MidiFile,
+    sourceMidi: MidiFile,
     handlers: KeyboardModeResolutionHandlers,
   ): boolean {
     if (!shouldPromptKeyboardModeSuggestion(midi, this.mode)) return true
-    this.setMode('88')
-    void handlers.onSwitchTo88?.()
+    this.promptSuggestion(sourceMidi, 0, {
+      onTranspose: (semitones) => handlers.onTranspose(semitones),
+      onSwitchTo88: () => {
+        this.setMode('88')
+        return handlers.onSwitchTo88?.()
+      },
+    })
     return false
+  }
+
+  private promptSuggestion(
+    midi: MidiFile,
+    currentTranspose: number,
+    handlers: KeyboardModeResolutionHandlers,
+  ): void {
+    const options = getCompatibleTranspositions(midi, '61').map((option) => ({
+      ...option,
+      semitones: option.semitones + currentTranspose,
+    }))
+    this.opts.promptSuggestion({
+      options,
+      onTranspose: (semitones) => handlers.onTranspose(semitones),
+      onSwitchTo88: () => handlers.onSwitchTo88?.(),
+    })
   }
 }

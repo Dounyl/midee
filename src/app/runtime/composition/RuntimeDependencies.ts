@@ -7,7 +7,10 @@ import type { RuntimeOverlayController } from '@/services/export/RuntimeOverlayC
 import { InputBus } from '@/services/input/InputBus'
 import { CaptureFanout } from '@/services/midi/CaptureFanout'
 import { ComputerKeyboardInput } from '@/services/midi/ComputerKeyboardInput'
-import { KeyboardModeCoordinator } from '@/services/midi/KeyboardModeCoordinator'
+import {
+  KeyboardModeCoordinator,
+  type KeyboardModeSuggestionRequest,
+} from '@/services/midi/KeyboardModeCoordinator'
 import { LiveLooper } from '@/services/midi/LiveLooper'
 import { LiveNoteStore } from '@/services/midi/LiveNoteStore'
 import { MidiInputCoordinator } from '@/services/midi/MidiInputCoordinator'
@@ -92,6 +95,7 @@ export class RuntimeDependencies {
     persistKeyboardMode: (mode: '61' | '88') => void
     applyKeyboardMode: (mode: '61' | '88') => void
     getSyncConsolePanel: () => (() => void) | undefined
+    promptKeyboardModeSuggestion: (request: KeyboardModeSuggestionRequest) => void
     getLooperCallbacks: () => {
       onPlaybackNoteOn: (pitch: number, velocity: number, ctxTime: number) => void
       onPlaybackNoteOff: (pitch: number, ctxTime: number) => void
@@ -106,6 +110,7 @@ export class RuntimeDependencies {
       persistMode: options.persistKeyboardMode,
       applyMode: options.applyKeyboardMode,
       syncConsolePanel: () => options.getSyncConsolePanel()?.(),
+      promptSuggestion: (request) => options.promptKeyboardModeSuggestion(request),
     })
 
     this.liveLooper = new LiveLooper(
