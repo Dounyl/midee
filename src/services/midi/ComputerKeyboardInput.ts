@@ -1,6 +1,6 @@
 import type { MasterClock } from '@/lib/core/MasterClock'
 import { createEventSignal } from '@/stores/app/eventSignal'
-import type { MidiNoteEvent } from './MidiInputManager'
+import type { MidiNoteEvent } from './MidiInputCoordinator'
 
 // FL Studio / DAW-style typing-keyboard layout.
 // Two octaves: the bottom row (Z..) plus its black keys on the S..row;

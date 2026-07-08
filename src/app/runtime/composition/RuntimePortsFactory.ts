@@ -1,9 +1,9 @@
+import { getCurrentRouteTarget, navigateToTarget } from '@/stores/routing/routerBridge'
+import type { RouteTarget } from '@/stores/routing/routeTarget'
+import { createAppRuntimePortBundle } from '../appRuntimePorts'
+import type { AppRuntimeUiShell } from '../appRuntimeUiShell'
 import type { RuntimeDependencies } from './RuntimeDependencies'
 import type { RuntimeState } from './RuntimeState'
-import type { AppRuntimeUiShell } from '../appRuntimeUiShell'
-import { createAppRuntimePortBundle } from '../appRuntimePorts'
-import type { RouteTarget } from '@/stores/routing/routeTarget'
-import { getCurrentRouteTarget, navigateToTarget } from '@/stores/routing/routerBridge'
 
 /**
  * RuntimePortsFactory
@@ -28,7 +28,7 @@ export class RuntimePortsFactory {
    */
   createPorts() {
     const deps = this.deps
-    const state = this.state
+    const _state = this.state
     const uiShell = this.uiShell
 
     return createAppRuntimePortBundle({

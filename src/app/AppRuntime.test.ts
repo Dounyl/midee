@@ -317,8 +317,8 @@ vi.mock('@/services/midi/CaptureFanout', () => ({
   },
 }))
 
-vi.mock('@/services/midi/MidiInputManager', () => ({
-  MidiInputManager: class {
+vi.mock('@/services/midi/MidiInputCoordinator', () => ({
+  MidiInputCoordinator: class {
     status = createSignalMock<'disconnected' | 'blocked' | 'connected'>('disconnected')
     deviceName = createSignalMock('')
     noteOn = createSignalMock(null)
@@ -434,7 +434,8 @@ describe('AppRuntime composition root', () => {
       expect.objectContaining({
         playback: expect.any(Object),
         midiFlow: expect.any(Object),
-        exportOverlay: expect.any(Object),
+        exportFlow: expect.any(Object),
+        runtimeOverlay: expect.any(Object),
       }),
     )
 

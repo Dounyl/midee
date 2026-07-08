@@ -1,4 +1,4 @@
-import type { MidiNoteEvent } from '@/services/midi/MidiInputManager'
+import type { MidiNoteEvent } from '@/services/midi/MidiInputCoordinator'
 import { createEventSignal } from '@/stores/app/eventSignal'
 
 // Where a note/pedal event entered the app. Subscribers use this for telemetry

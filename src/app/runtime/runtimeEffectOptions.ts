@@ -1,5 +1,5 @@
-import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 import type { WireRuntimeEffectsOptions } from '@/app/runtime/wireRuntimeEffects'
+import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 
 export interface CreateRuntimeEffectsOptions {
   ui: RuntimeUiBridge

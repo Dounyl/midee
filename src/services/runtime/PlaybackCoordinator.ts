@@ -129,8 +129,15 @@ export class PlaybackCoordinator {
   }
 
   handleLiveNoteOff(evt: BusNoteEvent): void {
-    this.opts.liveNotes.release(evt.pitch, evt.clockTime)
+    if (this.opts.store.state.status === 'exporting') return
+    const target = this.opts.getCurrentTarget()
+    const captures = routeCapturesLive(target)
+
     this.opts.performanceBus.routeNoteOff(evt)
+
+    if (captures) {
+      this.opts.liveNotes.release(evt.pitch, evt.clockTime)
+    }
   }
 
   deferToCtxTime(ctxTime: number, fn: () => void): void {

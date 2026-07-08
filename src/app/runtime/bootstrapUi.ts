@@ -1,14 +1,11 @@
+import { type CreateConsolePanelOptions, createConsolePanel } from '@/app/runtime/bootstrapConsole'
 import { ChordOverlay } from '@/components/playback/ChordOverlay'
 import type { ConsolePanel } from '@/components/playback/ConsolePanel'
-import { createControls, type ControlsProps } from '@/components/playback/Controls'
+import { type ControlsProps, createControls } from '@/components/playback/Controls'
 import { CustomizeMenu } from '@/components/playback/CustomizeMenu'
 import { DropZone, type LoadSource } from '@/components/playback/DropZone'
 import { InstrumentMenu } from '@/components/playback/InstrumentMenu'
 import { TrackPanel } from '@/components/playback/TrackPanel'
-import {
-  createConsolePanel,
-  type CreateConsolePanelOptions,
-} from '@/app/runtime/bootstrapConsole'
 import { setLocale } from '@/i18n'
 import { PARTICLE_STYLES } from '@/services/renderer/ParticleSystem'
 import type { PianoRollRenderer } from '@/services/renderer/PianoRollRenderer'
@@ -139,11 +136,7 @@ function bootstrapPlaybackUi(
   overlay: HTMLElement,
   options: BootstrapRuntimeUiPlaybackOptions,
 ): BootstrapPlaybackResult {
-  const dropzone = new DropZone(
-    overlay,
-    (file, source) => options.onDrop(file, source),
-    true,
-  )
+  const dropzone = new DropZone(overlay, (file, source) => options.onDrop(file, source), true)
   const { trackPanel, instrumentMenu } = createPlaybackPanels({
     overlay,
     renderer: options.panels.renderer,
@@ -174,23 +167,19 @@ function bootstrapMenusUi(
   }
 }
 
-function bootstrapOverlayUi(
-  parts: {
-    controls: ReturnType<typeof createControls>
-    dropzone: DropZone
-    trackPanel: TrackPanel
-    consolePanel: ConsolePanel
-    instrumentMenu: InstrumentMenu
-    chordOverlay: ChordOverlay
-    customizeMenu: CustomizeMenu
-  },
-): RuntimeUiBridge {
+function bootstrapOverlayUi(parts: {
+  controls: ReturnType<typeof createControls>
+  dropzone: DropZone
+  trackPanel: TrackPanel
+  consolePanel: ConsolePanel
+  instrumentMenu: InstrumentMenu
+  chordOverlay: ChordOverlay
+  customizeMenu: CustomizeMenu
+}): RuntimeUiBridge {
   return new RuntimeUiBridge(parts)
 }
 
-export function bootstrapRuntimeUi(
-  options: BootstrapRuntimeUiOptions,
-): BootstrapRuntimeUiResult {
+export function bootstrapRuntimeUi(options: BootstrapRuntimeUiOptions): BootstrapRuntimeUiResult {
   const controls = createControls(options.overlay, {
     services: options.services,
     actions: options.actions,

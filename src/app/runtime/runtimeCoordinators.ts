@@ -1,19 +1,22 @@
+import { ExportFlowService } from '@/services/export/ExportFlowService'
+import { RuntimeOverlayController } from '@/services/export/RuntimeOverlayController'
 import type { Theme } from '@/services/renderer/theme'
-import { ExportAndOverlayCoordinator } from '@/services/runtime/ExportAndOverlayCoordinator'
 import { MidiFlowCoordinator } from '@/services/runtime/MidiFlowCoordinator'
 import { PlaybackCoordinator } from '@/services/runtime/PlaybackCoordinator'
 
 export interface CreateRuntimeCoordinatorsOptions {
   playback: ConstructorParameters<typeof PlaybackCoordinator>[0]
   midiFlow: ConstructorParameters<typeof MidiFlowCoordinator>[0]
-  exportOverlay: ConstructorParameters<typeof ExportAndOverlayCoordinator>[0]
+  exportFlow: ConstructorParameters<typeof ExportFlowService>[0]
+  runtimeOverlay: ConstructorParameters<typeof RuntimeOverlayController>[0]
   initialTheme: Theme
 }
 
 export interface RuntimeCoordinatorBundle {
   playback: PlaybackCoordinator
   midiFlow: MidiFlowCoordinator
-  exportOverlay: ExportAndOverlayCoordinator
+  exportFlow: ExportFlowService
+  runtimeOverlay: RuntimeOverlayController
 }
 
 export function createRuntimeCoordinators(
@@ -21,17 +24,19 @@ export function createRuntimeCoordinators(
 ): RuntimeCoordinatorBundle {
   const playback = new PlaybackCoordinator(options.playback)
   const midiFlow = new MidiFlowCoordinator(options.midiFlow)
-  const exportOverlay = new ExportAndOverlayCoordinator(options.exportOverlay)
+  const exportFlow = new ExportFlowService(options.exportFlow)
+  const runtimeOverlay = new RuntimeOverlayController(options.runtimeOverlay)
 
-  exportOverlay.syncConsolePanel()
-  exportOverlay.applyChordOverlayVisibility()
-  exportOverlay.applyTheme(options.initialTheme)
-  exportOverlay.applyInstrument()
-  exportOverlay.applyParticleStyle()
+  runtimeOverlay.syncConsolePanel()
+  runtimeOverlay.applyChordOverlayVisibility()
+  runtimeOverlay.applyTheme(options.initialTheme)
+  runtimeOverlay.applyInstrument()
+  runtimeOverlay.applyParticleStyle()
 
   return {
     playback,
     midiFlow,
-    exportOverlay,
+    exportFlow,
+    runtimeOverlay,
   }
 }

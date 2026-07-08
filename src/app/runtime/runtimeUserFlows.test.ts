@@ -59,13 +59,11 @@ describe('runtimeUserFlows', () => {
 
   it('openRuntimeFilePicker resolves routing on modal callbacks', async () => {
     const opened: {
-      current:
-        | {
-            onFile: (file: File) => void
-            onSamplePlay: (id: string) => void
-            onSamplePractice: (id: string) => void
-          }
-        | null
+      current: {
+        onFile: (file: File) => void
+        onSamplePlay: (id: string) => void
+        onSamplePractice: (id: string) => void
+      } | null
     } = { current: null }
 
     const openFile = vi.fn(async () => {})
@@ -74,7 +72,7 @@ describe('runtimeUserFlows', () => {
 
     openRuntimeFilePicker({
       target: undefined,
-      getCurrentRouteTarget: () => ({ kind: 'exercise', routeId: 'play-along' } as never),
+      getCurrentRouteTarget: () => ({ kind: 'exercise', routeId: 'play-along' }) as never,
       getMidiPickerModal: async () => ({
         open: (options) => {
           opened.current = options

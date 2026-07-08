@@ -1,9 +1,9 @@
-import type { RuntimeDependencies } from './RuntimeDependencies'
-import type { RuntimeState } from './RuntimeState'
-import type { RuntimeLifecycle } from './RuntimeLifecycle'
+import { bindRuntimeDomEvents } from '../runtimeDomEvents'
 import { wireRuntimeEffects } from '../wireRuntimeEffects'
 import { wireRuntimeInput } from '../wireRuntimeInput'
-import { bindRuntimeDomEvents } from '../runtimeDomEvents'
+import type { RuntimeDependencies } from './RuntimeDependencies'
+import type { RuntimeLifecycle } from './RuntimeLifecycle'
+import type { RuntimeState } from './RuntimeState'
 
 /**
  * RuntimeEventWiring
@@ -17,8 +17,8 @@ import { bindRuntimeDomEvents } from '../runtimeDomEvents'
  */
 export class RuntimeEventWiring {
   constructor(
-    private readonly deps: RuntimeDependencies,
-    private readonly state: RuntimeState,
+    readonly _deps: RuntimeDependencies,
+    readonly _state: RuntimeState,
     private readonly lifecycle: RuntimeLifecycle,
   ) {}
 

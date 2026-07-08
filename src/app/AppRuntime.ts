@@ -1,13 +1,14 @@
 import { AppApplicationController } from '@/app/runtime/AppApplicationController'
 import type { AppIntentDriver } from '@/app/runtime/AppIntentDispatcher'
 import { createAppRuntimeUiShell } from '@/app/runtime/appRuntimeUiShell'
+import { requestConsoleKeyboardModeChange } from '@/app/runtime/bootstrapConsole'
+import { bootstrapRuntimeUi } from '@/app/runtime/bootstrapUi'
 import {
   createBootstrapRuntimeUiConsole,
   createBootstrapRuntimeUiControls,
   createBootstrapRuntimeUiMenus,
   createBootstrapRuntimeUiPlayback,
 } from '@/app/runtime/bootstrapUiActions'
-import { requestConsoleKeyboardModeChange } from '@/app/runtime/bootstrapConsole'
 import { RuntimeDependencies } from '@/app/runtime/composition/RuntimeDependencies'
 import { RuntimeEventWiring } from '@/app/runtime/composition/RuntimeEventWiring'
 import { RuntimeLearnFactory } from '@/app/runtime/composition/RuntimeLearnFactory'
@@ -16,36 +17,32 @@ import { RuntimePortsFactory } from '@/app/runtime/composition/RuntimePortsFacto
 import { RuntimeState } from '@/app/runtime/composition/RuntimeState'
 import { createLearnRuntimeLifecycle } from '@/app/runtime/learnRuntimeLifecycle'
 import { createAppPreferences } from '@/app/runtime/preferences'
-import { createDisplayPrefsState, createPlaybackSessionState } from '@/app/runtime/runtimePorts'
+import { syncLoadedMidiForCurrentRoute } from '@/app/runtime/routeEntry'
 import { createRuntimeCoordinators } from '@/app/runtime/runtimeCoordinators'
 import { createRuntimeEffectsOptions } from '@/app/runtime/runtimeEffectOptions'
 import { createRuntimeInputOptions } from '@/app/runtime/runtimeInputOptions'
+import { createDisplayPrefsState, createPlaybackSessionState } from '@/app/runtime/runtimePorts'
 import {
   enterRuntimeLiveRoute,
   resolveRuntimeOpenTarget,
   resolveRuntimeTelemetryMode,
 } from '@/app/runtime/runtimeRouteSemantics'
-import { syncLoadedMidiForCurrentRoute } from '@/app/runtime/routeEntry'
 import { connectRuntimeMidi, openRuntimeFilePicker } from '@/app/runtime/runtimeUserFlows'
 import type { AppShellHandles } from '@/app/runtime/types'
 import { scheduleRuntimeWarmup } from '@/app/runtime/warmup'
-import { bootstrapRuntimeUi } from '@/app/runtime/bootstrapUi'
 import loadingStyles from '@/app.module.css'
 import { showError, showSuccess } from '@/components/common/Toast'
 import { installViewportClassSync } from '@/components/common/utils'
 import type { CreateExercisePageRuntimeOptions } from '@/features/learn/runtime/types'
-import { lazyHandle } from '@/lib/lazyHandle'
 import { assertDefined } from '@/lib/assert'
+import { lazyHandle } from '@/lib/lazyHandle'
 import type { BusNoteEvent } from '@/services/input/InputBus'
 import { THEMES } from '@/services/renderer/theme'
 import { track } from '@/services/telemetry'
 import type { AppActions } from '@/stores/app/AppCtx'
 import type { AppStore } from '@/stores/app/state'
 import { getCurrentRouteTarget, navigateToTarget } from '@/stores/routing/routerBridge'
-import {
-  isLearnRouteTarget,
-  routeCapturesLive,
-} from '@/stores/routing/routeTarget'
+import { isLearnRouteTarget, routeCapturesLive } from '@/stores/routing/routeTarget'
 import type { AppServices } from '@/types/app/AppServices'
 import type { MidiFile } from '@/types/midi/types'
 
@@ -79,7 +76,7 @@ export class App {
   private postSessionHandle = lazyHandle(() =>
     import('@/components/export/PostSessionModal').then(({ PostSessionModal }) => {
       const m = new PostSessionModal(this.overlay!)
-      m.onAction = (action) => void this.dependencies.exportOverlay.handleSessionAction(action)
+      m.onAction = (action) => void this.dependencies.runtimeOverlay.handleSessionAction(action)
       return m
     }),
   )
@@ -91,14 +88,16 @@ export class App {
   private exportHandle = lazyHandle(() =>
     import('@/components/export/ExportModal').then(({ ExportModal }) => {
       const m = new ExportModal(this.overlay!)
-      m.onStart = (settings) => void this.dependencies.exportOverlay.startExport(settings)
-      m.onCancel = () => this.dependencies.exportOverlay.cancelExport()
+      m.onStart = (settings) => void this.dependencies.exportFlow.startExport(settings)
+      m.onCancel = () => this.dependencies.exportFlow.cancelExport()
       return m
     }),
   )
 
   private overlay!: HTMLElement
-  private onVisibilityChange = () => { if (document.hidden) this.releaseAllLiveNotes() }
+  private onVisibilityChange = () => {
+    if (document.hidden) this.releaseAllLiveNotes()
+  }
   private onWindowBlur = () => this.releaseAllLiveNotes()
   private onFirstPointerDown = () => this.primeInteractiveAudio()
   private onFirstKeyDown = () => this.primeInteractiveAudio()
@@ -133,19 +132,33 @@ export class App {
     const prefs = this.preferences
     return createDisplayPrefsState({
       getBaseMidi: () => state.baseMidi,
-      setBaseMidi: (v) => { state.baseMidi = v },
+      setBaseMidi: (v) => {
+        state.baseMidi = v
+      },
       getTransposeSemitones: () => state.transposeSemitones,
-      setTransposeSemitones: (v) => { state.transposeSemitones = v },
+      setTransposeSemitones: (v) => {
+        state.transposeSemitones = v
+      },
       getPitchLabelsVisible: () => state.pitchLabelsVisible,
-      setPitchLabelsVisible: (v) => { state.pitchLabelsVisible = v },
+      setPitchLabelsVisible: (v) => {
+        state.pitchLabelsVisible = v
+      },
       getChordOverlayOn: () => state.chordOverlayOn,
-      setChordOverlayOn: (v) => { state.chordOverlayOn = v },
+      setChordOverlayOn: (v) => {
+        state.chordOverlayOn = v
+      },
       getThemeIndex: () => state.themeIndex,
-      setThemeIndex: (v) => { state.themeIndex = v },
+      setThemeIndex: (v) => {
+        state.themeIndex = v
+      },
       getInstrumentIndex: () => state.instrumentIndex,
-      setInstrumentIndex: (v) => { state.instrumentIndex = v },
+      setInstrumentIndex: (v) => {
+        state.instrumentIndex = v
+      },
       getParticleIndex: () => state.particleIndex,
-      setParticleIndex: (v) => { state.particleIndex = v },
+      setParticleIndex: (v) => {
+        state.particleIndex = v
+      },
       saveThemeIndex: (v) => prefs.stores.themeIndex.save(v),
       saveInstrumentIndex: (v) => prefs.stores.instrumentIndex.save(v),
       saveParticleIndex: (v) => prefs.stores.particleIndex.save(v),
@@ -177,13 +190,17 @@ export class App {
       keyboardMode: this.preferences.stores.keyboardMode61.load() ? '61' : '88',
       persistKeyboardMode: (m) => this.preferences.stores.keyboardMode61.save(m === '61'),
       applyKeyboardMode: (m) => this.dependencies.renderer.setKeyboardMode(m),
-      getSyncConsolePanel: () => () => this.dependencies.exportOverlay?.syncConsolePanel(),
+      getSyncConsolePanel: () => () => this.dependencies.runtimeOverlay?.syncConsolePanel(),
       getLooperCallbacks: () => ({
         onPlaybackNoteOn: (pitch, velocity, ctxTime) => {
           this.dependencies.synth.scheduleNoteOn(pitch, velocity, ctxTime)
           this.deferToCtxTime(ctxTime, () => {
             this.dependencies.loopNotes.press(pitch, velocity, this.dependencies.clock.currentTime)
-            this.dependencies.sessionRec.captureNoteOn(pitch, velocity, this.dependencies.clock.currentTime)
+            this.dependencies.sessionRec.captureNoteOn(
+              pitch,
+              velocity,
+              this.dependencies.clock.currentTime,
+            )
           })
         },
         onPlaybackNoteOff: (pitch, ctxTime) => {
@@ -235,7 +252,7 @@ export class App {
     // Create a mutable reference for actions (will be set after appController is created)
     const actionsRef: { current: AppActions | null } = { current: null }
     const actionsProxy = new Proxy({} as AppActions, {
-      get(target, prop) {
+      get(_target, prop) {
         if (!actionsRef.current) {
           throw new Error(`Actions.${String(prop)} accessed before initialization`)
         }
@@ -256,13 +273,13 @@ export class App {
         },
         setTrackEnabled: (id, enabled) => this.dependencies.synth.setTrackEnabled(id, enabled),
         openFilePicker: () => this.openFilePicker(),
-        selectInstrument: (id) => this.dependencies.exportOverlay.setInstrumentById(id),
+        selectInstrument: (id) => this.dependencies.runtimeOverlay.setInstrumentById(id),
       }),
       menus: createBootstrapRuntimeUiMenus({
         chordOverlayOn: this.state.chordOverlayOn,
-        setThemeByIndex: (idx) => this.dependencies.exportOverlay.setThemeByIndex(idx),
-        setParticleByIndex: (idx) => this.dependencies.exportOverlay.setParticleByIndex(idx),
-        toggleChordOverlay: () => this.dependencies.exportOverlay.toggleChordOverlay(),
+        setThemeByIndex: (idx) => this.dependencies.runtimeOverlay.setThemeByIndex(idx),
+        setParticleByIndex: (idx) => this.dependencies.runtimeOverlay.setParticleByIndex(idx),
+        toggleChordOverlay: () => this.dependencies.runtimeOverlay.toggleChordOverlay(),
       }),
       overlayUi: this.createOverlayUiOptions(),
     })
@@ -300,12 +317,29 @@ export class App {
         displayPrefs: this.state.displayPrefs as any,
         playbackSession: this.state.playbackSession as any,
         keyboardInput: this.dependencies.keyboardInput,
-        onSyncConsolePanel: () => this.dependencies.exportOverlay?.syncConsolePanel(),
+        onSyncConsolePanel: () => this.dependencies.runtimeOverlay?.syncConsolePanel(),
         onResetInteractionState: () => this.resetInteractionState(),
-        handoffPreparedPlayAlong: (midi) => this.dependencies.appController.openPreparedPlayAlong(midi),
+        handoffPreparedPlayAlong: (midi) =>
+          this.dependencies.appController.openPreparedPlayAlong(midi),
         resetPlaybackTelemetry: () => this.state.resetPlaybackTelemetry(),
       },
-      exportOverlay: {
+      exportFlow: {
+        services: ports.services,
+        ui: ports.ui,
+        navigation: ports.navigation,
+        displayPrefs: this.state.displayPrefs as any,
+        playbackSession: this.state.playbackSession as any,
+        liveNotes: this.dependencies.liveNotes,
+        exporterRef: {
+          get current() {
+            return self.state.currentExporter
+          },
+          set current(v) {
+            self.state.currentExporter = v
+          },
+        },
+      },
+      runtimeOverlay: {
         services: ports.services,
         ui: ports.ui,
         navigation: ports.navigation,
@@ -316,13 +350,13 @@ export class App {
         loopNotes: this.dependencies.loopNotes,
         liveLooper: this.dependencies.liveLooper,
         sessionRec: this.dependencies.sessionRec,
-        exporterRef: {
-          get current() { return self.state.currentExporter },
-          set current(v) { self.state.currentExporter = v },
-        },
         pendingSessionRef: {
-          get current() { return self.state.pendingSession },
-          set current(v) { self.state.pendingSession = v },
+          get current() {
+            return self.state.pendingSession
+          },
+          set current(v) {
+            self.state.pendingSession = v
+          },
         },
         loadSessionMidi: (midi) => this.dependencies.midiFlow.loadSessionMidi(midi),
       },
@@ -352,24 +386,28 @@ export class App {
         enterLearn: (request) => this.dependencies.midiFlow.enterLearn(request),
       },
       resetInteractionState: () => this.resetInteractionState(),
-      syncConsolePanel: () => this.dependencies.exportOverlay?.syncConsolePanel(),
+      syncConsolePanel: () => this.dependencies.runtimeOverlay?.syncConsolePanel(),
     })
 
     this.dependencies.setAppController(appController)
     const actions = createActions(appController)
-    actionsRef.current = actions  // Update the actions reference
+    actionsRef.current = actions // Update the actions reference
 
     // Phase 8: Learn runtime lifecycle
     this.learnRuntimeLifecycle = createLearnRuntimeLifecycle({
       registry: this.dependencies.learnRuntimeRegistry,
-      syncConsolePanel: () => this.dependencies.exportOverlay?.syncConsolePanel(),
+      syncConsolePanel: () => this.dependencies.runtimeOverlay?.syncConsolePanel(),
     })
 
     // Phase 9: Event wiring
     this.eventWiring = new RuntimeEventWiring(this.dependencies, this.state, this.lifecycle)
     const firstPlayLoggedRef = {
-      get current() { return self.state.firstPlayLogged },
-      set current(v: boolean) { self.state.firstPlayLogged = v },
+      get current() {
+        return self.state.firstPlayLogged
+      },
+      set current(v: boolean) {
+        self.state.firstPlayLogged = v
+      },
     }
 
     this.eventWiring.wireEffects(
@@ -378,11 +416,12 @@ export class App {
         route: {
           currentTarget: () => getCurrentRouteTarget(),
           currentTelemetryMode: () => resolveRuntimeTelemetryMode(getCurrentRouteTarget()),
-          syncConsolePanel: () => this.dependencies.exportOverlay.syncConsolePanel(),
-          applyChordOverlayVisibility: () => this.dependencies.exportOverlay.applyChordOverlayVisibility(),
+          syncConsolePanel: () => this.dependencies.runtimeOverlay.syncConsolePanel(),
+          applyChordOverlayVisibility: () =>
+            this.dependencies.runtimeOverlay.applyChordOverlayVisibility(),
           handleLoadedMidiChange: () =>
             syncLoadedMidiForCurrentRoute({
-              syncConsolePanel: () => this.dependencies.exportOverlay.syncConsolePanel(),
+              syncConsolePanel: () => this.dependencies.runtimeOverlay.syncConsolePanel(),
               currentRouteTarget: () => getCurrentRouteTarget(),
               enterPlayRoute: (options) => appController.enterPlayRoute(options),
             }),
@@ -399,7 +438,8 @@ export class App {
             this.dependencies.liveNotes.releaseAll(this.dependencies.clock.currentTime)
             this.dependencies.synth.liveReleaseAll()
           },
-          onMaybeUpdateChordOverlay: (time) => this.dependencies.exportOverlay.maybeUpdateChordOverlay(time),
+          onMaybeUpdateChordOverlay: (time) =>
+            this.dependencies.runtimeOverlay.maybeUpdateChordOverlay(time),
           onFirstPlaybackMilestone: () => {},
           onSpeedChange: (speed) => {
             this.dependencies.clock.speed = speed
@@ -486,26 +526,26 @@ export class App {
         this.dependencies.liveNotes.reset()
       },
       zoom: (pps) => this.dependencies.renderer.setZoom(pps),
-      cycleTheme: () => this.dependencies.exportOverlay.cycleTheme(),
+      cycleTheme: () => this.dependencies.runtimeOverlay.cycleTheme(),
       connectMidi: () => this.connectMidi(),
       openTracks: () => this.dependencies.ui.toggleTrackPanel(),
-      openExport: () => this.dependencies.exportOverlay.openExportModal(),
+      openExport: () => this.dependencies.exportFlow.openModal(),
       hasLoadedMidi: () => this.store.state.loadedMidi !== null,
-      setTranspose: (s) => this.dependencies.exportOverlay.handleTransposeChange(s),
-      cycleInstrument: () => this.dependencies.exportOverlay.cycleInstrument(),
-      cycleParticleStyle: () => this.dependencies.exportOverlay.cycleParticleStyle(),
+      setTranspose: (s) => this.dependencies.runtimeOverlay.handleTransposeChange(s),
+      cycleInstrument: () => this.dependencies.runtimeOverlay.cycleInstrument(),
+      cycleParticleStyle: () => this.dependencies.runtimeOverlay.cycleParticleStyle(),
       toggleLoop: () => this.dependencies.liveLooper.toggle(),
       getLoopLayerCount: () => this.dependencies.liveLooper.layerCount.value,
       clearLoop: () => this.dependencies.liveLooper.clear(),
-      saveLoopAsMidi: () => this.dependencies.exportOverlay.saveLoopAsMidi(),
+      saveLoopAsMidi: () => this.dependencies.runtimeOverlay.saveLoopAsMidi(),
       undoLoop: () => this.dependencies.liveLooper.undo(),
       toggleMetronome: () => this.dependencies.metronome.toggle(),
       isMetronomeRunning: () => this.dependencies.metronome.running.value,
       setMetronomeBpm: (bpm) => this.dependencies.metronome.setBpm(bpm),
       getMetronomeBpm: () => this.dependencies.metronome.bpm.value,
       persistMetronomeBpm: (bpm) => this.preferences.stores.metronomeBpm.save(bpm),
-      toggleSessionRecord: () => this.dependencies.exportOverlay.toggleSessionRecord(),
-      toggleChordOverlay: () => this.dependencies.exportOverlay.toggleChordOverlay(),
+      toggleSessionRecord: () => this.dependencies.runtimeOverlay.toggleSessionRecord(),
+      toggleChordOverlay: () => this.dependencies.runtimeOverlay.toggleChordOverlay(),
       shiftOctave: (delta) => {
         if (delta < 0) this.dependencies.keyboardInput.shiftOctaveDown()
         else this.dependencies.keyboardInput.shiftOctaveUp()
@@ -515,9 +555,10 @@ export class App {
 
   private createOverlayUiOptions() {
     return createBootstrapRuntimeUiConsole({
-      handleTransposeChange: (v) => this.dependencies.exportOverlay.handleTransposeChange(v),
+      handleTransposeChange: (v) => this.dependencies.runtimeOverlay.handleTransposeChange(v),
       getLearnBaseKey: () =>
-        this.dependencies.learnRuntimeRegistry.getConsoleStateProvider()?.getConsoleState().baseKey ?? null,
+        this.dependencies.learnRuntimeRegistry.getConsoleStateProvider()?.getConsoleState()
+          .baseKey ?? null,
       getPlayBaseKey: () => this.state.baseMidi?.keySignature ?? null,
       includeLearnBaseKey: () => isLearnRouteTarget(getCurrentRouteTarget()),
       requestKeyboardModeChange: (mode, options) => {
@@ -532,7 +573,7 @@ export class App {
         isLearnRouteTarget(getCurrentRouteTarget())
           ? (this.dependencies.learnRuntimeRegistry.getMidiBackedRuntime()?.getLoadedMidi() ?? null)
           : this.store.state.loadedMidi,
-      setPitchLabelsVisible: (v) => this.dependencies.exportOverlay.setPitchLabelsVisible(v),
+      setPitchLabelsVisible: (v) => this.dependencies.runtimeOverlay.setPitchLabelsVisible(v),
     })
   }
 

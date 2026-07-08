@@ -1,12 +1,7 @@
 import { setNextLiveOpts } from '@/pages/LivePage/liveEnterOptions'
-import {
-  isLearnRouteTarget,
-  type RouteTarget,
-} from '@/stores/routing/routeTarget'
+import { isLearnRouteTarget, type RouteTarget } from '@/stores/routing/routeTarget'
 
-export function resolveRuntimeTelemetryMode(
-  target: RouteTarget | null,
-): 'play' | 'live' | 'learn' {
+export function resolveRuntimeTelemetryMode(target: RouteTarget | null): 'play' | 'live' | 'learn' {
   if (!target) return 'play'
   switch (target.kind) {
     case 'learn-hub':

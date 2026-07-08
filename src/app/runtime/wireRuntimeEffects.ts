@@ -1,9 +1,9 @@
 import type { MasterClock } from '@/lib/core/MasterClock'
-import type { Metronome } from '@/services/audio/Metronome'
 import type { InstrumentId } from '@/services/audio/instruments'
+import type { Metronome } from '@/services/audio/Metronome'
 import type { SynthEngine } from '@/services/audio/SynthEngine'
 import type { LiveLooper, LiveLooperState } from '@/services/midi/LiveLooper'
-import type { MidiInputManager } from '@/services/midi/MidiInputManager'
+import type { MidiInputCoordinator } from '@/services/midi/MidiInputCoordinator'
 import type { SessionRecorder } from '@/services/midi/SessionRecorder'
 import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 import { categorizeMidiDevice, track, trackActivation } from '@/services/telemetry'
@@ -42,7 +42,7 @@ export interface WireRuntimeEffectsOptions {
     applyInstrumentLoading(id: InstrumentId | null): void
   }
   midi: {
-    input: MidiInputManager
+    input: MidiInputCoordinator
   }
   ui: RuntimeUiBridge
 }

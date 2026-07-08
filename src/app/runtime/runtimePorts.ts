@@ -1,7 +1,3 @@
-import type { KeyboardMode } from '@/lib/core/keyboardLayout'
-import type { ChordReading } from '@/lib/music/ChordDetector'
-import type { InstrumentId } from '@/services/audio/instruments'
-import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 import type {
   DisplayPrefsState,
   ExportModalPort,
@@ -11,10 +7,10 @@ import type {
   RuntimeServicesCtx,
   RuntimeUiPort,
 } from '@/services/runtime/contracts'
-import type { Theme } from '@/services/renderer/theme'
+import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 import type { AppStore, PlaybackStatus } from '@/stores/app/state'
 import type { RouteTarget } from '@/stores/routing/routeTarget'
-import type { MidiFile, MidiKeySignature } from '@/types/midi/types'
+import type { MidiFile } from '@/types/midi/types'
 
 export interface CreateRuntimeServicesCtxOptions {
   services: Pick<

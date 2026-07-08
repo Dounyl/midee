@@ -67,7 +67,7 @@ export function parseMidiMessage(
 
 // Manages Web MIDI access, device hot-plug, and raw message parsing.
 // Emits noteOn / noteOff signals synchronously on each incoming message.
-export class MidiInputManager {
+export class MidiInputCoordinator {
   readonly status = createEventSignal<MidiDeviceStatus>(
     typeof navigator !== 'undefined' && typeof navigator.requestMIDIAccess === 'function'
       ? 'disconnected'
@@ -99,7 +99,7 @@ export class MidiInputManager {
       return true
     } catch (err) {
       if (!opts?.silent) {
-        console.warn('[MidiInputManager] Access denied:', err)
+        console.warn('[MidiInputCoordinator] Access denied:', err)
       }
       this.status.set('blocked')
       this.deviceName.set('')

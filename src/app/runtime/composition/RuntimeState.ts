@@ -1,7 +1,6 @@
-import type { MidiFile, MidiKeySignature } from '@/types/midi/types'
-import type { CapturedEvent } from '@/services/midi/MidiEncoding'
 import type { VideoExporter } from '@/services/export/VideoExporter'
-import type { AppStore } from '@/stores/app/state'
+import type { CapturedEvent } from '@/services/midi/MidiEncoding'
+import type { MidiFile } from '@/types/midi/types'
 
 // Forward declare the port types to avoid circular dependencies
 interface DisplayPrefsStatePort {

@@ -153,10 +153,12 @@ describe('wireRuntimeEffects', () => {
     expect(ui.syncMidiStatus).toHaveBeenCalledWith('idle', 'P-125')
     expect(applyChordOverlayVisibility).toHaveBeenCalledTimes(1)
 
-    groups.flatMap((group) => group.unsubs).forEach((unsub) => {
-      ;(unsub as { dispose?: () => void }).dispose?.()
-      unsub()
-    })
+    groups
+      .flatMap((group) => group.unsubs)
+      .forEach((unsub) => {
+        ;(unsub as { dispose?: () => void }).dispose?.()
+        unsub()
+      })
 
     liveLooperState.subs[0]?.('idle')
     instrumentLoading.subs[0]?.('piano')

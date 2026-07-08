@@ -18,7 +18,7 @@ import { createEventSignal } from '@/stores/app/eventSignal'
 import { watch } from '@/stores/app/watch'
 import type { AppServices } from '@/types/app/AppServices'
 import type { MidiFile } from '@/types/midi/types'
-import { PlayAlongSessionManager } from './PlayAlongSessionManager'
+import { PlayAlongMidiSession } from './PlayAlongMidiSession'
 import type { LearnConsoleState, LearnRuntimeHandle, PlayAlongPageRuntimeHandle } from './types'
 
 export interface PlayAlongPageRuntimeDeps {
@@ -45,10 +45,10 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
   private summaryAutoHide: ReturnType<typeof setTimeout> | null = null
   private unsubs: Array<() => void> = []
   private firstPlayLogged = false
-  private readonly session: PlayAlongSessionManager
+  private readonly session: PlayAlongMidiSession
 
   constructor(private readonly deps: PlayAlongPageRuntimeDeps) {
-    this.session = new PlayAlongSessionManager({
+    this.session = new PlayAlongMidiSession({
       services: deps.services,
       learnState: this.learnState,
       keyboardMode: deps.keyboardMode,

@@ -124,20 +124,40 @@ describe('wireRuntimeInput', () => {
     performanceOn[0]?.(midiEvt)
     performanceOff[0]?.(midiEvt)
     performanceOff[1]?.({ pitch: 60, velocity: 0, clockTime: -1 })
-    canvasPointerHandlers
-      .get('pointerdown')
-      ?.({ clientX: 10, clientY: 0, target: { setPointerCapture: vi.fn() }, pointerId: 1, preventDefault: vi.fn() })
+    canvasPointerHandlers.get('pointerdown')?.({
+      clientX: 10,
+      clientY: 0,
+      target: { setPointerCapture: vi.fn() },
+      pointerId: 1,
+      preventDefault: vi.fn(),
+    })
     canvasPointerHandlers.get('pointermove')?.({ clientX: 11, clientY: 0 })
     canvasPointerHandlers.get('pointerup')?.()
 
     expect(inputBus.emitNoteOn).toHaveBeenNthCalledWith(1, midiEvt, 'midi')
     expect(inputBus.emitNoteOn).toHaveBeenNthCalledWith(2, midiEvt, 'keyboard')
-    expect(inputBus.emitNoteOn).toHaveBeenNthCalledWith(3, { pitch: 60, velocity: 0.8, clockTime: 42 }, 'touch')
-    expect(inputBus.emitNoteOn).toHaveBeenNthCalledWith(4, { pitch: 62, velocity: 0.8, clockTime: 42 }, 'touch')
+    expect(inputBus.emitNoteOn).toHaveBeenNthCalledWith(
+      3,
+      { pitch: 60, velocity: 0.8, clockTime: 42 },
+      'touch',
+    )
+    expect(inputBus.emitNoteOn).toHaveBeenNthCalledWith(
+      4,
+      { pitch: 62, velocity: 0.8, clockTime: 42 },
+      'touch',
+    )
     expect(inputBus.emitNoteOff).toHaveBeenNthCalledWith(1, midiEvt, 'midi')
     expect(inputBus.emitNoteOff).toHaveBeenNthCalledWith(2, midiEvt, 'keyboard')
-    expect(inputBus.emitNoteOff).toHaveBeenNthCalledWith(3, { pitch: 60, velocity: 0, clockTime: 42 }, 'touch')
-    expect(inputBus.emitNoteOff).toHaveBeenNthCalledWith(4, { pitch: 62, velocity: 0, clockTime: 42 }, 'touch')
+    expect(inputBus.emitNoteOff).toHaveBeenNthCalledWith(
+      3,
+      { pitch: 60, velocity: 0, clockTime: 42 },
+      'touch',
+    )
+    expect(inputBus.emitNoteOff).toHaveBeenNthCalledWith(
+      4,
+      { pitch: 62, velocity: 0, clockTime: 42 },
+      'touch',
+    )
     expect(inputBus.emitPedal).toHaveBeenNthCalledWith(1, true, 'midi')
     expect(inputBus.emitPedal).toHaveBeenNthCalledWith(2, false, 'midi')
     expect(inputBus.emitPedal).toHaveBeenNthCalledWith(3, true, 'keyboard')

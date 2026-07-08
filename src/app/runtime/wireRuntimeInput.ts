@@ -1,10 +1,10 @@
+import type { SynthEngine } from '@/services/audio/SynthEngine'
 import type { BusNoteEvent, InputBus } from '@/services/input/InputBus'
 import type { CaptureFanout } from '@/services/midi/CaptureFanout'
 import type { ComputerKeyboardInput } from '@/services/midi/ComputerKeyboardInput'
-import type { MidiInputManager } from '@/services/midi/MidiInputManager'
 import type { LiveNoteStore } from '@/services/midi/LiveNoteStore'
+import type { MidiInputCoordinator } from '@/services/midi/MidiInputCoordinator'
 import type { LivePerformanceBus } from '@/services/performance/LivePerformanceBus'
-import type { SynthEngine } from '@/services/audio/SynthEngine'
 
 export interface RuntimeSubscriptionGroup {
   label: string
@@ -12,7 +12,7 @@ export interface RuntimeSubscriptionGroup {
 }
 
 export interface WireRuntimeInputMidiOptions {
-  input: MidiInputManager
+  input: MidiInputCoordinator
 }
 
 export interface WireRuntimeInputKeyboardOptions {

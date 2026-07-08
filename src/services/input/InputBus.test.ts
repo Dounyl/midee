@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MidiNoteEvent } from '@/services/midi/MidiInputManager'
+import type { MidiNoteEvent } from '@/services/midi/MidiInputCoordinator'
 import { type BusNoteEvent, type BusPedalEvent, InputBus } from './InputBus'
 
 function noteEvent(pitch: number, velocity = 0.75, clockTime = 0): MidiNoteEvent {

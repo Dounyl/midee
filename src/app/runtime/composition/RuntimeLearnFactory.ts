@@ -1,11 +1,11 @@
-import type { RuntimeDependencies } from './RuntimeDependencies'
-import type { RuntimeState } from './RuntimeState'
-import type { RuntimeLifecycle } from './RuntimeLifecycle'
-import { createPlayAlongRuntime, createExerciseRuntime } from '../learnRuntimeFactories'
-import type { PlayAlongPageRuntime } from '@/features/learn/runtime/PlayAlongPageRuntime'
 import type { ExercisePageRuntime } from '@/features/learn/runtime/ExercisePageRuntime'
+import type { PlayAlongPageRuntime } from '@/features/learn/runtime/PlayAlongPageRuntime'
 import type { CreateExercisePageRuntimeOptions } from '@/features/learn/runtime/types'
 import type { AppServices } from '@/types/app/AppServices'
+import { createExerciseRuntime, createPlayAlongRuntime } from '../learnRuntimeFactories'
+import type { RuntimeDependencies } from './RuntimeDependencies'
+import type { RuntimeLifecycle } from './RuntimeLifecycle'
+import type { RuntimeState } from './RuntimeState'
 
 /**
  * RuntimeLearnFactory
@@ -20,7 +20,7 @@ import type { AppServices } from '@/types/app/AppServices'
 export class RuntimeLearnFactory {
   constructor(
     private readonly deps: RuntimeDependencies,
-    private readonly state: RuntimeState,
+    readonly _state: RuntimeState,
     private readonly lifecycle: RuntimeLifecycle,
     private readonly overlay: HTMLElement,
     private readonly getLearnRuntimeLifecycle: () => {
@@ -49,7 +49,7 @@ export class RuntimeLearnFactory {
       overlayRoot: this.overlay,
       keyboardMode: this.deps.keyboardModeCoordinator,
       setLearnFileName: (name) => this.deps.ui.setLearnFileName(name),
-      updateConsolePanel: () => this.deps.exportOverlay?.syncConsolePanel(),
+      updateConsolePanel: () => this.deps.runtimeOverlay?.syncConsolePanel(),
       lifecycle: {
         onActivate: (runtime) => this.getLearnRuntimeLifecycle().activate(runtime),
         onDeactivate: (runtime) => this.getLearnRuntimeLifecycle().deactivate(runtime),

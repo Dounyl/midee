@@ -1,4 +1,4 @@
-**Reality:** The product is **midee** (`package.json` → `"name": "midee"`). The repo directory on disk is often **`pianoroll`** — same codebase. Everything user-facing is a **static Vite SPA**: MIDI, audio, Pixi canvas, and MP4 export run in the **browser only**; there is no app server for core features (deploy is static assets + optional analytics keys).
+**Reality:** The product is **midee** (`package.json` → `"name": "midee"`). Everything user-facing is a **static Vite SPA**: MIDI, audio, Pixi canvas, and MP4 export run in the **browser only**; there is no app server for core features (deploy is static assets + optional analytics keys).
 
 ## CodeGraph
 
@@ -65,29 +65,16 @@ src/
 - `src/components/learn/` = learn-specific reusable UI.
 - `src/features/learn/` = learn engines, exercises, overlays, hub logic, and feature-local UI.
 
-### Legacy Compatibility Directories
-
-The following directories may still exist during migration, but they are compatibility layers and should not receive new source files unless the task is specifically migration cleanup:
-
-- `src/audio/`
-- `src/core/`
-- `src/export/`
-- `src/learn/`
-- `src/midi/`
-- `src/renderer/`
-- `src/store/`
-- `src/ui/`
-- old lowercase page paths like `src/pages/home/`, `src/pages/play/`, `src/pages/live/`, `src/pages/learn/`
-
 ### Working Rule
 
 - Prefer imports from canonical directories and `@/` aliases.
 - Prefer moving or adding real code under `app/components/features/stores/services/lib/types`.
-- Avoid creating new compatibility shims unless needed to keep the build green during migration.
 
 ### File Size Guidelines
 
 **Why**: Large files are hard to understand, test, and review. They often signal mixed responsibilities.
+
+**Philosophy**: Clear responsibility separation is more important than file size. A 600-line file with a single, well-defined responsibility is better than splitting it artificially into smaller files with unclear boundaries.
 
 **Recommended targets**:
 - Component/Service files: ~400 lines
@@ -95,12 +82,23 @@ The following directories may still exist during migration, but they are compati
 - Single function/method: <100 lines
 - Constructor: <50 lines
 
-**When to consider refactoring**: When a file's size makes it difficult to understand, test, or review, and there are clearly separable responsibilities.
+**When to consider refactoring**: 
+- The file's size makes it difficult to understand, test, or review
+- **AND** there are clearly separable responsibilities that can be extracted
+- If a file is large but has a single, cohesive responsibility, size alone is not a reason to refactor
+
+**Red flags that warrant splitting**:
+- Multiple distinct concerns in one file
+- Methods that operate on completely different data
+- Sections that could be tested independently
+- Different parts that change for different reasons
 
 **How to verify**:
 ```bash
 find src -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -20
 ```
+
+**Note**: Files like `instruments.ts` (data definitions), rendering engines with cohesive rendering logic, or UI components with tightly integrated state should NOT be split solely based on line count.
 
 ### Naming Conventions
 

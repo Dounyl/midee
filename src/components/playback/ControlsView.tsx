@@ -1,7 +1,7 @@
 import { icons } from '@/components/common/icons'
 import { t } from '@/i18n'
 import type { LiveLooperState } from '@/services/midi/LiveLooper'
-import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
+import type { MidiDeviceStatus } from '@/services/midi/MidiInputCoordinator'
 import type { RouteTarget } from '@/stores/routing/routeTarget'
 import {
   isLearnRouteTarget,

@@ -1,5 +1,5 @@
-import { t } from '@/i18n'
 import { resolveRuntimeOpenTarget } from '@/app/runtime/runtimeRouteSemantics'
+import { t } from '@/i18n'
 import { track } from '@/services/telemetry'
 import type { RouteTarget } from '@/stores/routing/routeTarget'
 
@@ -41,11 +41,7 @@ export interface OpenRuntimeFilePickerOptions {
   getCurrentRouteTarget(): RouteTarget | null
   getMidiPickerModal(): Promise<MidiPickerModalPort>
   midiFlow: {
-    openFile(
-      file: File,
-      source: 'picker',
-      target: 'play' | 'learn',
-    ): Promise<void> | void
+    openFile(file: File, source: 'picker', target: 'play' | 'learn'): Promise<void> | void
     openSample(sampleId: string, target: 'play' | 'learn'): Promise<void> | void
   }
   appController: {

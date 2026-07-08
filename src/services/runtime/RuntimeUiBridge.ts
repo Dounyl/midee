@@ -8,7 +8,7 @@ import type { TrackPanel } from '@/components/playback/TrackPanel'
 import type { KeyboardMode } from '@/lib/core/keyboardLayout'
 import type { ChordReading } from '@/lib/music/ChordDetector'
 import type { InstrumentId } from '@/services/audio/instruments'
-import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
+import type { MidiDeviceStatus } from '@/services/midi/MidiInputCoordinator'
 import type { Theme } from '@/services/renderer/theme'
 import type { MidiFile, MidiKeySignature } from '@/types/midi/types'
 

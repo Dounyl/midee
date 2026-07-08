@@ -1,32 +1,37 @@
-import { createSignal, createEffect, onMount, onCleanup, type Component } from 'solid-js'
+import { createSignal, onCleanup, onMount } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { render } from 'solid-js/web'
 import { DragCoachmark } from '@/components/common/DragCoachmark'
 import { isLearnCoachmarkSeen, LearnCoachmark } from '@/components/learn/LearnCoachmark'
-import { ControlsContext, type UiStoreShape, type ControlsContextValue } from './ControlsContext'
-import {
-  HudView,
-  KeyHintView,
-  TopStripView,
-  loadHudHasDragged,
-  loadKeyHintHidden,
-  saveHudHasDragged,
-  saveKeyHintHidden,
-  ZOOM_DEFAULT,
-  formatSpeed,
-  formatTime,
-  formatMMSS,
-  getMidiMenuLabel,
-  getMidiPillLabel,
-  loopLabel,
-} from './ControlsView'
 import { t } from '@/i18n'
-import { watch } from '@/stores/app/watch'
-import { getCurrentRouteTarget, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
-import { isLearnRouteTarget, isLiveRouteTarget, isPlayRouteTarget, type RouteTarget } from '@/stores/routing/routeTarget'
 import { trackEvent, trackEventSettled } from '@/services/telemetry'
 import type { AppActions } from '@/stores/app/AppCtx'
+import { watch } from '@/stores/app/watch'
+import { getCurrentRouteTarget, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
+import {
+  isLearnRouteTarget,
+  isLiveRouteTarget,
+  isPlayRouteTarget,
+  type RouteTarget,
+} from '@/stores/routing/routeTarget'
 import type { AppServices } from '@/types/app/AppServices'
+import { ControlsContext, type ControlsContextValue, type UiStoreShape } from './ControlsContext'
+import {
+  formatMMSS,
+  formatSpeed,
+  formatTime,
+  getMidiMenuLabel,
+  getMidiPillLabel,
+  HudView,
+  KeyHintView,
+  loadHudHasDragged,
+  loadKeyHintHidden,
+  loopLabel,
+  saveHudHasDragged,
+  saveKeyHintHidden,
+  TopStripView,
+  ZOOM_DEFAULT,
+} from './ControlsView'
 
 const SKIP_SECONDS = 10
 
@@ -110,27 +115,54 @@ export function createControls(
 
   disposeRoot = render(() => {
     return Controls(props, {
-      onSetInstrumentLoading: (fn) => { setInstrumentLoadingSignal = fn },
-      onUpdateContext: (fn) => { updateContextFn = fn },
-      onSetUiStore: (fn) => { setUiStoreFn = fn },
-      onMetroBeatEl: (el) => { metroBeatElRef = el },
-      onTracksButton: (el) => { tracksButtonRef = el },
-      onInstrumentSlot: (el) => { instrumentSlotRef = el },
-      onChordSlot: (el) => { chordSlotRef = el },
-      onCustomizeSlot: (el) => { customizeSlotRef = el },
+      onSetInstrumentLoading: (fn) => {
+        setInstrumentLoadingSignal = fn
+      },
+      onUpdateContext: (fn) => {
+        updateContextFn = fn
+      },
+      onSetUiStore: (fn) => {
+        setUiStoreFn = fn
+      },
+      onMetroBeatEl: (el) => {
+        metroBeatElRef = el
+      },
+      onTracksButton: (el) => {
+        tracksButtonRef = el
+      },
+      onInstrumentSlot: (el) => {
+        instrumentSlotRef = el
+      },
+      onChordSlot: (el) => {
+        chordSlotRef = el
+      },
+      onCustomizeSlot: (el) => {
+        customizeSlotRef = el
+      },
     })
   }, container)
 
   return {
     dispose: () => disposeRoot?.(),
-    get tracksButton() { return tracksButtonRef },
-    get instrumentSlot() { return instrumentSlotRef },
-    get chordSlot() { return chordSlotRef },
-    get customizeSlot() { return customizeSlotRef },
+    get tracksButton() {
+      return tracksButtonRef
+    },
+    get instrumentSlot() {
+      return instrumentSlotRef
+    },
+    get chordSlot() {
+      return chordSlotRef
+    },
+    get customizeSlot() {
+      return customizeSlotRef
+    },
 
     // Imperative API methods (for RuntimeUiBridge compatibility)
     updateLoopState: (state: string, layerCount: number) => {
-      setUiStoreFn?.((prev) => ({ ...prev, loop: { ...prev.loop, state: state as any, layerCount } }))
+      setUiStoreFn?.((prev) => ({
+        ...prev,
+        loop: { ...prev.loop, state: state as any, layerCount },
+      }))
     },
     updateLoopProgress: (progress: number) => {
       const deg = Math.max(0, Math.min(1, progress)) * 360
@@ -151,19 +183,19 @@ export function createControls(
     updateMidiStatus: (status: string, deviceName: string) => {
       setUiStoreFn?.((prev) => ({ ...prev, midi: { status: status as any, deviceName } }))
     },
-    updateOctave: (octave: number) => {
+    updateOctave: (_octave: number) => {
       // Handled via setOctave signal exposure if needed
     },
     setInstrumentLoading: (loading: boolean) => {
       setInstrumentLoadingSignal?.(loading)
     },
-    updateInstrument: (name: string) => {
+    updateInstrument: (_name: string) => {
       // No-op for now
     },
     updateLearnFileName: (name: string | null) => {
       updateContextFn?.(name)
     },
-    updateChordOverlayState: (on: boolean) => {
+    updateChordOverlayState: (_on: boolean) => {
       // No-op for now
     },
   }
@@ -235,7 +267,10 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
 
   // Expose hooks for imperative API
   hooks?.onSetInstrumentLoading?.(setInstrumentLoading)
-  hooks?.onUpdateContext?.((name) => { learnFileName = name; updateContext(name) })
+  hooks?.onUpdateContext?.((name) => {
+    learnFileName = name
+    updateContext(name)
+  })
   hooks?.onSetUiStore?.((setter) => setUi(setter as any))
 
   // Lifecycle: Setup subscriptions
@@ -247,23 +282,32 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
       subscribeCurrentRoute(() => {
         setRouteTarget(getCurrentRouteTarget())
         updateContext(learnFileName)
-      })
+      }),
     )
 
     // Store watchers
     unsubs.push(
-      watch(() => store.state.status, (s) => {
-        setStatus(s)
-        updateContext(learnFileName)
-      }),
-      watch(() => store.state.loadedMidi, (midi) => {
-        setHasFile(midi !== null)
-        updateContext(learnFileName)
-      }),
-      watch(() => store.state.duration, (d) => {
-        if (scrubberRef) scrubberRef.max = String(d)
-        if (durationRef) durationRef.textContent = formatTime(d)
-      })
+      watch(
+        () => store.state.status,
+        (s) => {
+          setStatus(s)
+          updateContext(learnFileName)
+        },
+      ),
+      watch(
+        () => store.state.loadedMidi,
+        (midi) => {
+          setHasFile(midi !== null)
+          updateContext(learnFileName)
+        },
+      ),
+      watch(
+        () => store.state.duration,
+        (d) => {
+          if (scrubberRef) scrubberRef.max = String(d)
+          if (durationRef) durationRef.textContent = formatTime(d)
+        },
+      ),
     )
 
     // Clock subscription for 60Hz updates
@@ -294,7 +338,7 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
           clock.seek(0)
           store.setState('status', 'ready')
         }
-      })
+      }),
     )
 
     // Document-level event listeners
@@ -600,9 +644,17 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
     <ControlsContext.Provider value={contextValue}>
       <div style={{ display: 'contents' }}>
         {/* Hidden slots for external panels - with IDs for querySelector */}
-        <div id="ts-instrument-slot" ref={(el) => (instrumentSlotRef = el)} style={{ display: 'none' }} />
+        <div
+          id="ts-instrument-slot"
+          ref={(el) => (instrumentSlotRef = el)}
+          style={{ display: 'none' }}
+        />
         <div id="ts-chord-slot" ref={(el) => (chordSlotRef = el)} style={{ display: 'none' }} />
-        <div id="ts-customize-slot" ref={(el) => (customizeSlotRef = el)} style={{ display: 'none' }} />
+        <div
+          id="ts-customize-slot"
+          ref={(el) => (customizeSlotRef = el)}
+          style={{ display: 'none' }}
+        />
 
         <TopStripView
           ref={(el: HTMLElement) => (topStripRef = el)}
@@ -631,7 +683,7 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
           onMidi={() => props.onMidiConnect?.()}
           onRecord={() => props.onRecord?.()}
           onLearnThis={() => void props.actions.learn.enter({ kind: 'current-midi' })}
-          registerEl={(el) => {}}
+          registerEl={(_el) => {}}
           registerTracksBtn={(el) => (tracksButtonRef = el)}
         />
 
@@ -711,16 +763,28 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
           onScrubberChange={handleScrubberChange}
           onScrubberDown={handleScrubberDown}
           onScrubberTouch={handleScrubberTouch}
-          registerScrubber={(el) => { scrubberRef = el }}
-          registerTime={(el) => { timeDisplayRef = el }}
-          registerDuration={(el) => { durationRef = el }}
-          registerMetroBeat={(el) => { metroBeatRef = el }}
+          registerScrubber={(el) => {
+            scrubberRef = el
+          }}
+          registerTime={(el) => {
+            timeDisplayRef = el
+          }}
+          registerDuration={(el) => {
+            durationRef = el
+          }}
+          registerMetroBeat={(el) => {
+            metroBeatRef = el
+          }}
           volume={volume}
           speed={speed}
           speedLabel={() => formatSpeed(speed())}
           zoom={zoom}
-          wakeRef={(fn) => { hudWakeFn = fn }}
-          togglePinRef={(fn) => { hudTogglePinFn = fn }}
+          wakeRef={(fn) => {
+            hudWakeFn = fn
+          }}
+          togglePinRef={(fn) => {
+            hudTogglePinFn = fn
+          }}
           onIdleChange={(idle) => {
             setHudIdle(idle)
             setDimTopStrip(idle)

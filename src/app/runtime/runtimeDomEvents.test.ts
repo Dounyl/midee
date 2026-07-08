@@ -30,11 +30,9 @@ describe('bindRuntimeDomEvents', () => {
       expect.any(Function),
       { passive: true },
     )
-    expect(windowTarget.addEventListener).toHaveBeenCalledWith(
-      'keydown',
-      expect.any(Function),
-      { passive: true },
-    )
+    expect(windowTarget.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function), {
+      passive: true,
+    })
 
     cleanup()
 
@@ -46,9 +44,6 @@ describe('bindRuntimeDomEvents', () => {
       'pointerdown',
       expect.any(Function),
     )
-    expect(windowTarget.removeEventListener).toHaveBeenCalledWith(
-      'keydown',
-      expect.any(Function),
-    )
+    expect(windowTarget.removeEventListener).toHaveBeenCalledWith('keydown', expect.any(Function))
   })
 })

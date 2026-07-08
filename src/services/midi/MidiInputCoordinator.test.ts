@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { backdateEventTime, parseMidiMessage } from './MidiInputManager'
+import { backdateEventTime, parseMidiMessage } from './MidiInputCoordinator'
 
 // Only the pure decode/timing helpers are tested here. Device hot-plug and
 // `requestMIDIAccess` wiring need a real MIDIAccess and are covered by e2e.

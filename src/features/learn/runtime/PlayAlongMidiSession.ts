@@ -4,7 +4,7 @@ import type { KeyboardModeCoordinator } from '@/services/midi/KeyboardModeCoordi
 import type { AppServices } from '@/types/app/AppServices'
 import type { MidiFile } from '@/types/midi/types'
 
-export interface PlayAlongSessionManagerDeps {
+export interface PlayAlongMidiSessionDeps {
   services: AppServices
   learnState: LearnState
   keyboardMode: KeyboardModeCoordinator
@@ -13,11 +13,11 @@ export interface PlayAlongSessionManagerDeps {
   onMidiReady: (midi: MidiFile) => Promise<void> | void
 }
 
-export class PlayAlongSessionManager {
+export class PlayAlongMidiSession {
   private baseMidi: MidiFile | null = null
   private transposeSemitones = 0
 
-  constructor(private readonly deps: PlayAlongSessionManagerDeps) {}
+  constructor(private readonly deps: PlayAlongMidiSessionDeps) {}
 
   get baseKey() {
     return this.baseMidi?.keySignature ?? null
@@ -72,7 +72,7 @@ export class PlayAlongSessionManager {
     services.clock.pause()
     services.synth.pause()
     services.synth.load(midi).catch((err) => {
-      console.error('[PlayAlongSessionManager] SynthEngine.load failed:', err)
+      console.error('[PlayAlongMidiSession] SynthEngine.load failed:', err)
     })
     this.deps.learnState.setState({
       loadedMidi: midi,
@@ -108,7 +108,7 @@ export class PlayAlongSessionManager {
     this.baseMidi = midi
     this.transposeSemitones = 0
     services.synth.load(midi).catch((err) => {
-      console.error('[PlayAlongSessionManager] SynthEngine.load failed:', err)
+      console.error('[PlayAlongMidiSession] SynthEngine.load failed:', err)
     })
     this.deps.learnState.completeLoad(midi)
     services.renderer.setKeyboardMode(this.deps.keyboardMode.getMode())

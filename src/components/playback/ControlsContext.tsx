@@ -1,10 +1,10 @@
-import { createContext, useContext, type Accessor } from 'solid-js'
+import { type Accessor, createContext, useContext } from 'solid-js'
 import type { SetStoreFunction } from 'solid-js/store'
+import type { LiveLooperState } from '@/services/midi/LiveLooper'
+import type { MidiDeviceStatus } from '@/services/midi/MidiInputCoordinator'
 import type { AppActions } from '@/stores/app/AppCtx'
 import type { RouteTarget } from '@/stores/routing/routeTarget'
 import type { AppServices } from '@/types/app/AppServices'
-import type { LiveLooperState } from '@/services/midi/LiveLooper'
-import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
 
 /**
  * UI Store shape - matches the original Controls implementation

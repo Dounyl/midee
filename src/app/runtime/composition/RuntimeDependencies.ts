@@ -1,23 +1,27 @@
-import { MasterClock } from '@/lib/core/MasterClock'
-import { PianoRollRenderer } from '@/services/renderer/PianoRollRenderer'
-import { SynthEngine } from '@/services/audio/SynthEngine'
-import { InputBus } from '@/services/input/InputBus'
-import { Metronome } from '@/services/audio/Metronome'
-import { LiveNoteStore } from '@/services/midi/LiveNoteStore'
-import { MidiInputManager } from '@/services/midi/MidiInputManager'
-import { ComputerKeyboardInput } from '@/services/midi/ComputerKeyboardInput'
-import { LiveLooper } from '@/services/midi/LiveLooper'
-import { SessionRecorder } from '@/services/midi/SessionRecorder'
-import { CaptureFanout } from '@/services/midi/CaptureFanout'
-import { KeyboardModeCoordinator } from '@/services/midi/KeyboardModeCoordinator'
-import { createLivePerformanceBus, type LivePerformanceBus } from '@/services/performance/LivePerformanceBus'
 import { ActiveLearnRuntimeRegistry } from '@/features/learn/runtime/ActiveLearnRuntimeRegistry'
-import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
+import { MasterClock } from '@/lib/core/MasterClock'
+import { Metronome } from '@/services/audio/Metronome'
+import { SynthEngine } from '@/services/audio/SynthEngine'
+import type { ExportFlowService } from '@/services/export/ExportFlowService'
+import type { RuntimeOverlayController } from '@/services/export/RuntimeOverlayController'
+import { InputBus } from '@/services/input/InputBus'
+import { CaptureFanout } from '@/services/midi/CaptureFanout'
+import { ComputerKeyboardInput } from '@/services/midi/ComputerKeyboardInput'
+import { KeyboardModeCoordinator } from '@/services/midi/KeyboardModeCoordinator'
+import { LiveLooper } from '@/services/midi/LiveLooper'
+import { LiveNoteStore } from '@/services/midi/LiveNoteStore'
+import { MidiInputCoordinator } from '@/services/midi/MidiInputCoordinator'
+import { SessionRecorder } from '@/services/midi/SessionRecorder'
+import {
+  createLivePerformanceBus,
+  type LivePerformanceBus,
+} from '@/services/performance/LivePerformanceBus'
+import { PianoRollRenderer } from '@/services/renderer/PianoRollRenderer'
 import type { MidiFlowCoordinator } from '@/services/runtime/MidiFlowCoordinator'
 import type { PlaybackCoordinator } from '@/services/runtime/PlaybackCoordinator'
-import type { ExportAndOverlayCoordinator } from '@/services/runtime/ExportAndOverlayCoordinator'
-import type { AppApplicationController } from '../AppApplicationController'
+import type { RuntimeUiBridge } from '@/services/runtime/RuntimeUiBridge'
 import type { AppStore } from '@/stores/app/state'
+import type { AppApplicationController } from '../AppApplicationController'
 
 /**
  * RuntimeDependencies
@@ -46,7 +50,7 @@ export class RuntimeDependencies {
   readonly learnRuntimeRegistry: ActiveLearnRuntimeRegistry
 
   // ========== Dependent Services（需要在 init 中创建） ==========
-  midiInput!: MidiInputManager
+  midiInput!: MidiInputCoordinator
   keyboardInput!: ComputerKeyboardInput
   keyboardModeCoordinator!: KeyboardModeCoordinator
   liveLooper!: LiveLooper
@@ -58,7 +62,8 @@ export class RuntimeDependencies {
   ui!: RuntimeUiBridge
   midiFlow!: MidiFlowCoordinator
   playback!: PlaybackCoordinator
-  exportOverlay!: ExportAndOverlayCoordinator
+  exportFlow!: ExportFlowService
+  runtimeOverlay!: RuntimeOverlayController
   appController!: AppApplicationController
 
   // ========== Lazy Handles（在 AppRuntime 中创建，这里只保存引用） ==========
@@ -93,7 +98,7 @@ export class RuntimeDependencies {
     }
     getLooperSnapFn: () => (raw: number) => number
   }) {
-    this.midiInput = new MidiInputManager(this.clock)
+    this.midiInput = new MidiInputCoordinator(this.clock)
     this.keyboardInput = new ComputerKeyboardInput(this.clock)
 
     this.keyboardModeCoordinator = new KeyboardModeCoordinator({
@@ -121,12 +126,14 @@ export class RuntimeDependencies {
     ui: RuntimeUiBridge
     midiFlow: MidiFlowCoordinator
     playback: PlaybackCoordinator
-    exportOverlay: ExportAndOverlayCoordinator
+    exportFlow: ExportFlowService
+    runtimeOverlay: RuntimeOverlayController
   }) {
     this.ui = coordinators.ui
     this.midiFlow = coordinators.midiFlow
     this.playback = coordinators.playback
-    this.exportOverlay = coordinators.exportOverlay
+    this.exportFlow = coordinators.exportFlow
+    this.runtimeOverlay = coordinators.runtimeOverlay
   }
 
   /**
@@ -139,11 +146,7 @@ export class RuntimeDependencies {
   /**
    * 设置 lazy handles（从 AppRuntime 传入）
    */
-  setLazyHandles(handles: {
-    postSessionHandle: any
-    midiPickerHandle: any
-    exportHandle: any
-  }) {
+  setLazyHandles(handles: { postSessionHandle: any; midiPickerHandle: any; exportHandle: any }) {
     this.postSessionHandle = handles.postSessionHandle
     this.midiPickerHandle = handles.midiPickerHandle
     this.exportHandle = handles.exportHandle
