@@ -73,7 +73,7 @@ export class RuntimeState {
       instrumentIndex: number
       particleIndex: number
     },
-    createDisplayPrefsState: () => DisplayPrefsStatePort,
+    createDisplayPrefsState: (state: RuntimeState) => DisplayPrefsStatePort,
     createPlaybackSessionState: () => PlaybackSessionStatePort,
   ) {
     this.chordOverlayOn = hydratedPreferences.chordOverlay
@@ -82,7 +82,7 @@ export class RuntimeState {
     this.instrumentIndex = hydratedPreferences.instrumentIndex
     this.particleIndex = hydratedPreferences.particleIndex
 
-    this.displayPrefs = createDisplayPrefsState()
+    this.displayPrefs = createDisplayPrefsState(this)
     this.playbackSession = createPlaybackSessionState()
   }
 

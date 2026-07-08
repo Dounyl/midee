@@ -1,60 +1,49 @@
-import { createSignal } from 'solid-js'
-import { createStore, type SetStoreFunction } from 'solid-js/store'
+import { createSignal, createEffect, onMount, onCleanup, type Component } from 'solid-js'
+import { createStore } from 'solid-js/store'
 import { render } from 'solid-js/web'
 import { DragCoachmark } from '@/components/common/DragCoachmark'
 import { isLearnCoachmarkSeen, LearnCoachmark } from '@/components/learn/LearnCoachmark'
-import { t } from '@/i18n'
-import type { LiveLooperState } from '@/services/midi/LiveLooper'
-import type { MidiDeviceStatus } from '@/services/midi/MidiInputManager'
-import { trackEvent, trackEventSettled } from '@/services/telemetry'
-import type { AppActions } from '@/stores/app/AppCtx'
-import { watch } from '@/stores/app/watch'
-import { getCurrentRouteTarget, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
+import { ControlsContext, type UiStoreShape, type ControlsContextValue } from './ControlsContext'
 import {
-  isLearnRouteTarget,
-  isLiveRouteTarget,
-  isPlayRouteTarget,
-  type RouteTarget,
-} from '@/stores/routing/routeTarget'
-import type { AppServices } from '@/types/app/AppServices'
-import {
-  formatMMSS,
-  formatSpeed,
-  formatTime,
-  getMidiMenuLabel,
-  getMidiPillLabel,
   HudView,
   KeyHintView,
+  TopStripView,
   loadHudHasDragged,
   loadKeyHintHidden,
-  loopLabel,
   saveHudHasDragged,
   saveKeyHintHidden,
-  TopStripView,
   ZOOM_DEFAULT,
+  formatSpeed,
+  formatTime,
+  formatMMSS,
+  getMidiMenuLabel,
+  getMidiPillLabel,
+  loopLabel,
 } from './ControlsView'
+import { t } from '@/i18n'
+import { watch } from '@/stores/app/watch'
+import { getCurrentRouteTarget, subscribeCurrentRoute } from '@/stores/routing/routerBridge'
+import { isLearnRouteTarget, isLiveRouteTarget, isPlayRouteTarget, type RouteTarget } from '@/stores/routing/routeTarget'
+import { trackEvent, trackEventSettled } from '@/services/telemetry'
+import type { AppActions } from '@/stores/app/AppCtx'
+import type { AppServices } from '@/types/app/AppServices'
 
 const SKIP_SECONDS = 10
 
 export { ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN } from './ControlsView'
 
-// Grouped UI state with field-level reactivity. Each top-level key is read
-// individually in JSX so updates fan out only to the views that actually
-// depend on the changed field.
-interface UiStoreShape {
-  context: { kicker: string; title: string }
-  midiLibrary: {
-    entries: Array<{ id: string; name: string; sub: string; active: boolean }>
-    open: boolean
-  }
-  midi: { status: MidiDeviceStatus; deviceName: string }
-  session: { recording: boolean; elapsed: number }
-  loop: { state: LiveLooperState; layerCount: number; progressDeg: number }
-  metro: { running: boolean; bpm: number }
+interface ControlsInternalHooks {
+  onSetInstrumentLoading: (fn: (v: boolean) => void) => void
+  onUpdateContext: (fn: (fileName: string | null) => void) => void
+  onSetUiStore: (fn: (setter: (prev: UiStoreShape) => UiStoreShape) => void) => void
+  onMetroBeatEl: (el: HTMLElement) => void
+  onTracksButton: (el: HTMLButtonElement) => void
+  onInstrumentSlot: (el: HTMLElement) => void
+  onChordSlot: (el: HTMLElement) => void
+  onCustomizeSlot: (el: HTMLElement) => void
 }
 
-export interface ControlsOptions {
-  container: HTMLElement
+export interface ControlsProps {
   services: AppServices
   actions: AppActions
   onSeek?: (t: number) => void
@@ -77,522 +66,404 @@ export interface ControlsOptions {
   onOctaveShift?: (delta: number) => void
 }
 
-export class Controls {
-  private topStripEl!: HTMLElement
-  private scrubber!: HTMLInputElement
-  private timeDisplay!: HTMLElement
-  private durationEl!: HTMLElement
-  private metroBeatEl!: HTMLElement
-  private tracksBtn!: HTMLButtonElement
+/**
+ * Controls - Main playback controls component (Solid-ified)
+ *
+ * Replaces the 776-line Controls class with a declarative Solid component.
+ * Uses Context to share state with child components (TopStrip, FloatingHud, KeyHint).
+ *
+ * Note: This component renders into the provided container element and returns
+ * refs to DOM elements needed by other parts of the UI bootstrap process.
+ */
+export function createControls(
+  container: HTMLElement,
+  props: ControlsProps,
+): {
+  dispose: () => void
+  tracksButton: HTMLButtonElement
+  instrumentSlot: HTMLElement
+  chordSlot: HTMLElement
+  customizeSlot: HTMLElement
+  updateLoopState: (state: string, layerCount: number) => void
+  updateLoopProgress: (progress: number) => void
+  updateMetronome: (running: boolean, bpm: number) => void
+  pulseMetronomeBeat: (isDownbeat: boolean) => void
+  updateSessionRecording: (recording: boolean, elapsed: number) => void
+  updateMidiStatus: (status: string, deviceName: string) => void
+  updateOctave: (octave: number) => void
+  setInstrumentLoading: (loading: boolean) => void
+  updateInstrument: (name: string) => void
+  updateLearnFileName: (name: string | null) => void
+  updateChordOverlayState: (on: boolean) => void
+} {
+  let disposeRoot: (() => void) | undefined
+  let tracksButtonRef: HTMLButtonElement
+  let instrumentSlotRef: HTMLElement
+  let chordSlotRef: HTMLElement
+  let customizeSlotRef: HTMLElement
 
-  private disposeRoot: (() => void) | null = null
-  private midiListHideTimer: ReturnType<typeof setTimeout> | null = null
+  // Imperative API hooks
+  let setInstrumentLoadingSignal: ((v: boolean) => void) | undefined
+  let updateContextFn: ((fileName: string | null) => void) | undefined
+  let setUiStoreFn: ((setter: (prev: UiStoreShape) => UiStoreShape) => void) | undefined
+  let metroBeatElRef: HTMLElement | undefined
 
-  // Content-driven label collapse (see evaluateCompact + the .ts-compact rules
-  // in ControlsView.css). Observers re-run the measurement on strip resize and on
-  // title-text changes (a new song doesn't change the strip's size).
-  private titleEl: HTMLElement | null = null
-  private compactRO: ResizeObserver | null = null
-  private compactMO: MutationObserver | null = null
-  private compactRaf = 0
-
-  private isScrubbing = false
-  private learnFileName: string | null = null
-  private lastDisplaySec = -1
-  private lastFillPct = -1
-  private unsubs: Array<() => void> = []
-
-  // Escape hatches into FloatingHud's reactive state.
-  private hudWake: (() => void) | null = null
-  private hudTogglePin: (() => void) | null = null
-
-  // Reactive state — drives the three JSX views.
-  private uiStore!: UiStoreShape
-  private setUi!: SetStoreFunction<UiStoreShape>
-  private readonly setDimTopStrip: (v: boolean) => void
-  private readonly setHudIdle: (v: boolean) => void
-  private readonly setHudHasDragged: (v: boolean) => void
-  private readonly hudHasDraggedSig: () => boolean
-  private readonly setInstrumentLoadingSig: (v: boolean) => void
-  private readonly setKeyHintCollapsed: (v: boolean) => void
-  private readonly setOctave: (v: number) => void
-  private readonly setVolume: (v: number) => void
-  private readonly setSpeed: (v: number) => void
-  private readonly setZoom: (v: number) => void
-
-  private currentRouteTarget(): RouteTarget | null {
-    return getCurrentRouteTarget()
-  }
-
-  // Document-level listeners bound at construction.
-  private onMouseMoveDoc = (): void => {
-    const target = this.currentRouteTarget()
-    if (isPlayRouteTarget(target) || isLiveRouteTarget(target)) this.wakeUp()
-  }
-  private onKeyDownDoc = (e: KeyboardEvent): void => this.handleKey(e)
-
-  constructor(private opts: ControlsOptions) {
-    const { store } = opts.services
-
-    const [routeTarget, setRouteTarget] = createSignal<RouteTarget | null>(
-      this.currentRouteTarget(),
-    )
-    const [status, setStatus] = createSignal<string>(store.state.status)
-    const [hasFile, setHasFile] = createSignal<boolean>(store.state.loadedMidi !== null)
-    const [dimTopStrip, setDimTopStrip] = createSignal(false)
-    const [hudIdle, setHudIdle] = createSignal(false)
-    const [hudHasDragged, setHudHasDragged] = createSignal(loadHudHasDragged())
-    // Reactive mirror of the learn-coachmark "seen" flag so the drag
-    // coachmark's eligibility re-evaluates the moment Learn fires (the
-    // localStorage read alone is not reactive).
-    const [learnCoachmarkSeen, setLearnCoachmarkSeen] = createSignal(isLearnCoachmarkSeen())
-    const [instrumentLoading, setInstrumentLoading] = createSignal(false)
-    const [keyHintCollapsed, setKeyHintCollapsed] = createSignal(loadKeyHintHidden())
-    const [octave, setOctave] = createSignal(4)
-    const [volume, setVolumeSig] = createSignal(store.state.volume ?? 0.8)
-    const [speed, setSpeedSig] = createSignal(store.state.speed ?? 1)
-    const [zoom, setZoomSig] = createSignal(ZOOM_DEFAULT)
-    const [uiStore, setUi] = createStore<UiStoreShape>({
-      context: {
-        kicker: t('topStrip.context.ready.kicker'),
-        title: t('topStrip.context.ready.title'),
-      },
-      midiLibrary: { entries: [], open: false },
-      midi: { status: 'disconnected', deviceName: '' },
-      session: { recording: false, elapsed: 0 },
-      loop: { state: 'idle', layerCount: 0, progressDeg: 0 },
-      metro: { running: false, bpm: 120 },
+  disposeRoot = render(() => {
+    return Controls(props, {
+      onSetInstrumentLoading: (fn) => { setInstrumentLoadingSignal = fn },
+      onUpdateContext: (fn) => { updateContextFn = fn },
+      onSetUiStore: (fn) => { setUiStoreFn = fn },
+      onMetroBeatEl: (el) => { metroBeatElRef = el },
+      onTracksButton: (el) => { tracksButtonRef = el },
+      onInstrumentSlot: (el) => { instrumentSlotRef = el },
+      onChordSlot: (el) => { chordSlotRef = el },
+      onCustomizeSlot: (el) => { customizeSlotRef = el },
     })
-    this.uiStore = uiStore
-    this.setUi = setUi
+  }, container)
 
-    void routeTarget
-    this.setDimTopStrip = setDimTopStrip
-    this.setHudIdle = setHudIdle
-    this.setHudHasDragged = setHudHasDragged
-    this.hudHasDraggedSig = hudHasDragged
-    this.setInstrumentLoadingSig = setInstrumentLoading
-    this.setKeyHintCollapsed = setKeyHintCollapsed
-    this.setOctave = setOctave
-    this.setVolume = setVolumeSig
-    this.setSpeed = setSpeedSig
-    this.setZoom = setZoomSig
-    // One Solid root hosts the three sibling views (TopStrip, HUD, KeyHint).
-    // Single owner tree, single error-boundary scope, single schedule cycle —
-    // and the views still render as DOM siblings under `opts.container`
-    // because the wrapper uses `display: contents`.
-    const rootWrap = document.createElement('div')
-    rootWrap.style.display = 'contents'
-    opts.container.appendChild(rootWrap)
-    this.disposeRoot = render(
-      () => (
-        <>
-          <TopStripView
-            routeTarget={routeTarget}
-            status={status}
-            hasFile={hasFile}
-            isLoadingFile={() => isPlayRouteTarget(routeTarget()) && status() === 'loading'}
-            context={() => uiStore.context}
-            midiStatus={() => uiStore.midi.status}
-            midiDeviceName={() => uiStore.midi.deviceName}
-            midiPillLabel={() => getMidiPillLabel(uiStore.midi.status, uiStore.midi.deviceName)}
-            midiMenuLabel={() => getMidiMenuLabel(uiStore.midi.status, uiStore.midi.deviceName)}
-            dim={dimTopStrip}
-            onHome={() => opts.actions.navigation.toTarget({ kind: 'play' })}
-            onMode={(selection) =>
-              opts.actions.navigation.toTarget(
-                selection === 'learn'
-                  ? { kind: 'learn-hub' }
-                  : selection === 'live'
-                    ? { kind: 'live' }
-                    : { kind: 'play' },
-              )
-            }
-            onOpenFile={() => void opts.actions.library.open({ kind: 'picker' })}
-            onTracks={() => opts.onOpenTracks?.()}
-            onMidi={() => opts.onMidiConnect?.()}
-            onRecord={() => opts.onRecord?.()}
-            onLearnThis={() => void opts.actions.learn.enter({ kind: 'current-midi' })}
-            registerEl={(el) => {
-              this.topStripEl = el
-              this.setupCompactObserver(el)
-            }}
-            registerTracksBtn={(el) => {
-              this.tracksBtn = el
-            }}
-          />
-          <LearnCoachmark
-            eligible={() =>
-              isPlayRouteTarget(routeTarget()) &&
-              hasFile() &&
-              status() !== 'loading' &&
-              status() !== 'exporting'
-            }
-            onShow={() => setLearnCoachmarkSeen(true)}
-          />
-          <HudView
-            routeTarget={routeTarget}
-            status={status}
-            showPlayHud={() =>
-              isPlayRouteTarget(routeTarget()) && hasFile() && status() !== 'loading'
-            }
-            showLiveHud={() => isLiveRouteTarget(routeTarget())}
-            playing={() => status() === 'playing'}
-            instrumentLoading={instrumentLoading}
-            sessionRecording={() => uiStore.session.recording}
-            sessionLabel={() =>
-              uiStore.session.recording
-                ? formatMMSS(uiStore.session.elapsed)
-                : t('hud.session.label.record')
-            }
-            loopState={() => uiStore.loop.state}
-            loopLabel={() => loopLabel(uiStore.loop.state, uiStore.loop.layerCount)}
-            loopProgressDeg={() => uiStore.loop.progressDeg}
-            loopActive={() => {
-              const s = uiStore.loop.state
-              return s !== 'idle' && s !== 'armed'
-            }}
-            loopSaveVisible={() =>
-              uiStore.loop.state === 'playing' || uiStore.loop.state === 'overdubbing'
-            }
-            loopUndoVisible={() => {
-              const { state, layerCount } = uiStore.loop
-              return state === 'overdubbing' || (state === 'playing' && layerCount >= 1)
-            }}
-            metroRunning={() => uiStore.metro.running}
-            metroBpm={() => uiStore.metro.bpm}
-            onPlay={() => this.handlePlayClick()}
-            onSkipBack={() => this.handleSkip(-SKIP_SECONDS)}
-            onSkipFwd={() => this.handleSkip(SKIP_SECONDS)}
-            onVolume={(v) => {
-              this.setVolume(v)
-              store.setState('volume', v)
-              trackEventSettled('volume_changed', { volume: Math.round(v * 100) / 100 })
-            }}
-            onSpeed={(v) => {
-              this.setSpeed(v)
-              store.setState('speed', v)
-              trackEventSettled('speed_changed', { speed: v })
-            }}
-            onZoom={(v) => {
-              this.setZoom(v)
-              opts.onZoom?.(v)
-              trackEventSettled('zoom_changed', { zoom: Math.round(v) })
-            }}
-            onMetroToggle={() => opts.onMetronomeToggle?.()}
-            onBpmDec={() => this.bumpBpm(-1)}
-            onBpmInc={() => this.bumpBpm(+1)}
-            onBpmWheel={(e) => {
-              const dir = e.deltaY < 0 ? 1 : -1
-              const step = e.shiftKey ? 10 : 1
-              this.bumpBpm(dir * step)
-            }}
-            onSession={() => opts.onSessionToggle?.()}
-            onLoop={() => opts.onLoopToggle?.()}
-            onLoopUndo={() => opts.onLoopUndo?.()}
-            onLoopSave={() => opts.onLoopSave?.()}
-            onLoopClear={() => opts.onLoopClear?.()}
-            onScrubberDown={() => {
-              this.isScrubbing = true
-              this.wakeUp()
-            }}
-            onScrubberTouch={() => {
-              this.isScrubbing = true
-            }}
-            onScrubberInput={() => {
-              const t = parseFloat(this.scrubber.value)
-              this.timeDisplay.textContent = formatTime(t)
-              this.updateFill(t)
-            }}
-            onScrubberChange={() => {
-              this.isScrubbing = false
-              const t = parseFloat(this.scrubber.value)
-              const from = opts.services.clock.currentTime
-              this.invalidateTimeCache()
-              opts.services.clock.seek(t)
-              opts.onSeek?.(t)
-              trackEvent('seeked', {
-                from_s: Math.round(from),
-                to_s: Math.round(t),
-                method: 'scrub',
-              })
-            }}
-            registerScrubber={(el) => {
-              this.scrubber = el
-            }}
-            registerTime={(el) => {
-              this.timeDisplay = el
-            }}
-            registerDuration={(el) => {
-              this.durationEl = el
-            }}
-            registerMetroBeat={(el) => {
-              this.metroBeatEl = el
-            }}
-            volume={volume}
-            speed={speed}
-            speedLabel={() => formatSpeed(speed())}
-            zoom={zoom}
-            wakeRef={(fn) => {
-              this.hudWake = fn
-            }}
-            togglePinRef={(fn) => {
-              this.hudTogglePin = fn
-            }}
-            onIdleChange={(idle) => {
-              this.setHudIdle(idle)
-              this.setDimTopStrip(idle)
-            }}
-            onHasDragged={() => {
-              if (!this.hudHasDraggedSig()) {
-                this.setHudHasDragged(true)
-                saveHudHasDragged()
-              }
-            }}
-          />
-          {/* Mounted *after* HudView so the `#hud-drag` anchor exists when
-              the coachmark's onMount looks it up. */}
-          <DragCoachmark
-            eligible={() =>
-              // Stagger behind the Learn coachmark so two bubbles don't fight
-              // for attention. Only show when the HUD is actually visible
-              // (drag handle lives on it) and the user hasn't already dragged.
-              learnCoachmarkSeen() &&
-              !hudHasDragged() &&
-              hasFile() &&
-              status() !== 'loading' &&
-              status() !== 'exporting' &&
-              (isPlayRouteTarget(routeTarget()) || isLiveRouteTarget(routeTarget())) &&
-              !hudIdle()
-            }
-            hasDragged={hudHasDragged}
-          />
-          <KeyHintView
-            visible={() => isLiveRouteTarget(routeTarget())}
-            idle={hudIdle}
-            collapsed={keyHintCollapsed}
-            octave={octave}
-            onOctaveDown={() => opts.onOctaveShift?.(-1)}
-            onOctaveUp={() => opts.onOctaveShift?.(+1)}
-            onClose={() => {
-              this.setKeyHintCollapsed(true)
-              saveKeyHintHidden(true)
-            }}
-            onReopen={() => {
-              this.setKeyHintCollapsed(false)
-              saveKeyHintHidden(false)
-            }}
-          />
-        </>
-      ),
-      rootWrap,
+  return {
+    dispose: () => disposeRoot?.(),
+    get tracksButton() { return tracksButtonRef },
+    get instrumentSlot() { return instrumentSlotRef },
+    get chordSlot() { return chordSlotRef },
+    get customizeSlot() { return customizeSlotRef },
+
+    // Imperative API methods (for RuntimeUiBridge compatibility)
+    updateLoopState: (state: string, layerCount: number) => {
+      setUiStoreFn?.((prev) => ({ ...prev, loop: { ...prev.loop, state: state as any, layerCount } }))
+    },
+    updateLoopProgress: (progress: number) => {
+      const deg = Math.max(0, Math.min(1, progress)) * 360
+      setUiStoreFn?.((prev) => ({ ...prev, loop: { ...prev.loop, progressDeg: deg } }))
+    },
+    updateMetronome: (running: boolean, bpm: number) => {
+      setUiStoreFn?.((prev) => ({ ...prev, metro: { running, bpm } }))
+    },
+    pulseMetronomeBeat: (isDownbeat: boolean) => {
+      if (!metroBeatElRef) return
+      metroBeatElRef.classList.remove('hud-metro-beat--tick', 'hud-metro-beat--down')
+      void metroBeatElRef.offsetWidth
+      metroBeatElRef.classList.add(isDownbeat ? 'hud-metro-beat--down' : 'hud-metro-beat--tick')
+    },
+    updateSessionRecording: (recording: boolean, elapsed: number) => {
+      setUiStoreFn?.((prev) => ({ ...prev, session: { recording, elapsed } }))
+    },
+    updateMidiStatus: (status: string, deviceName: string) => {
+      setUiStoreFn?.((prev) => ({ ...prev, midi: { status: status as any, deviceName } }))
+    },
+    updateOctave: (octave: number) => {
+      // Handled via setOctave signal exposure if needed
+    },
+    setInstrumentLoading: (loading: boolean) => {
+      setInstrumentLoadingSignal?.(loading)
+    },
+    updateInstrument: (name: string) => {
+      // No-op for now
+    },
+    updateLearnFileName: (name: string | null) => {
+      updateContextFn?.(name)
+    },
+    updateChordOverlayState: (on: boolean) => {
+      // No-op for now
+    },
+  }
+}
+
+export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) => {
+  const { store, clock } = props.services
+
+  // Signals - reactive primitives
+  const [routeTarget, setRouteTarget] = createSignal<RouteTarget | null>(getCurrentRouteTarget())
+  const [status, setStatus] = createSignal<string>(store.state.status)
+  const [hasFile, setHasFile] = createSignal<boolean>(store.state.loadedMidi !== null)
+  const [dimTopStrip, setDimTopStrip] = createSignal(false)
+  const [hudIdle, setHudIdle] = createSignal(false)
+  const [hudHasDragged, setHudHasDragged] = createSignal(loadHudHasDragged())
+  const [learnCoachmarkSeen, setLearnCoachmarkSeen] = createSignal(isLearnCoachmarkSeen())
+  const [instrumentLoading, setInstrumentLoading] = createSignal(false)
+  const [keyHintHidden, setKeyHintHidden] = createSignal(loadKeyHintHidden())
+  const [octave, setOctave] = createSignal(4)
+  const [volume, setVolume] = createSignal(store.state.volume ?? 0.8)
+  const [speed, setSpeed] = createSignal(store.state.speed ?? 1)
+  const [zoom, setZoom] = createSignal(ZOOM_DEFAULT)
+
+  // Store - grouped UI state with field-level reactivity
+  const [uiStore, setUi] = createStore<UiStoreShape>({
+    context: {
+      kicker: t('topStrip.context.ready.kicker'),
+      title: t('topStrip.context.ready.title'),
+    },
+    midiLibrary: {
+      entries: [],
+      open: false,
+    },
+    midi: {
+      status: 'disconnected' as const,
+      deviceName: null,
+    },
+    session: {
+      recording: false,
+      elapsed: 0,
+    },
+    loop: {
+      state: 'idle' as const,
+      layerCount: 0,
+      progressDeg: 0,
+    },
+    metro: {
+      running: false,
+      bpm: 120,
+    },
+  })
+
+  // Refs for imperative DOM access
+  let scrubberRef: HTMLInputElement | undefined
+  let timeDisplayRef: HTMLElement | undefined
+  let durationRef: HTMLElement | undefined
+  let metroBeatRef: HTMLElement | undefined
+  let topStripRef: HTMLElement | undefined
+  let tracksButtonRef: HTMLButtonElement | undefined
+  let instrumentSlotRef: HTMLElement | undefined
+  let chordSlotRef: HTMLElement | undefined
+  let customizeSlotRef: HTMLElement | undefined
+  let learnFileName: string | null = null
+  let isScrubbing = false
+  let lastDisplaySec = -1
+  let lastFillPct = -1
+  let hudWakeFn: (() => void) | undefined
+  let hudTogglePinFn: (() => void) | undefined
+
+  // Expose hooks for imperative API
+  hooks?.onSetInstrumentLoading?.(setInstrumentLoading)
+  hooks?.onUpdateContext?.((name) => { learnFileName = name; updateContext(name) })
+  hooks?.onSetUiStore?.((setter) => setUi(setter as any))
+
+  // Lifecycle: Setup subscriptions
+  onMount(() => {
+    const unsubs: Array<() => void> = []
+
+    // Route changes
+    unsubs.push(
+      subscribeCurrentRoute(() => {
+        setRouteTarget(getCurrentRouteTarget())
+        updateContext(learnFileName)
+      })
     )
 
-    // Sync store → reactive signals.
-    this.unsubs.push(
-      subscribeCurrentRoute((target) => {
-        setRouteTarget(target)
-        this.refreshUi()
+    // Store watchers
+    unsubs.push(
+      watch(() => store.state.status, (s) => {
+        setStatus(s)
+        updateContext(learnFileName)
       }),
-      watch(
-        () => store.state.status,
-        (s) => {
-          setStatus(s)
-          this.refreshUi()
-        },
-      ),
-      watch(
-        () => store.state.loadedMidi,
-        (midi) => {
-          setHasFile(midi !== null)
-          this.refreshUi()
-        },
-      ),
-      watch(
-        () => store.state.duration,
-        (d) => {
-          this.scrubber.max = String(d)
-          this.durationEl.textContent = formatTime(d)
-        },
-      ),
+      watch(() => store.state.loadedMidi, (midi) => {
+        setHasFile(midi !== null)
+        updateContext(learnFileName)
+      }),
+      watch(() => store.state.duration, (d) => {
+        if (scrubberRef) scrubberRef.max = String(d)
+        if (durationRef) durationRef.textContent = formatTime(d)
+      })
     )
 
-    // 60Hz clock tick — imperative per §2 rule 4.
-    this.unsubs.push(
-      opts.services.clock.subscribe((t) => {
-        if (!isPlayRouteTarget(this.currentRouteTarget()) || this.isScrubbing) return
-        // Skip UI updates during export — frame-by-frame seeks would thrash the
-        // scrubber behind the export modal and compete with the encoder.
+    // Clock subscription for 60Hz updates
+    unsubs.push(
+      clock.subscribe((t) => {
+        if (!isPlayRouteTarget(routeTarget()) || isScrubbing) return
         if (store.state.status === 'exporting') return
         const dur = store.state.duration
 
-        // @reactive-scrubber-forbidden — see docs/done/SOLID_MIGRATION_PLAN.md §2 rule 4
-        this.scrubber.value = String(t)
+        if (scrubberRef) {
+          scrubberRef.value = String(t)
+        }
 
         const sec = Math.floor(t)
-        if (sec !== this.lastDisplaySec) {
-          // @reactive-scrubber-forbidden — see docs/done/SOLID_MIGRATION_PLAN.md §2 rule 4
-          this.timeDisplay.textContent = formatTime(t)
-          this.lastDisplaySec = sec
+        if (sec !== lastDisplaySec && timeDisplayRef) {
+          timeDisplayRef.textContent = formatTime(t)
+          lastDisplaySec = sec
         }
 
         const pct = dur > 0 ? Math.min((t / dur) * 100, 100) : 0
-        if (Math.abs(pct - this.lastFillPct) >= 0.1) {
-          // @reactive-scrubber-forbidden — see docs/done/SOLID_MIGRATION_PLAN.md §2 rule 4
-          this.scrubber.style.setProperty('--pct', `${pct.toFixed(1)}%`)
-          this.lastFillPct = pct
+        if (Math.abs(pct - lastFillPct) >= 0.1 && scrubberRef) {
+          scrubberRef.style.setProperty('--pct', `${pct.toFixed(1)}%`)
+          lastFillPct = pct
         }
 
         if (dur > 0 && t >= dur) {
-          opts.services.clock.pause()
-          opts.services.clock.seek(0)
+          clock.pause()
+          clock.seek(0)
           store.setState('status', 'ready')
         }
-      }),
+      })
     )
 
-    document.addEventListener('mousemove', this.onMouseMoveDoc)
-    document.addEventListener('keydown', this.onKeyDownDoc)
-
-    this.refreshUi()
-  }
-
-  // ── Public methods (called by App) ──────────────────────────────────
-
-  updateThemeDot(_color: string): void {}
-  updateThemeLabel(_name: string): void {}
-  updateInstrument(_name: string): void {}
-  updateParticleStyle(_name: string): void {}
-  updateChordOverlayState(_on: boolean): void {}
-
-  updateOctave(octave: number): void {
-    this.setOctave(octave)
-  }
-
-  updateSessionRecording(recording: boolean, elapsedSec: number): void {
-    this.setUi('session', { recording, elapsed: elapsedSec })
-  }
-
-  // Hot path: fires every animation frame while a loop is recording / playing.
-  // Field-level write so JSX getters that read `loop.state` / `layerCount`
-  // don't re-fire on every frame — only `loopProgressDeg` does.
-  updateLoopProgress(fraction: number): void {
-    const deg = Math.max(0, Math.min(1, fraction)) * 360
-    this.setUi('loop', 'progressDeg', deg)
-  }
-
-  updateMetronome(running: boolean, bpm: number): void {
-    this.setUi('metro', { running, bpm })
-  }
-
-  // Called once per beat from Metronome; triggers a brief visual pulse on the
-  // icon. Restarts the CSS animation by toggling the class off and on after a
-  // forced reflow.
-  pulseMetronomeBeat(isDownbeat: boolean): void {
-    this.metroBeatEl.classList.remove('hud-metro-beat--tick', 'hud-metro-beat--down')
-    void this.metroBeatEl.offsetWidth
-    this.metroBeatEl.classList.add(isDownbeat ? 'hud-metro-beat--down' : 'hud-metro-beat--tick')
-  }
-
-  updateLoopState(state: LiveLooperState, layerCount: number): void {
-    // Merge — leaves `progressDeg` alone so per-frame writes don't race.
-    this.setUi('loop', { state, layerCount })
-  }
-
-  setInstrumentLoading(loading: boolean): void {
-    this.setInstrumentLoadingSig(loading)
-  }
-
-  updateMidiStatus(status: MidiDeviceStatus, deviceName: string): void {
-    this.setUi('midi', { status, deviceName })
-    this.refreshUi()
-  }
-
-  // Push the currently-loaded Learn-mode song name into the topbar context.
-  // Called by LearnController when its MIDI store changes — Learn keeps its
-  // own state to avoid disturbing Play, so this can't ride the existing
-  // `store.state.loadedMidi` watch.
-  updateLearnFileName(name: string | null): void {
-    if (this.learnFileName === name) return
-    this.learnFileName = name
-    this.refreshUi()
-  }
-
-  get tracksButton(): HTMLElement {
-    return this.tracksBtn
-  }
-  get instrumentSlot(): HTMLElement {
-    return this.topStripEl.querySelector<HTMLElement>('#ts-instrument-slot')!
-  }
-  get chordSlot(): HTMLElement {
-    return this.topStripEl.querySelector<HTMLElement>('#ts-chord-slot')!
-  }
-  get customizeSlot(): HTMLElement {
-    return this.topStripEl.querySelector<HTMLElement>('#ts-customize-slot')!
-  }
-
-  dispose(): void {
-    for (const unsub of this.unsubs) unsub()
-    this.unsubs = []
-    document.removeEventListener('mousemove', this.onMouseMoveDoc)
-    document.removeEventListener('keydown', this.onKeyDownDoc)
-    this.disposeRoot?.()
-    this.disposeRoot = null
-    this.compactRO?.disconnect()
-    this.compactRO = null
-    this.compactMO?.disconnect()
-    this.compactMO = null
-    if (this.compactRaf) cancelAnimationFrame(this.compactRaf)
-    this.compactRaf = 0
-    if (this.midiListHideTimer) clearTimeout(this.midiListHideTimer)
-    this.midiListHideTimer = null
-  }
-
-  // ── Private helpers ─────────────────────────────────────────────────
-
-  // Collapse the secondary right-cluster labels to icons only when keeping them
-  // would clip the Now-Playing title. Measuring always from the expanded
-  // (labels-shown) baseline makes the decision a pure function of strip width +
-  // title length, so there's no collapse↔expand oscillation and no hysteresis
-  // needed. The strip's own width is fixed by layout, so toggling .ts-compact
-  // never re-triggers the ResizeObserver (no feedback loop).
-  private setupCompactObserver(strip: HTMLElement): void {
-    this.compactRO = new ResizeObserver(() => this.scheduleCompactEval())
-    this.compactRO.observe(strip)
-    const title = strip.querySelector<HTMLElement>('.ts-status-title')
-    if (title) {
-      this.titleEl = title
-      this.compactMO = new MutationObserver(() => this.scheduleCompactEval())
-      this.compactMO.observe(title, { characterData: true, childList: true, subtree: true })
+    // Document-level event listeners
+    const handleMouseMove = () => {
+      const target = routeTarget()
+      if (isPlayRouteTarget(target) || isLiveRouteTarget(target)) {
+        wakeUp()
+      }
     }
-    this.scheduleCompactEval()
-  }
 
-  private scheduleCompactEval = (): void => {
-    if (this.compactRaf) return // coalesce bursts of resize/mutation into one eval
-    this.compactRaf = requestAnimationFrame(() => {
-      this.compactRaf = 0
-      this.evaluateCompact()
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+      const route = routeTarget()
+
+      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.code === 'KeyP') {
+        e.preventDefault()
+        hudTogglePinFn?.()
+        return
+      }
+
+      if (isPlayRouteTarget(route)) {
+        if (e.code === 'Space') {
+          e.preventDefault()
+          handlePlayClick()
+        } else if (e.code === 'ArrowLeft') {
+          e.preventDefault()
+          handleSkip(-SKIP_SECONDS)
+        } else if (e.code === 'ArrowRight') {
+          e.preventDefault()
+          handleSkip(SKIP_SECONDS)
+        } else if (e.code === 'KeyT') {
+          props.onOpenTracks?.()
+        } else if (e.code === 'KeyR' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+          if (store.state.status !== 'exporting') {
+            props.onRecord?.()
+          }
+        }
+        return
+      }
+
+      if (isLiveRouteTarget(route)) {
+        if (e.code === 'Tab') {
+          e.preventDefault()
+          props.onSessionToggle?.()
+          return
+        }
+        if (e.code === 'Backquote') {
+          e.preventDefault()
+          props.onMetronomeToggle?.()
+          return
+        }
+
+        if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          switch (e.code) {
+            case 'KeyR':
+              e.preventDefault()
+              props.onSessionToggle?.()
+              break
+            case 'KeyL':
+              e.preventDefault()
+              props.onLoopToggle?.()
+              break
+            case 'KeyU':
+              e.preventDefault()
+              props.onLoopUndo?.()
+              break
+            case 'KeyC':
+              e.preventDefault()
+              props.onLoopClear?.()
+              break
+            case 'KeyM':
+              e.preventDefault()
+              props.onMetronomeToggle?.()
+              break
+          }
+        }
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('keydown', handleKeyDown)
+
+    // Cleanup
+    onCleanup(() => {
+      unsubs.forEach((u) => u())
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('keydown', handleKeyDown)
+    })
+
+    // Initial UI refresh
+    updateContext(learnFileName)
+
+    // Expose refs via hooks
+    if (metroBeatRef) hooks?.onMetroBeatEl?.(metroBeatRef)
+    if (tracksButtonRef) hooks?.onTracksButton?.(tracksButtonRef)
+    if (instrumentSlotRef) hooks?.onInstrumentSlot?.(instrumentSlotRef)
+    if (chordSlotRef) hooks?.onChordSlot?.(chordSlotRef)
+    if (customizeSlotRef) hooks?.onCustomizeSlot?.(customizeSlotRef)
+  })
+
+  // Update context based on route
+  const updateContext = (fileName: string | null) => {
+    learnFileName = fileName
+    const target = routeTarget()
+
+    if (isPlayRouteTarget(target) && status() === 'loading') {
+      setUi('context', {
+        kicker: t('topStrip.context.loading.kicker'),
+        title: t('topStrip.context.loading.title'),
+      })
+      return
+    }
+
+    if (isPlayRouteTarget(target)) {
+      const midi = store.state.loadedMidi
+      if (midi) {
+        setUi('context', {
+          kicker: t('topStrip.context.play.kicker'),
+          title: midi.name,
+        })
+      } else {
+        setUi('context', {
+          kicker: t('topStrip.context.play.kicker'),
+          title: t('topStrip.context.play.fallback'),
+        })
+      }
+      return
+    }
+
+    if (isLiveRouteTarget(target)) {
+      const midiStatus = uiStore.midi.status
+      const deviceName = uiStore.midi.deviceName
+      setUi('context', {
+        kicker: t('topStrip.context.live.kicker'),
+        title:
+          midiStatus === 'connected'
+            ? deviceName || t('topStrip.context.live.midiSession')
+            : t('topStrip.context.live.keyboard'),
+      })
+      return
+    }
+
+    if (isLearnRouteTarget(target)) {
+      if (fileName) {
+        setUi('context', {
+          kicker: t('topStrip.context.learning.kicker'),
+          title: fileName,
+        })
+      } else {
+        setUi('context', {
+          kicker: t('topStrip.context.learn.kicker'),
+          title: t('topStrip.context.learn.title'),
+        })
+      }
+      return
+    }
+
+    setUi('context', {
+      kicker: t('topStrip.context.ready.kicker'),
+      title: t('topStrip.context.ready.title'),
     })
   }
 
-  private evaluateCompact(): void {
-    const strip = this.topStripEl
-    const title = this.titleEl ?? strip?.querySelector<HTMLElement>('.ts-status-title') ?? null
-    if (!strip || !title) return
-    this.titleEl = title
-    // Reading scrollWidth/clientWidth after dropping .ts-compact forces a
-    // synchronous reflow, but the browser only paints after this callback
-    // returns — so re-adding the class (when not clipping) is flicker-free.
-    strip.classList.remove('ts-compact')
-    const clips = title.scrollWidth - title.clientWidth > 1
-    strip.classList.toggle('ts-compact', clips)
-  }
+  // Event handlers
+  const handlePlayClick = () => {
+    if (!isPlayRouteTarget(routeTarget())) return
+    const s = status()
 
-  private handlePlayClick(): void {
-    const { store, clock } = this.opts.services
-    if (!isPlayRouteTarget(this.currentRouteTarget())) return
-    const s = store.state.status
     if (s === 'playing') {
       clock.pause()
       store.setState('status', 'paused')
@@ -607,170 +478,291 @@ export class Controls {
     }
   }
 
-  private handleSkip(delta: number): void {
-    const { store, clock } = this.opts.services
-    if (!isPlayRouteTarget(this.currentRouteTarget())) return
+  const handleSkip = (delta: number) => {
+    if (!isPlayRouteTarget(routeTarget())) return
     const from = clock.currentTime
     const next =
       delta < 0
         ? Math.max(0, clock.currentTime + delta)
         : Math.min(store.state.duration, clock.currentTime + delta)
-    this.invalidateTimeCache()
+    invalidateTimeCache()
     clock.seek(next)
-    this.opts.onSeek?.(next)
+    props.onSeek?.(next)
     trackEvent('seeked', { from_s: Math.round(from), to_s: Math.round(next), method: 'skip' })
   }
 
-  private handleKey(e: KeyboardEvent): void {
-    const target = e.target as HTMLElement
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
-    const routeTarget = this.currentRouteTarget()
-
-    if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.code === 'KeyP') {
-      e.preventDefault()
-      this.hudTogglePin?.()
-      return
-    }
-
-    if (isPlayRouteTarget(routeTarget)) {
-      if (e.code === 'Space') {
-        e.preventDefault()
-        this.handlePlayClick()
-      } else if (e.code === 'ArrowLeft') {
-        e.preventDefault()
-        this.handleSkip(-SKIP_SECONDS)
-      } else if (e.code === 'ArrowRight') {
-        e.preventDefault()
-        this.handleSkip(SKIP_SECONDS)
-      } else if (e.code === 'KeyT') {
-        this.opts.onOpenTracks?.()
-      } else if (e.code === 'KeyR' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-        // Bare R only — leaves Cmd+R / Shift+Cmd+R for the browser's reload
-        // shortcuts and avoids hijacking the user's muscle memory.
-        if (this.opts.services.store.state.status !== 'exporting') {
-          this.opts.onRecord?.()
-        }
-      }
-      return
-    }
-
-    if (isLiveRouteTarget(routeTarget)) {
-      if (e.code === 'Tab') {
-        e.preventDefault()
-        this.opts.onSessionToggle?.()
-        return
-      }
-      if (e.code === 'Backquote') {
-        e.preventDefault()
-        this.opts.onMetronomeToggle?.()
-        return
-      }
-
-      // Shift-only (no Cmd/Ctrl/Alt) so we don't hijack browser shortcuts like
-      // Shift+Cmd+R (hard reload).
-      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        switch (e.code) {
-          case 'KeyR':
-            e.preventDefault()
-            this.opts.onSessionToggle?.()
-            break
-          case 'KeyL':
-            e.preventDefault()
-            this.opts.onLoopToggle?.()
-            break
-          case 'KeyU':
-            e.preventDefault()
-            this.opts.onLoopUndo?.()
-            break
-          case 'KeyC':
-            e.preventDefault()
-            this.opts.onLoopClear?.()
-            break
-          case 'KeyM':
-            e.preventDefault()
-            this.opts.onMetronomeToggle?.()
-            break
-        }
-      }
-    }
+  const handleBpmChange = (delta: number) => {
+    const current = uiStore.metro.bpm
+    props.onMetronomeBpmChange?.(current + delta)
   }
 
-  private bumpBpm(delta: number): void {
-    const current = this.uiStore.metro.bpm
-    this.opts.onMetronomeBpmChange?.(current + delta)
+  const wakeUp = () => {
+    setDimTopStrip(false)
+    hudWakeFn?.()
   }
 
-  private refreshUi(): void {
-    const { store } = this.opts.services
-    this.renderContext(this.currentRouteTarget(), store.state.loadedMidi?.name ?? null)
+  const invalidateTimeCache = () => {
+    lastDisplaySec = -1
+    lastFillPct = -1
   }
 
-  private renderContext(routeTarget: RouteTarget | null, fileName: string | null): void {
-    const midi = this.uiStore.midi
+  const updateFill = (t: number) => {
+    if (!scrubberRef) return
+    const dur = store.state.duration
+    const pct = dur > 0 ? Math.min((t / dur) * 100, 100) : 0
+    scrubberRef.style.setProperty('--pct', `${pct}%`)
+  }
 
-    if (isPlayRouteTarget(routeTarget) && this.opts.services.store.state.status === 'loading') {
-      this.setUi('context', {
-        kicker: t('topStrip.context.loading.kicker'),
-        title: t('topStrip.context.loading.title'),
-      })
-      return
-    }
+  const handleScrubberInput = () => {
+    if (!scrubberRef || !timeDisplayRef) return
+    const t = parseFloat(scrubberRef.value)
+    timeDisplayRef.textContent = formatTime(t)
+    updateFill(t)
+  }
 
-    if (isLiveRouteTarget(routeTarget)) {
-      this.setUi('context', {
-        kicker: t('topStrip.context.live.kicker'),
-        title:
-          midi.status === 'connected'
-            ? midi.deviceName || t('topStrip.context.live.midiSession')
-            : t('topStrip.context.live.keyboard'),
-      })
-      return
-    }
-
-    if (isPlayRouteTarget(routeTarget)) {
-      this.setUi('context', {
-        kicker: t('topStrip.context.play.kicker'),
-        title: fileName ?? t('topStrip.context.play.fallback'),
-      })
-      return
-    }
-
-    if (isLearnRouteTarget(routeTarget)) {
-      // Show the loaded song name when an exercise is using one, otherwise
-      // fall back to the generic Learn label.
-      if (this.learnFileName) {
-        this.setUi('context', {
-          kicker: t('topStrip.context.learning.kicker'),
-          title: this.learnFileName,
-        })
-      } else {
-        this.setUi('context', {
-          kicker: t('topStrip.context.learn.kicker'),
-          title: t('topStrip.context.learn.title'),
-        })
-      }
-      return
-    }
-
-    this.setUi('context', {
-      kicker: t('topStrip.context.ready.kicker'),
-      title: t('topStrip.context.ready.title'),
+  const handleScrubberChange = () => {
+    if (!scrubberRef) return
+    isScrubbing = false
+    const t = parseFloat(scrubberRef.value)
+    const from = clock.currentTime
+    invalidateTimeCache()
+    clock.seek(t)
+    props.onSeek?.(t)
+    trackEvent('seeked', {
+      from_s: Math.round(from),
+      to_s: Math.round(t),
+      method: 'scrub',
     })
   }
 
-  private wakeUp(): void {
-    this.setDimTopStrip(false)
-    this.hudWake?.()
+  const handleScrubberDown = () => {
+    isScrubbing = true
+    wakeUp()
   }
 
-  private updateFill(t: number): void {
-    const dur = this.opts.services.store.state.duration
-    const pct = dur > 0 ? Math.min((t / dur) * 100, 100) : 0
-    this.scrubber.style.setProperty('--pct', `${pct}%`)
+  const handleScrubberTouch = () => {
+    isScrubbing = true
   }
 
-  private invalidateTimeCache(): void {
-    this.lastDisplaySec = -1
-    this.lastFillPct = -1
+  // Context value
+  const contextValue: ControlsContextValue = {
+    services: props.services,
+    actions: props.actions,
+    routeTarget,
+    status,
+    hasFile,
+    dimTopStrip,
+    hudIdle,
+    hudHasDragged,
+    instrumentLoading,
+    octave,
+    volume,
+    speed,
+    zoom,
+    uiStore,
+    setUi,
+    setDimTopStrip,
+    setHudIdle,
+    setHudHasDragged,
+    setInstrumentLoading,
+    setOctave,
+    setVolume,
+    setSpeed,
+    setZoom,
+    handlePlayClick,
+    handleSkip,
+    handleBpmChange,
+    wakeUp,
+    updateContext,
+    scrubberRef,
+    topStripRef,
+    onSeek: props.onSeek,
+    onZoom: props.onZoom,
+    onThemeCycle: props.onThemeCycle,
+    onMidiConnect: props.onMidiConnect,
+    onTracksOpen: props.onOpenTracks,
+    onExportOpen: props.onRecord,
+    onTransposeChange: props.onTransposeChange,
+    onInstrumentCycle: props.onInstrumentCycle,
+    onParticleStyleCycle: props.onParticleCycle,
+    onLoopToggle: props.onLoopToggle,
+    onLoopClear: props.onLoopClear,
+    onLoopSave: props.onLoopSave,
+    onLoopUndo: props.onLoopUndo,
+    onMetroToggle: props.onMetronomeToggle,
+    onMetroBpmChange: props.onMetronomeBpmChange,
+    onSessionToggle: props.onSessionToggle,
+    onChordToggle: props.onChordToggle,
+    onOctaveShift: props.onOctaveShift,
   }
+
+  return (
+    <ControlsContext.Provider value={contextValue}>
+      <div style={{ display: 'contents' }}>
+        {/* Hidden slots for external panels - with IDs for querySelector */}
+        <div id="ts-instrument-slot" ref={(el) => (instrumentSlotRef = el)} style={{ display: 'none' }} />
+        <div id="ts-chord-slot" ref={(el) => (chordSlotRef = el)} style={{ display: 'none' }} />
+        <div id="ts-customize-slot" ref={(el) => (customizeSlotRef = el)} style={{ display: 'none' }} />
+
+        <TopStripView
+          ref={(el: HTMLElement) => (topStripRef = el)}
+          routeTarget={routeTarget}
+          status={status}
+          hasFile={hasFile}
+          isLoadingFile={() => isPlayRouteTarget(routeTarget()) && status() === 'loading'}
+          context={() => uiStore.context}
+          midiStatus={() => uiStore.midi.status}
+          midiDeviceName={() => uiStore.midi.deviceName || ''}
+          midiPillLabel={() => getMidiPillLabel(uiStore.midi.status, uiStore.midi.deviceName || '')}
+          midiMenuLabel={() => getMidiMenuLabel(uiStore.midi.status, uiStore.midi.deviceName || '')}
+          dim={dimTopStrip}
+          onHome={() => props.actions.navigation.toTarget({ kind: 'play' })}
+          onMode={(selection) =>
+            props.actions.navigation.toTarget(
+              selection === 'learn'
+                ? { kind: 'learn-hub' }
+                : selection === 'live'
+                  ? { kind: 'live' }
+                  : { kind: 'play' },
+            )
+          }
+          onOpenFile={() => void props.actions.library.open({ kind: 'picker' })}
+          onTracks={() => props.onOpenTracks?.()}
+          onMidi={() => props.onMidiConnect?.()}
+          onRecord={() => props.onRecord?.()}
+          onLearnThis={() => void props.actions.learn.enter({ kind: 'current-midi' })}
+          registerEl={(el) => {}}
+          registerTracksBtn={(el) => (tracksButtonRef = el)}
+        />
+
+        <LearnCoachmark
+          eligible={() =>
+            isPlayRouteTarget(routeTarget()) &&
+            hasFile() &&
+            status() !== 'loading' &&
+            status() !== 'exporting'
+          }
+          onShow={() => setLearnCoachmarkSeen(true)}
+        />
+
+        <HudView
+          routeTarget={routeTarget}
+          status={status}
+          showPlayHud={() =>
+            isPlayRouteTarget(routeTarget()) && hasFile() && status() !== 'loading'
+          }
+          showLiveHud={() => isLiveRouteTarget(routeTarget())}
+          playing={() => status() === 'playing'}
+          instrumentLoading={instrumentLoading}
+          sessionRecording={() => uiStore.session.recording}
+          sessionLabel={() =>
+            uiStore.session.recording
+              ? formatMMSS(uiStore.session.elapsed)
+              : t('hud.session.label.record')
+          }
+          loopState={() => uiStore.loop.state}
+          loopLabel={() => loopLabel(uiStore.loop.state, uiStore.loop.layerCount)}
+          loopProgressDeg={() => uiStore.loop.progressDeg}
+          loopActive={() => {
+            const s = uiStore.loop.state
+            return s !== 'idle' && s !== 'armed'
+          }}
+          loopSaveVisible={() =>
+            uiStore.loop.state === 'playing' || uiStore.loop.state === 'overdubbing'
+          }
+          loopUndoVisible={() => {
+            const { state, layerCount } = uiStore.loop
+            return state === 'overdubbing' || (state === 'playing' && layerCount >= 1)
+          }}
+          metroRunning={() => uiStore.metro.running}
+          metroBpm={() => uiStore.metro.bpm}
+          onPlay={handlePlayClick}
+          onSkipBack={() => handleSkip(-SKIP_SECONDS)}
+          onSkipFwd={() => handleSkip(SKIP_SECONDS)}
+          onVolume={(v) => {
+            setVolume(v)
+            store.setState('volume', v)
+            trackEventSettled('volume_changed', { volume: Math.round(v * 100) / 100 })
+          }}
+          onSpeed={(v) => {
+            setSpeed(v)
+            store.setState('speed', v)
+            trackEventSettled('speed_changed', { speed: v })
+          }}
+          onZoom={(v) => {
+            setZoom(v)
+            props.onZoom?.(v)
+            trackEventSettled('zoom_changed', { zoom: Math.round(v) })
+          }}
+          onMetroToggle={() => props.onMetronomeToggle?.()}
+          onBpmDec={() => handleBpmChange(-1)}
+          onBpmInc={() => handleBpmChange(+1)}
+          onBpmWheel={(e) => {
+            const dir = e.deltaY < 0 ? 1 : -1
+            const step = e.shiftKey ? 10 : 1
+            handleBpmChange(dir * step)
+          }}
+          onSession={() => props.onSessionToggle?.()}
+          onLoop={() => props.onLoopToggle?.()}
+          onLoopUndo={() => props.onLoopUndo?.()}
+          onLoopSave={() => props.onLoopSave?.()}
+          onLoopClear={() => props.onLoopClear?.()}
+          onScrubberInput={handleScrubberInput}
+          onScrubberChange={handleScrubberChange}
+          onScrubberDown={handleScrubberDown}
+          onScrubberTouch={handleScrubberTouch}
+          registerScrubber={(el) => { scrubberRef = el }}
+          registerTime={(el) => { timeDisplayRef = el }}
+          registerDuration={(el) => { durationRef = el }}
+          registerMetroBeat={(el) => { metroBeatRef = el }}
+          volume={volume}
+          speed={speed}
+          speedLabel={() => formatSpeed(speed())}
+          zoom={zoom}
+          wakeRef={(fn) => { hudWakeFn = fn }}
+          togglePinRef={(fn) => { hudTogglePinFn = fn }}
+          onIdleChange={(idle) => {
+            setHudIdle(idle)
+            setDimTopStrip(idle)
+          }}
+          onHasDragged={() => {
+            if (!hudHasDragged()) {
+              setHudHasDragged(true)
+              saveHudHasDragged()
+            }
+          }}
+        />
+
+        <DragCoachmark
+          eligible={() =>
+            learnCoachmarkSeen() &&
+            !hudHasDragged() &&
+            hasFile() &&
+            status() !== 'loading' &&
+            status() !== 'exporting' &&
+            (isPlayRouteTarget(routeTarget()) || isLiveRouteTarget(routeTarget())) &&
+            !hudIdle()
+          }
+          hasDragged={hudHasDragged}
+        />
+
+        <KeyHintView
+          visible={() => isLiveRouteTarget(routeTarget())}
+          idle={hudIdle}
+          collapsed={keyHintHidden}
+          octave={octave}
+          onOctaveDown={() => props.onOctaveShift?.(-1)}
+          onOctaveUp={() => props.onOctaveShift?.(+1)}
+          onClose={() => {
+            setKeyHintHidden(true)
+            saveKeyHintHidden(true)
+          }}
+          onReopen={() => {
+            setKeyHintHidden(false)
+            saveKeyHintHidden(false)
+          }}
+        />
+      </div>
+    </ControlsContext.Provider>
+  )
 }

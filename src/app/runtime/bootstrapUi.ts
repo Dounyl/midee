@@ -1,6 +1,6 @@
 import { ChordOverlay } from '@/components/playback/ChordOverlay'
 import type { ConsolePanel } from '@/components/playback/ConsolePanel'
-import { Controls, type ControlsOptions } from '@/components/playback/Controls'
+import { createControls, type ControlsProps } from '@/components/playback/Controls'
 import { CustomizeMenu } from '@/components/playback/CustomizeMenu'
 import { DropZone, type LoadSource } from '@/components/playback/DropZone'
 import { InstrumentMenu } from '@/components/playback/InstrumentMenu'
@@ -44,7 +44,7 @@ interface BootstrapPlaybackPanelsOptions {
 }
 
 export interface BootstrapRuntimeUiControlsOptions
-  extends Omit<ControlsOptions, 'container' | 'services' | 'actions'> {}
+  extends Omit<ControlsProps, 'services' | 'actions'> {}
 
 export interface BootstrapRuntimeUiPlaybackOptions {
   onDrop(file: File, source: LoadSource): void
@@ -135,7 +135,7 @@ function createPlaybackPanels(options: CreatePlaybackPanelsOptions): {
 }
 
 function bootstrapPlaybackUi(
-  controls: Controls,
+  controls: ReturnType<typeof createControls>,
   overlay: HTMLElement,
   options: BootstrapRuntimeUiPlaybackOptions,
 ): BootstrapPlaybackResult {
@@ -157,7 +157,7 @@ function bootstrapPlaybackUi(
 }
 
 function bootstrapMenusUi(
-  controls: Controls,
+  controls: ReturnType<typeof createControls>,
   overlay: HTMLElement,
   options: BootstrapRuntimeUiMenuOptions,
 ): BootstrapMenuResult {
@@ -176,7 +176,7 @@ function bootstrapMenusUi(
 
 function bootstrapOverlayUi(
   parts: {
-    controls: Controls
+    controls: ReturnType<typeof createControls>
     dropzone: DropZone
     trackPanel: TrackPanel
     consolePanel: ConsolePanel
@@ -191,8 +191,7 @@ function bootstrapOverlayUi(
 export function bootstrapRuntimeUi(
   options: BootstrapRuntimeUiOptions,
 ): BootstrapRuntimeUiResult {
-  const controls = new Controls({
-    container: options.overlay,
+  const controls = createControls(options.overlay, {
     services: options.services,
     actions: options.actions,
     ...options.controls,

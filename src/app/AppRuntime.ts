@@ -124,13 +124,12 @@ export class App {
     this.dependencies = new RuntimeDependencies(store)
     this.state = new RuntimeState(
       this.hydratedPreferences,
-      () => this.createDisplayPrefsPort() as any,
+      (state) => this.createDisplayPrefsPort(state) as any,
       () => createPlaybackSessionState({ store: this.store }) as any,
     )
   }
 
-  private createDisplayPrefsPort() {
-    const state = this.state
+  private createDisplayPrefsPort(state: RuntimeState) {
     const prefs = this.preferences
     return createDisplayPrefsState({
       getBaseMidi: () => state.baseMidi,
@@ -233,10 +232,21 @@ export class App {
     }
 
     // Phase 5: Bootstrap UI
+    // Create a mutable reference for actions (will be set after appController is created)
+    const actionsRef: { current: AppActions | null } = { current: null }
+    const actionsProxy = new Proxy({} as AppActions, {
+      get(target, prop) {
+        if (!actionsRef.current) {
+          throw new Error(`Actions.${String(prop)} accessed before initialization`)
+        }
+        return actionsRef.current[prop as keyof AppActions]
+      },
+    })
+
     const runtimeUi = bootstrapRuntimeUi({
       overlay,
       services: this.services,
-      actions: null as any,
+      actions: actionsProxy,
       controls: this.createControlsOptions(),
       playback: createBootstrapRuntimeUiPlayback({
         renderer: this.dependencies.renderer,
@@ -347,6 +357,7 @@ export class App {
 
     this.dependencies.setAppController(appController)
     const actions = createActions(appController)
+    actionsRef.current = actions  // Update the actions reference
 
     // Phase 8: Learn runtime lifecycle
     this.learnRuntimeLifecycle = createLearnRuntimeLifecycle({

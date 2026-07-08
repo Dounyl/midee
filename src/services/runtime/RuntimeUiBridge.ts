@@ -1,6 +1,6 @@
 import type { ChordOverlay } from '@/components/playback/ChordOverlay'
 import type { ConsolePanel } from '@/components/playback/ConsolePanel'
-import type { Controls } from '@/components/playback/Controls'
+import type { createControls } from '@/components/playback/Controls'
 import type { CustomizeMenu } from '@/components/playback/CustomizeMenu'
 import type { DropZone } from '@/components/playback/DropZone'
 import type { InstrumentMenu } from '@/components/playback/InstrumentMenu'
@@ -13,7 +13,7 @@ import type { Theme } from '@/services/renderer/theme'
 import type { MidiFile, MidiKeySignature } from '@/types/midi/types'
 
 export interface RuntimeUiBridgeParts {
-  controls: Controls
+  controls: ReturnType<typeof createControls>
   dropzone: DropZone
   trackPanel: TrackPanel
   consolePanel: ConsolePanel
@@ -23,7 +23,7 @@ export interface RuntimeUiBridgeParts {
 }
 
 export class RuntimeUiBridge {
-  readonly controls: Controls
+  readonly controls: ReturnType<typeof createControls>
   readonly dropzone: DropZone
   readonly trackPanel: TrackPanel
   readonly consolePanel: ConsolePanel
@@ -152,7 +152,9 @@ export class RuntimeUiBridge {
   }
 
   bindTrackTrigger(): void {
-    this.trackPanel.setTrigger(this.controls.tracksButton)
+    if (this.controls.tracksButton) {
+      this.trackPanel.setTrigger(this.controls.tracksButton)
+    }
   }
 
   dispose(): void {
