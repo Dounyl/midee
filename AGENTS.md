@@ -85,17 +85,17 @@ The following directories may still exist during migration, but they are compati
 - Prefer moving or adding real code under `app/components/features/stores/services/lib/types`.
 - Avoid creating new compatibility shims unless needed to keep the build green during migration.
 
-### File Size Limits
+### File Size Guidelines
 
 **Why**: Large files are hard to understand, test, and review. They often signal mixed responsibilities.
 
-**Limits**:
-- Component/Service files: <400 lines (soft), <600 lines (hard)
-- Runtime/Orchestration files: <500 lines (soft), <700 lines (hard)
+**Recommended targets**:
+- Component/Service files: ~400 lines
+- Runtime/Orchestration files: ~500 lines
 - Single function/method: <100 lines
 - Constructor: <50 lines
 
-**When**: Refactor immediately when hitting hard limits. Plan refactor within 1 sprint when hitting soft limits.
+**When to consider refactoring**: When a file's size makes it difficult to understand, test, or review, and there are clearly separable responsibilities.
 
 **How to verify**:
 ```bash
