@@ -563,6 +563,7 @@ export class App {
   }
 
   dispose() {
+    this.releaseAllLiveNotes()
     this.lifecycle.dispose()
     this.dependencies.dispose()
   }

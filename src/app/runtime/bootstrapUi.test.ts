@@ -8,14 +8,16 @@ const customizeMenuInstances: any[] = []
 const chordOverlayInstances: any[] = []
 
 vi.mock('@/components/playback/Controls', () => ({
-  Controls: class {
-    instrumentSlot = document.createElement('div')
-    tracksButton = document.createElement('button')
-    customizeSlot = document.createElement('div')
-    chordSlot = document.createElement('div')
-    constructor(public options: unknown) {
-      controlsInstances.push(this)
+  createControls: (_overlay: HTMLElement, options: unknown) => {
+    const instance = {
+      instrumentSlot: document.createElement('div'),
+      tracksButton: document.createElement('button'),
+      customizeSlot: document.createElement('div'),
+      chordSlot: document.createElement('div'),
+      options,
     }
+    controlsInstances.push(instance)
+    return instance
   },
 }))
 
