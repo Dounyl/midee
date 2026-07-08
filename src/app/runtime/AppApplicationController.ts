@@ -53,6 +53,9 @@ export class AppApplicationController implements AppIntentDriver {
       this.routeEntryStore(),
       {
         renderer: this.opts.services.renderer,
+        playbackAudio: {
+          load: (midi) => this.opts.services.synth.load(midi),
+        },
         trackPanel: {
           close: () => this.opts.ui.closeTrackPanel(),
           render: (midi) => this.opts.ui.renderTrackPanel(midi),
@@ -70,6 +73,9 @@ export class AppApplicationController implements AppIntentDriver {
   enterLiveRoute(): void {
     applyLiveRouteEntry(this.routeEntryStore(), {
       renderer: this.opts.services.renderer,
+      playbackAudio: {
+        load: (midi) => this.opts.services.synth.load(midi),
+      },
       trackPanel: {
         close: () => this.opts.ui.closeTrackPanel(),
         render: (midi) => this.opts.ui.renderTrackPanel(midi),

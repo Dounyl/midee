@@ -25,6 +25,7 @@ function fakeMidi(name = 'demo.mid', duration = 12.5): MidiFile {
 function makeRouteEntryShell() {
   return {
     renderer: { clearMidi: vi.fn(), loadMidi: vi.fn() },
+    playbackAudio: { load: vi.fn(async () => {}) },
     trackPanel: { close: vi.fn(), render: vi.fn() },
     dropzone: { show: vi.fn(), hide: vi.fn() },
     keyboardInput: { enable: vi.fn() },
@@ -70,6 +71,7 @@ describe('route entry helpers', () => {
     expect(store.state.status).toBe('idle')
     expect(store.state.loadedMidi).toBeNull()
     expect(store.state.currentTime).toBe(0)
+    expect(shell.playbackAudio.load).not.toHaveBeenCalled()
     expect(shell.renderer.clearMidi).toHaveBeenCalledOnce()
     expect(shell.trackPanel.close).toHaveBeenCalledOnce()
     expect(shell.dropzone.hide).toHaveBeenCalledOnce()
@@ -90,6 +92,7 @@ describe('route entry helpers', () => {
 
     expect(store.state.status).toBe('ready')
     expect(store.state.currentTime).toBe(7.5)
+    expect(shell.playbackAudio.load).toHaveBeenCalledWith(midi)
     expect(shell.renderer.loadMidi).toHaveBeenCalledWith(midi)
     expect(shell.trackPanel.render).toHaveBeenCalledWith(midi)
     expect(shell.dropzone.hide).toHaveBeenCalledOnce()
@@ -102,6 +105,20 @@ describe('route entry helpers', () => {
     expect(telemetryMocks.trackEvent).toHaveBeenCalledWith('play_mode_entered', { duration_s: 20 })
     expect(telemetryMocks.track).toHaveBeenCalledWith('file_mode_entered', { duration_s: 20 })
     expect(document.title).toBe('song.mid - midee')
+  })
+
+  it('applyPlayRouteEntry re-syncs playback audio from the play session midi', () => {
+    const store = createAppStore()
+    const shell = makeRouteEntryShell()
+    const midi = fakeMidi('play-session.mid', 18)
+    store.completePlayLoad(midi)
+
+    applyPlayRouteEntry(store, shell, { skipAnalytics: true })
+
+    expect(shell.playbackAudio.load).toHaveBeenCalledTimes(1)
+    expect(shell.playbackAudio.load).toHaveBeenCalledWith(midi)
+    expect(shell.renderer.loadMidi).toHaveBeenCalledWith(midi)
+    expect(shell.trackPanel.render).toHaveBeenCalledWith(midi)
   })
 
   it('syncLoadedMidiForCurrentRoute resyncs play without replaying analytics', () => {

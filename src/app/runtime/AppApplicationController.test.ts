@@ -63,7 +63,7 @@ function createController() {
   const controller = new AppApplicationController({
     services: {
       clock: { pause: vi.fn(), seek: vi.fn() },
-      synth: {} as never,
+      synth: { load: vi.fn(async () => {}) } as never,
       metronome: {} as never,
       renderer: { clearMidi: vi.fn(), setLiveNotesVisible: vi.fn(), setVisible: vi.fn() },
       input: {} as never,

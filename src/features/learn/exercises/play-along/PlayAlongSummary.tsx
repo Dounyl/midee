@@ -34,10 +34,11 @@ function PlayAlongSummaryView(props: ViewProps) {
   }
 
   return (
-    <button
+    <div
       class={styles.playAlongSummary}
       aria-label={t('learn.pa.summary.cancel')}
-      type="button"
+      role="button"
+      tabIndex={0}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return
         cancelSummary()
@@ -112,7 +113,7 @@ function PlayAlongSummaryView(props: ViewProps) {
           </button>
         </footer>
       </section>
-    </button>
+    </div>
   )
 }
 

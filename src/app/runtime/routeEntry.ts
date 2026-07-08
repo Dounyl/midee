@@ -10,6 +10,9 @@ interface RouteEntryShell {
     clearMidi(): void
     loadMidi(midi: NonNullable<AppStore['state']['loadedMidi']>): void
   }
+  playbackAudio: {
+    load(midi: NonNullable<AppStore['state']['loadedMidi']>): Promise<void>
+  }
   trackPanel: {
     close(): void
     render(midi: NonNullable<AppStore['state']['loadedMidi']>): void
@@ -50,6 +53,9 @@ export function applyPlayRouteEntry(
   }
 
   store.enterPlay(false)
+  void shell.playbackAudio
+    .load(midi)
+    .catch((err) => console.error('[applyPlayRouteEntry] Failed to sync SynthEngine MIDI:', err))
   shell.renderer.loadMidi(midi)
   shell.trackPanel.render(midi)
   shell.dropzone.hide()
