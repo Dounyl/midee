@@ -3,6 +3,7 @@ import {
   pitchClassToJianpuLabel,
   pitchToJianpuLabel,
   pitchToKeyboardLabels,
+  pitchToSpelledNoteName,
   shouldRenderKeyboardJianpuLabels,
   tonicPitchClassForKeySignature,
 } from './jianpu'
@@ -11,7 +12,7 @@ describe('jianpu labels', () => {
   it('maps pitch classes to fixed-do labels by default', () => {
     expect(
       Array.from({ length: 12 }, (_, pitchClass) => pitchClassToJianpuLabel(pitchClass)),
-    ).toEqual(['1', '#1', '2', '#2', '3', '4', '#4', '5', '#5', '6', '#6', '7'])
+    ).toEqual(['1', '#1', '2', 'b3', '3', '4', '#4', '5', 'b6', '6', 'b7', '7'])
   })
 
   it('wraps out-of-range pitch classes and midi pitches', () => {
@@ -19,6 +20,7 @@ describe('jianpu labels', () => {
     expect(pitchToJianpuLabel(60)).toBe('1')
     expect(pitchToJianpuLabel(61)).toBe('#1')
     expect(pitchToJianpuLabel(71)).toBe('7')
+    expect(pitchToJianpuLabel(70)).toBe('b7')
   })
 
   it('resolves tonic pitch classes from supported key signatures', () => {
@@ -34,7 +36,8 @@ describe('jianpu labels', () => {
     expect(pitchToJianpuLabel(69, 'G')).toBe('2')
     expect(pitchToJianpuLabel(66, 'G')).toBe('7')
     expect(pitchToJianpuLabel(70, 'F')).toBe('4')
-    expect(pitchToJianpuLabel(65, 'Dm')).toBe('#2')
+    expect(pitchToJianpuLabel(65, 'Dm')).toBe('3')
+    expect(pitchToJianpuLabel(71, 'F')).toBe('#4')
   })
 
   it('accepts MidiKeySignature objects directly', () => {
@@ -54,7 +57,14 @@ describe('jianpu labels', () => {
     expect(pitchToKeyboardLabels(60, 'Dm')).toEqual({ jianpu: '7', noteName: 'c' })
   })
 
-  it('renders keyboard labels for default and transposed keys', () => {
+  it('spells chromatic note names against the active key signature', () => {
+    expect(pitchToSpelledNoteName(70, 'C')).toBe('Bb')
+    expect(pitchToSpelledNoteName(66, 'G')).toBe('F#')
+    expect(pitchToSpelledNoteName(71, 'F')).toBe('B')
+    expect(pitchToSpelledNoteName(60, 'Dm')).toBe('C')
+  })
+
+  it('renders keyboard labels for supported keys', () => {
     expect(shouldRenderKeyboardJianpuLabels(null)).toBe(true)
     expect(shouldRenderKeyboardJianpuLabels('C')).toBe(true)
     expect(
@@ -73,6 +83,6 @@ describe('jianpu labels', () => {
         source: 'midi',
         confidence: 1,
       }),
-    ).toBe(false)
+    ).toBe(true)
   })
 })

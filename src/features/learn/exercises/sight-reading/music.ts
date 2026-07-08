@@ -1,3 +1,5 @@
+import { pitchToSpelledNoteName } from '@/lib/music/jianpu'
+
 // Pure music-theory helpers for sight-reading rendering and note naming.
 // Ported from the POC at midi-learning/src/lib/music.ts; extended with
 // noteNameInKey() for key-signature-aware spelling.
@@ -6,7 +8,6 @@ const SEMI_TO_DIATONIC = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]
 const ACCIDENTAL = [false, true, false, true, false, false, true, false, true, false, true, false]
 const WHITE_KEYS = new Set([0, 2, 4, 5, 7, 9, 11])
 const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']
-const FLAT_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B']
 
 // E4 (MIDI 64) sits on the bottom line of the treble clef — staff step 0.
 const E4_DIATONIC = 4 * 7 + 2 // 30
@@ -59,33 +60,12 @@ export function rangeForClef(clef: ClefMode): [number, number] {
   return [36, 84] // C2–C6
 }
 
-// Key signature data: pitch classes (0–11) that are sharped or flatted.
-// Matches KEY_SIGNATURES in the POC's key-signatures.ts.
-interface KeySigData {
-  sharps: number[]
-  flats: number[]
-}
-
-const KEY_SIG_DATA: Record<string, KeySigData> = {
-  C: { sharps: [], flats: [] },
-  G: { sharps: [6], flats: [] },
-  D: { sharps: [6, 1], flats: [] },
-  A: { sharps: [6, 1, 8], flats: [] },
-  E: { sharps: [6, 1, 8, 3], flats: [] },
-  F: { sharps: [], flats: [10] },
-  Bb: { sharps: [], flats: [10, 3] },
-  Eb: { sharps: [], flats: [10, 3, 8] },
-  Ab: { sharps: [], flats: [10, 3, 8, 1] },
-}
-
 /**
  * Returns the note name correctly spelled for a key signature.
  * Flat keys spell accidentals as flats; sharp keys spell them as sharps.
  * Falls back to noteName() for unknown key strings.
  */
 export function noteNameInKey(midi: number, keySignature: string): string {
-  const ks = KEY_SIG_DATA[keySignature]
-  if (!ks) return noteName(midi)
-  if (ks.flats.length > 0) return FLAT_NAMES[midi % 12]!
-  return NOTE_NAMES[midi % 12]!
+  if (!/^[A-G](?:#|b)?m?$/.test(keySignature)) return noteName(midi)
+  return pitchToSpelledNoteName(midi, keySignature).replace(/#/g, '♯').replace(/b/g, '♭')
 }
