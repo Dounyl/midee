@@ -37,13 +37,14 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  width: 100%;
 }
 
 .pa-hud__scrub {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -112,7 +113,7 @@
 
 .pa-hud__scrubber-wrap {
   position: relative;
-  flex: 1 1 120px;
+  flex: 1 1 92px;
   display: flex;
   align-items: center;
   min-width: 80px;
@@ -232,6 +233,11 @@
   min-width: 0;
 }
 
+.pa-hud__segmented--mode {
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
 .pa-hud__seg-label {
   font: 600 10px / 1 var(--font);
   color: var(--text-dim);
@@ -247,6 +253,17 @@
   background: rgba(255, 255, 255, 0.035);
   border-radius: 10px;
   gap: 2px;
+}
+
+.pa-hud__seg-track--mode {
+  min-width: 182px;
+  justify-content: stretch;
+}
+
+.pa-hud__seg-track--mode .pa-hud__seg {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 12px;
 }
 
 .pa-hud__seg {
@@ -392,6 +409,25 @@
     width: min(calc(100vw - 16px), 720px);
     padding: 8px 12px 10px 0;
   }
+
+  .pa-hud__transport {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .pa-hud__scrub {
+    min-width: min(100%, 240px);
+  }
+
+  .pa-hud__segmented--mode {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .pa-hud__seg-track--mode {
+    min-width: 0;
+  }
+
   .pa-hud__seg-label {
     display: none;
   }

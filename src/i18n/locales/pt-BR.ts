@@ -399,6 +399,13 @@ const ptBR: Messages = {
   'learn.pa.summary.cancel': 'Cancelar',
   'learn.pa.summary.continue': 'Continuar praticando',
   'learn.pa.summary.done': 'Concluir',
+  'learn.pa.prompt.startTitle': 'Escolha como iniciar esta passada',
+  'learn.pa.prompt.startSubtitle': 'Selecione um modo guiado antes de começar o play-along.',
+  'learn.pa.prompt.replayTitle': 'Escolha como iniciar o próximo loop',
+  'learn.pa.prompt.replaySubtitle': 'Troque de modo aqui antes de o loop recomeçar.',
+  'learn.pa.prompt.defaultCountdown':
+    'Entrando em {mode} em {seconds}s com base na sua última escolha.',
+  'learn.pa.prompt.startNow': 'Começar agora',
 
   'learn.streak.tip': 'Sequência de prática · últimos 14 dias',
   'learn.streak.label': 'dias seguidos',
@@ -494,6 +501,15 @@ const ptBR: Messages = {
   'toast.recording.empty': 'Nada gravado — toque algumas notas com o Gravar ativo.',
 
   'onboarding.localeDetected': 'Mostrando em {language} · troque em Aparência',
+  'learn.pa.modeAria': 'Modo guiado',
+  'learn.pa.modeLabel': 'Modo',
+  'learn.pa.modeDemoAria': 'Modo demonstracao',
+  'learn.pa.modePracticeAria': 'Modo pratica',
+  'learn.pa.modeDemoTip': 'Modo demonstracao - mantem audivel todo o acompanhamento guiado',
+  'learn.pa.modePracticeTip':
+    'Modo pratica - so a mao oposta soa, ou silencio ao praticar com as duas maos',
+  'learn.pa.modeDemoLabel': 'Demonstracao',
+  'learn.pa.modePracticeLabel': 'Pratica',
 }
 
 export default ptBR

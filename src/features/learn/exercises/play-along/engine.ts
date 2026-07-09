@@ -16,7 +16,8 @@ import { PracticeEngine } from '@/features/learn/engines/PracticeEngine'
 import type { BusNoteEvent } from '@/services/input/InputBus'
 import { watch } from '@/stores/app/watch'
 import type { AppServices } from '@/types/app/AppServices'
-import type { MidiFile } from '@/types/midi/types'
+import type { MidiFile, MidiTrack } from '@/types/midi/types'
+import type { PlayAlongGuidedMode } from './state'
 
 // Composes wait-mode (PracticeEngine) with loop-region + tempo-ramp + a
 // graded score model. UI reads off `engine.state.*`; nothing here touches
@@ -50,6 +51,7 @@ export interface PlayAlongState {
   waitEnabled: boolean
   speedPct: number
   hand: HandFilter
+  guidedMode: PlayAlongGuidedMode
   tempoRampEnabled: boolean
   cleanPasses: number
 
@@ -100,6 +102,7 @@ export class PlayAlongEngine {
       waitEnabled: true,
       speedPct: 100,
       hand: 'both',
+      guidedMode: 'demo',
       tempoRampEnabled: false,
       cleanPasses: 0,
       perfect: 0,
@@ -157,7 +160,8 @@ export class PlayAlongEngine {
 
     // Now build practice steps + apply filters against the correct time.
     this.practice.loadMidi(midi)
-    this.applyHand(midi)
+    this.applySessionRouting(midi)
+    this.syncPracticeMode()
     this.applySpeed()
     batch(() => {
       this.setState({ duration: midi?.duration ?? 0, currentTime: initial })
@@ -178,7 +182,6 @@ export class PlayAlongEngine {
 
   detach(): void {
     this.active = false
-    this.currentMidi = null
     this.pressedPitches.clear()
     this.heldEligible.clear()
     this.setState('userWantsToPlay', false)
@@ -192,6 +195,8 @@ export class PlayAlongEngine {
     this.practice.setEnabled(false)
     this.practice.dispose()
     this.opts.services.renderer.setPracticeTrackFocus(null)
+    this.restoreAllTrackAudio()
+    this.currentMidi = null
     this.opts.services.clock.speed = 1
     this.opts.services.synth.setSpeed(1)
   }
@@ -267,6 +272,7 @@ export class PlayAlongEngine {
 
   onNoteOn(evt: BusNoteEvent): 'advanced' | 'rejected' | 'none' {
     if (!this.active) return 'none'
+    if (this.state.guidedMode !== 'practice') return 'none'
     this.pressedPitches.add(evt.pitch)
     const outcome = this.practice.notePressed(evt.pitch)
     if (outcome.kind === 'advanced') {
@@ -298,7 +304,7 @@ export class PlayAlongEngine {
   setWaitEnabled(enabled: boolean): void {
     this.setState('waitEnabled', enabled)
     const wasWaiting = this.practice.isWaiting
-    this.practice.setEnabled(enabled)
+    this.syncPracticeMode()
     if (!enabled && wasWaiting && this.state.userWantsToPlay) {
       const { services, learnState } = this.opts
       services.clock.play()
@@ -313,7 +319,16 @@ export class PlayAlongEngine {
 
   setHand(filter: HandFilter): void {
     this.setState('hand', filter)
-    this.applyHand(this.currentMidi)
+    this.applySessionRouting(this.currentMidi)
+    this.refreshScheduledPlayback()
+    this.resumeAfterPracticeFilterChange()
+  }
+
+  setGuidedMode(mode: PlayAlongGuidedMode): void {
+    this.setState('guidedMode', mode)
+    this.syncPracticeMode()
+    this.applySessionRouting(this.currentMidi)
+    this.refreshScheduledPlayback()
     this.resumeAfterPracticeFilterChange()
   }
 
@@ -326,7 +341,7 @@ export class PlayAlongEngine {
     this.currentMidi = midi
     const currentTime = this.opts.services.clock.currentTime
     this.practice.loadMidi(midi)
-    this.applyHand(midi)
+    this.applySessionRouting(midi)
     this.practice.notifySeek(currentTime)
     this.heldEligible.clear()
     this.pressedPitches.clear()
@@ -422,30 +437,31 @@ export class PlayAlongEngine {
     }
   }
 
-  private applyHand(midi: MidiFile | null): void {
+  private applySessionRouting(midi: MidiFile | null): void {
     if (!midi) return
     // Clear stale held-eligible entries — switching hands invalidates the
     // current chord's held window because `setVisibleTracks` rebuilds the
     // step list against the new filter.
     this.heldEligible.clear()
-    const filter = this.state.hand
-    if (filter === 'both') {
+    if (this.state.guidedMode !== 'practice') {
       this.practice.setVisibleTracks(null)
       this.opts.services.renderer.setPracticeTrackFocus(null)
+      this.applyPlaybackPolicy(midi.tracks)
       return
     }
-    const visible = midi.tracks
-      .filter((track) => {
-        if (track.isDrum) return false
-        const avg = averagePitch(track.notes)
-        return filter === 'left' ? avg < 60 : avg >= 60
-      })
-      .map((t) => t.id)
-    this.practice.setVisibleTracks(visible)
-    this.opts.services.renderer.setPracticeTrackFocus(visible)
+    const visible = resolvePracticeTrackIds(midi.tracks, this.state.hand)
+    if (visible === null) {
+      this.practice.setVisibleTracks(null)
+      this.opts.services.renderer.setPracticeTrackFocus(null)
+    } else {
+      this.practice.setVisibleTracks(visible)
+      this.opts.services.renderer.setPracticeTrackFocus(visible)
+    }
+    this.applyPlaybackPolicy(midi.tracks)
   }
 
   private resumeAfterPracticeFilterChange(): void {
+    if (this.state.guidedMode !== 'practice') return
     if (!this.active || !this.state.userWantsToPlay || this.practice.isWaiting) return
     const { services, learnState } = this.opts
     // A hand switch rebuilds PracticeEngine steps and may clear a wait that
@@ -454,6 +470,31 @@ export class PlayAlongEngine {
     // hand's next step engages.
     services.clock.play()
     learnState.setState('status', 'playing')
+  }
+
+  private applyPlaybackPolicy(tracks: MidiTrack[]): void {
+    const audible = resolveAudibleTrackIds(tracks, this.state.guidedMode, this.state.hand)
+    const audibleSet = audible === null ? null : new Set(audible)
+    for (const track of tracks) {
+      const enabled = audibleSet === null ? true : audibleSet.has(track.id)
+      this.opts.services.synth.setTrackEnabled?.(track.id, enabled)
+    }
+  }
+
+  private restoreAllTrackAudio(): void {
+    if (!this.currentMidi) return
+    for (const track of this.currentMidi.tracks) {
+      this.opts.services.synth.setTrackEnabled?.(track.id, true)
+    }
+  }
+
+  private refreshScheduledPlayback(): void {
+    if (!this.active || !this.currentMidi) return
+    this.opts.services.synth.seek(this.opts.services.clock.currentTime)
+  }
+
+  private syncPracticeMode(): void {
+    this.practice.setEnabled(this.state.guidedMode === 'practice' && this.state.waitEnabled)
   }
 
   private onTick(time: number): void {
@@ -528,4 +569,25 @@ function averagePitch(notes: { pitch: number }[]): number {
   let sum = 0
   for (const n of notes) sum += n.pitch
   return sum / notes.length
+}
+
+function resolvePracticeTrackIds(tracks: MidiTrack[], filter: HandFilter): string[] | null {
+  if (filter === 'both') return null
+  return tracks
+    .filter((track) => {
+      if (track.isDrum) return false
+      const avg = averagePitch(track.notes)
+      return filter === 'left' ? avg < 60 : avg >= 60
+    })
+    .map((track) => track.id)
+}
+
+function resolveAudibleTrackIds(
+  tracks: MidiTrack[],
+  guidedMode: PlayAlongGuidedMode,
+  hand: HandFilter,
+): string[] | null {
+  if (guidedMode === 'demo') return null
+  if (hand === 'both') return []
+  return resolvePracticeTrackIds(tracks, hand === 'left' ? 'right' : 'left') ?? []
 }

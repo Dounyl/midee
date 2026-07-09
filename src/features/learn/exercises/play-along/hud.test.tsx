@@ -20,6 +20,7 @@ function createEngine() {
       waitEnabled: false,
       tempoRampEnabled: false,
       speedPct: 100,
+      guidedMode: 'demo' as const,
       hand: 'both' as const,
       loopRegion: null,
       loopMark: null,
@@ -32,6 +33,7 @@ function createEngine() {
     seek: vi.fn(),
     togglePlay: vi.fn(),
     setSpeedPreset: vi.fn(),
+    setGuidedMode: vi.fn(),
     setHand: vi.fn(),
     setWaitEnabled: vi.fn(),
     setTempoRamp: vi.fn(),
@@ -72,5 +74,17 @@ describe('PlayAlongHudView', () => {
     expect(engine.seek).toHaveBeenCalledWith(12)
 
     result.unmount()
+  })
+
+  it('switches guided modes from the transport row control', () => {
+    const engine = createEngine()
+    render(() => <PlayAlongHudView engine={engine as never} onMarkLoop={vi.fn()} onClearLoop={vi.fn()} />)
+
+    const buttons = Array.from(document.querySelectorAll('.pa-hud__seg-track--mode .pa-hud__seg'))
+    expect(buttons).toHaveLength(2)
+
+    ;(buttons[1] as HTMLButtonElement).click()
+
+    expect(engine.setGuidedMode).toHaveBeenCalledWith('practice')
   })
 })

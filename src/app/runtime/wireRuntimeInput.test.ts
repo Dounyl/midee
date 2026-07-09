@@ -46,6 +46,7 @@ describe('wireRuntimeInput', () => {
     }
     const liveNotes = {
       press: vi.fn(),
+      release: vi.fn(),
     }
     const capture = {
       captureNoteOff: vi.fn(),

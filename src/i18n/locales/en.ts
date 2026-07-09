@@ -393,6 +393,15 @@ export const en = {
   'learn.pa.speedPctAria': '{pct}% speed',
   'learn.pa.handsAria': 'Hands',
   'learn.pa.handsLabel': 'Hands',
+  'learn.pa.modeAria': 'Guided mode',
+  'learn.pa.modeLabel': 'Mode',
+  'learn.pa.modeDemoAria': 'Demo mode',
+  'learn.pa.modePracticeAria': 'Practice mode',
+  'learn.pa.modeDemoTip': 'Demo mode - keep the full guided accompaniment audible',
+  'learn.pa.modePracticeTip':
+    'Practice mode - only the opposite hand sounds, or silence for both hands',
+  'learn.pa.modeDemoLabel': 'Demo',
+  'learn.pa.modePracticeLabel': 'Practice',
   'learn.pa.handLeftTip': 'Left hand only',
   'learn.pa.handRightTip': 'Right hand only',
   'learn.pa.handBothTip': 'Both hands',
@@ -428,6 +437,12 @@ export const en = {
   'learn.pa.summary.cancel': 'Cancel',
   'learn.pa.summary.continue': 'Continue practicing',
   'learn.pa.summary.done': 'Done',
+  'learn.pa.prompt.startTitle': 'Choose how to begin this pass',
+  'learn.pa.prompt.startSubtitle': 'Pick a guided mode before play-along starts.',
+  'learn.pa.prompt.replayTitle': 'Choose how to start the next loop',
+  'learn.pa.prompt.replaySubtitle': 'Switch modes here before the loop begins again.',
+  'learn.pa.prompt.defaultCountdown': 'Defaulting to {mode} in {seconds}s based on your last choice.',
+  'learn.pa.prompt.startNow': 'Start now',
 
   // Streak row (Learn hub topbar).
   'learn.streak.tip': 'Practice streak · last 14 days',

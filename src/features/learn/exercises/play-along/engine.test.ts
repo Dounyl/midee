@@ -52,6 +52,7 @@ function makeClock() {
 function makeSynth() {
   const speed = { current: 1 }
   const seekCalls: number[] = []
+  const trackEnabledCalls: Array<{ trackId: string; enabled: boolean }> = []
   return {
     setSpeed: (v: number) => {
       speed.current = v
@@ -59,11 +60,17 @@ function makeSynth() {
     seek: (t: number) => {
       seekCalls.push(t)
     },
+    setTrackEnabled: (trackId: string, enabled: boolean) => {
+      trackEnabledCalls.push({ trackId, enabled })
+    },
     get speed() {
       return speed.current
     },
     get seekCalls() {
       return seekCalls
+    },
+    get trackEnabledCalls() {
+      return trackEnabledCalls
     },
   }
 }
@@ -362,6 +369,7 @@ describe('PlayAlongEngine', () => {
     const { services, clock, learnState, renderer } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeSplitHandMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     engine.play()
 
@@ -382,10 +390,88 @@ describe('PlayAlongEngine', () => {
     expect(learnState.state.status).toBe('paused')
   })
 
+  it('defaults guided mode to demo so existing sessions keep audible playback', () => {
+    const { services, learnState } = makeServices()
+    const engine = new PlayAlongEngine({ services, learnState })
+    engine.attach(makeSplitHandMidi())
+
+    expect(engine.state.guidedMode).toBe('demo')
+  })
+
+  it('keeps all tracks audible in demo mode', () => {
+    const { services, synth, learnState } = makeServices()
+    const engine = new PlayAlongEngine({ services, learnState })
+    engine.attach(makeSplitHandMidi())
+    engine.setHand('left')
+
+    expect(synth.trackEnabledCalls.at(-2)).toEqual({ trackId: 'lh', enabled: true })
+    expect(synth.trackEnabledCalls.at(-1)).toEqual({ trackId: 'rh', enabled: true })
+  })
+
+  it('does not focus or score hands in demo mode', () => {
+    const { services, clock, renderer, learnState } = makeServices()
+    const engine = new PlayAlongEngine({ services, learnState })
+    engine.attach(makeSplitHandMidi())
+    engine.setHand('left')
+    engine.setWaitEnabled(true)
+    engine.play()
+
+    clock.emit(2.01)
+
+    expect(renderer.focusCalls.at(-1)).toBeNull()
+    expect(engine.practice.isWaiting).toBe(false)
+
+    engine.onNoteOn({ pitch: 48, velocity: 1, clockTime: 2.01, source: 'midi' })
+
+    expect(engine.state.perfect).toBe(0)
+    expect(engine.state.good).toBe(0)
+    expect(engine.state.errors).toBe(0)
+  })
+
+  it('uses opposite-hand accompaniment when practice mode is active', () => {
+    const { services, synth, learnState } = makeServices()
+    const engine = new PlayAlongEngine({ services, learnState })
+    engine.attach(makeSplitHandMidi())
+
+    engine.setGuidedMode('practice')
+    engine.setHand('left')
+
+    expect(synth.trackEnabledCalls.at(-2)).toEqual({ trackId: 'lh', enabled: false })
+    expect(synth.trackEnabledCalls.at(-1)).toEqual({ trackId: 'rh', enabled: true })
+
+    engine.setHand('right')
+
+    expect(synth.trackEnabledCalls.at(-2)).toEqual({ trackId: 'lh', enabled: true })
+    expect(synth.trackEnabledCalls.at(-1)).toEqual({ trackId: 'rh', enabled: false })
+  })
+
+  it('mutes both hands in practice mode when both-hand practice is selected', () => {
+    const { services, synth, learnState } = makeServices()
+    const engine = new PlayAlongEngine({ services, learnState })
+    engine.attach(makeSplitHandMidi())
+
+    engine.setGuidedMode('practice')
+    engine.setHand('both')
+
+    expect(synth.trackEnabledCalls.at(-2)).toEqual({ trackId: 'lh', enabled: false })
+    expect(synth.trackEnabledCalls.at(-1)).toEqual({ trackId: 'rh', enabled: false })
+  })
+
+  it('refreshes scheduled playback immediately when guided mode changes mid-session', () => {
+    const { services, synth, learnState } = makeServices()
+    const engine = new PlayAlongEngine({ services, learnState })
+    engine.attach(makeSplitHandMidi())
+
+    engine.setGuidedMode('practice')
+
+    expect(synth.seekCalls.at(-1)).toBe(0)
+  })
+
   it('keeps waiting when switching to the hand that owns the current wait', () => {
     const { services, clock, learnState, renderer } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeSplitHandMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     engine.play()
 
@@ -409,6 +495,7 @@ describe('PlayAlongEngine', () => {
     const { services, clock, learnState, renderer } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeSplitHandMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
 
     clock.emit(2.01)
@@ -425,6 +512,7 @@ describe('PlayAlongEngine', () => {
     const { services, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
     engine.setState('cleanPasses', 3)
     engine.setWaitEnabled(true)
     // The first chord onsets at t=2 — engaging wait at 2.01 puts the engine
@@ -463,6 +551,7 @@ describe('PlayAlongEngine', () => {
     const { services, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(midi)
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     // Engage wait.
     const clock = services.clock as unknown as { emit: (t: number) => void }
@@ -486,6 +575,7 @@ describe('PlayAlongEngine', () => {
     ;(engine as unknown as { practice: { ['nowMs']: () => number } }).practice['nowMs'] = () =>
       nowMs
     engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     const clock = services.clock as unknown as { emit: (t: number) => void }
     clock.emit(2.01) // engage at first chord (60+64+67)
@@ -507,6 +597,7 @@ describe('PlayAlongEngine', () => {
     const { services, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     const clock = services.clock as unknown as { emit: (t: number) => void }
     clock.emit(2.01) // engage
@@ -593,6 +684,7 @@ describe('PlayAlongEngine', () => {
     const { services, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     const clock = services.clock as unknown as { emit: (t: number) => void }
     clock.emit(2.01) // engage at first chord (60+64+67)
@@ -633,6 +725,7 @@ describe('PlayAlongEngine transport invariants', () => {
     const { services, clock, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     engine.play() // userWantsToPlay = true, clock.playing = true
 
@@ -661,6 +754,7 @@ describe('PlayAlongEngine transport invariants', () => {
     const { services, clock, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi()) // chords at t=2 and t=4
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     engine.play()
 
@@ -689,6 +783,7 @@ describe('PlayAlongEngine held-tick eligibility clearing', () => {
     const { services, clock, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi()) // chord at t=2, latestEnd=2.5, eligible until 2.55
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     engine.play()
     learnState.setState('status', 'playing')
@@ -720,6 +815,7 @@ describe('PlayAlongEngine held-tick eligibility clearing', () => {
     const { services, clock, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
 
     clock.emit(2.01)
@@ -741,6 +837,7 @@ describe('PlayAlongEngine held-tick eligibility clearing', () => {
     const { services, clock, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeSplitHandMidi()) // LH: pitch 48 at t=2, eligible until 2.55
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
 
     clock.emit(2.01)

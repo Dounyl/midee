@@ -9,8 +9,10 @@ vi.mock('tone', () => ({
 const { engineInstances } = vi.hoisted(() => ({
   engineInstances: [] as Array<{
     togglePlay: ReturnType<typeof vi.fn>
+    onNoteOn: ReturnType<typeof vi.fn>
     opts: { onSegmentComplete?: (target: 'song-end' | 'loop-end') => void }
     state: {
+      guidedMode: string
       perfect: number
       good: number
       errors: number
@@ -31,6 +33,7 @@ vi.mock('./engine', () => ({
       waitEnabled: true,
       speedPct: 100,
       hand: 'both',
+      guidedMode: 'demo',
       tempoRampEnabled: false,
       cleanPasses: 0,
       perfect: 0,
@@ -58,7 +61,12 @@ vi.mock('./engine', () => ({
     readonly seek = vi.fn()
     readonly setWaitEnabled = vi.fn()
     readonly setTempoRamp = vi.fn()
-    readonly setHand = vi.fn()
+    readonly setHand = vi.fn((hand: 'left' | 'right' | 'both') => {
+      this.state.hand = hand
+    })
+    readonly setGuidedMode = vi.fn((mode: 'demo' | 'practice') => {
+      this.state.guidedMode = mode
+    })
     readonly markLoopPoint = vi.fn()
     readonly clearLoop = vi.fn()
     readonly setSpeedPreset = vi.fn()
@@ -99,7 +107,10 @@ function makeContext(): ExerciseContext {
       metronome: null as never,
       renderer: {
         currentTheme: { nowLine: 0xfbd38d },
+        currentViewport: { config: { canvasWidth: 960 }, nowLineY: 180 },
         setPracticeHints: vi.fn(),
+        setParticleEffectsSuppressed: vi.fn(),
+        burstParticleAt: vi.fn(),
       } as never,
       input: null as never,
     },
@@ -109,6 +120,7 @@ function makeContext(): ExerciseContext {
       drawLoopBand: vi.fn(),
       pulseTargetZone: vi.fn(),
       celebrationSwell: vi.fn(),
+      practiceSuccessBurst: vi.fn(),
       update: vi.fn(),
     } as never,
     host: document.createElement('div'),
@@ -187,5 +199,87 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
     })
 
     exercise.stop()
+  })
+
+  it('fires enlarged success feedback only for accepted notes in practice mode', () => {
+    const ctx = makeContext()
+    ctx.learnState.setState('loadedMidi', {
+      name: 'practice.mid',
+      duration: 30,
+      bpm: 120,
+      timeSignature: [4, 4],
+      keySignature: null,
+      tracks: [
+        {
+          id: 'rh',
+          name: 'Right',
+          channel: 0,
+          instrument: 0,
+          isDrum: false,
+          color: 0xffffff,
+          colorIndex: 0,
+          notes: [{ pitch: 60, time: 2, duration: 1, velocity: 1 }],
+        },
+      ],
+    } as never)
+    ;(ctx.services.clock as { currentTime: number }).currentTime = 2.2
+    const exercise = playAlongDescriptor.factory(ctx)
+    exercise.start()
+
+    const engine = engineInstances[0]
+    expect(engine).toBeDefined()
+
+    engine!.state.guidedMode = 'practice'
+    engine!.onNoteOn.mockReturnValueOnce('accepted')
+
+    exercise.onNoteOn?.({ pitch: 59, velocity: 1, clockTime: 2.2, source: 'midi' })
+
+    expect(ctx.overlay.pulseTargetZone).not.toHaveBeenCalled()
+    expect(ctx.services.renderer.burstParticleAt).not.toHaveBeenCalled()
+    expect(ctx.overlay.practiceSuccessBurst).not.toHaveBeenCalled()
+
+    engine!.onNoteOn.mockReturnValueOnce('advanced')
+
+    exercise.onNoteOn?.({ pitch: 60, velocity: 1, clockTime: 2.2, source: 'midi' })
+
+    expect(ctx.log.hit).toHaveBeenCalledWith(60)
+    expect(ctx.overlay.pulseTargetZone).toHaveBeenCalled()
+    expect(ctx.services.renderer.burstParticleAt).toHaveBeenCalledWith(60, { force: true })
+    expect(ctx.overlay.practiceSuccessBurst).toHaveBeenCalled()
+
+    ;(ctx.overlay.pulseTargetZone as ReturnType<typeof vi.fn>).mockClear()
+    ;(ctx.overlay.practiceSuccessBurst as ReturnType<typeof vi.fn>).mockClear()
+    ;(ctx.services.renderer.burstParticleAt as ReturnType<typeof vi.fn>).mockClear()
+    ;(ctx.log.error as ReturnType<typeof vi.fn>).mockClear()
+
+    engine!.onNoteOn.mockReturnValueOnce('rejected')
+    exercise.onNoteOn?.({ pitch: 61, velocity: 1, clockTime: 0, source: 'midi' })
+
+    expect(ctx.log.error).toHaveBeenCalled()
+    expect(ctx.overlay.pulseTargetZone).not.toHaveBeenCalled()
+    expect(ctx.services.renderer.burstParticleAt).not.toHaveBeenCalled()
+    expect(ctx.overlay.practiceSuccessBurst).not.toHaveBeenCalled()
+
+    exercise.stop()
+  })
+
+  it('suppresses particles only while guided practice mode is active', () => {
+    const ctx = makeContext()
+    const exercise = playAlongDescriptor.factory(ctx)
+    exercise.start()
+
+    const engine = engineInstances[0]
+    expect(engine).toBeDefined()
+
+    expect(ctx.services.renderer.setParticleEffectsSuppressed).toHaveBeenCalledWith(false)
+
+    engine!.state.guidedMode = 'practice'
+    ;(exercise as unknown as { syncGuidedModePresentation: () => void }).syncGuidedModePresentation()
+
+    expect(ctx.services.renderer.setParticleEffectsSuppressed).toHaveBeenLastCalledWith(true)
+
+    exercise.stop()
+
+    expect(ctx.services.renderer.setParticleEffectsSuppressed).toHaveBeenLastCalledWith(false)
   })
 })

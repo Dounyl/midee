@@ -97,6 +97,10 @@ class PlayAlongExercise implements Exercise {
     this.renderLoopBand(this.engine.state.loopRegion)
     this.unsubs.push(
       watch(
+        () => this.engine.state.guidedMode,
+        () => this.syncGuidedModePresentation(),
+      ),
+      watch(
         () => this.engine.state.loopRegion,
         (region) => this.renderLoopBand(region),
       ),
@@ -107,6 +111,7 @@ class PlayAlongExercise implements Exercise {
             this.engine.state.tempoRampEnabled,
             this.engine.state.speedPct,
             this.engine.state.hand,
+            this.engine.state.guidedMode,
           ] as const,
         () =>
           writePlayAlongPreferences({
@@ -114,6 +119,7 @@ class PlayAlongExercise implements Exercise {
             tempoRampEnabled: this.engine.state.tempoRampEnabled,
             speedPct: this.engine.state.speedPct,
             hand: this.engine.state.hand,
+            guidedMode: this.engine.state.guidedMode,
           }),
       ),
       this.engine.practice.status.subscribe((status) => {
@@ -124,6 +130,7 @@ class PlayAlongExercise implements Exercise {
         this.ctx.services.renderer.setPracticeHints(status.pending, status.accepted)
       }),
     )
+    this.syncGuidedModePresentation()
     if (this.replayState?.autoplay !== false) {
       this.engine.play()
     }
@@ -137,6 +144,7 @@ class PlayAlongExercise implements Exercise {
     for (const off of this.unsubs) off()
     this.unsubs = []
     this.ctx.services.renderer.setPracticeHints(null, null)
+    this.ctx.services.renderer.setParticleEffectsSuppressed(false)
     this.engine.detach()
     this.completionRequested = false
     if (this.prevLookAhead !== null) {
@@ -157,11 +165,11 @@ class PlayAlongExercise implements Exercise {
     const kind = this.engine.onNoteOn(evt)
     if (kind === 'advanced') {
       this.ctx.log.hit(evt.pitch)
+      if (this.shouldRenderPracticeFeedback(evt.pitch)) this.emitPracticeSuccessFeedback(evt.pitch)
+    } else if (kind === 'accepted') {
+      if (this.shouldRenderPracticeFeedback(evt.pitch)) this.emitPracticeSuccessFeedback(evt.pitch)
     } else if (kind === 'rejected') {
       this.ctx.log.error()
-    }
-    if (this.engine.practice.isWaiting === false) {
-      this.ctx.overlay.pulseTargetZone(0xfbd38d)
     }
   }
 
@@ -254,7 +262,40 @@ class PlayAlongExercise implements Exercise {
     this.engine.setWaitEnabled(this.initialPrefs.waitEnabled)
     this.engine.setTempoRamp(this.initialPrefs.tempoRampEnabled)
     this.engine.setHand(this.initialPrefs.hand)
+    this.engine.setGuidedMode(this.initialPrefs.guidedMode)
     this.engine.setSpeedPreset(this.initialPrefs.speedPct)
+  }
+
+  private emitPracticeSuccessFeedback(pitch: number): void {
+    if (this.engine.state.guidedMode !== 'practice') return
+    const viewport = this.ctx.services.renderer.currentViewport
+    const color = 0xfbd38d
+    this.ctx.overlay.pulseTargetZone(color)
+    this.ctx.services.renderer.burstParticleAt(pitch, { force: true })
+    this.ctx.overlay.practiceSuccessBurst(viewport.config.canvasWidth / 2, viewport.nowLineY, color)
+  }
+
+  private shouldRenderPracticeFeedback(pitch: number): boolean {
+    if (this.engine.state.guidedMode !== 'practice') return false
+    const midi = this.ctx.learnState.state.loadedMidi
+    if (!midi) return false
+    const currentTime = this.ctx.services.clock.currentTime
+    const practiceTrackIds = resolvePracticeTrackIdsForFeedback(midi, this.engine.state.hand)
+    for (const track of midi.tracks) {
+      if (track.isDrum) continue
+      if (practiceTrackIds !== null && !practiceTrackIds.has(track.id)) continue
+      for (const note of track.notes) {
+        if (note.pitch !== pitch) continue
+        if (note.time <= currentTime && currentTime <= note.time + note.duration) return true
+      }
+    }
+    return false
+  }
+
+  private syncGuidedModePresentation(): void {
+    this.ctx.services.renderer.setParticleEffectsSuppressed(
+      this.engine.state.guidedMode === 'practice',
+    )
   }
 
   private restoreReplayState(): void {
@@ -282,4 +323,21 @@ class PlayAlongExercise implements Exercise {
     this.completionLoopRegion = target === 'loop-end' ? this.engine.state.loopRegion : null
     queueMicrotask(() => this.ctx.onClose('completed'))
   }
+}
+
+function resolvePracticeTrackIdsForFeedback(
+  midi: MidiFile,
+  hand: 'left' | 'right' | 'both',
+): ReadonlySet<string> | null {
+  if (hand === 'both') return null
+  const ids = midi.tracks
+    .filter((track) => {
+      if (track.isDrum || track.notes.length === 0) return false
+      let sum = 0
+      for (const note of track.notes) sum += note.pitch
+      const avg = sum / track.notes.length
+      return hand === 'left' ? avg < 60 : avg >= 60
+    })
+    .map((track) => track.id)
+  return new Set(ids)
 }

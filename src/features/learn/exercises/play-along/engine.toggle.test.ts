@@ -49,6 +49,7 @@ function makeSynth() {
   return {
     setSpeed: () => {},
     seek: () => {},
+    setTrackEnabled: () => {},
   }
 }
 
@@ -108,6 +109,7 @@ describe('PlayAlongEngine wait toggle', () => {
     const { services, clock, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
     engine.setWaitEnabled(true)
     engine.play()
 

@@ -16,6 +16,7 @@ const TARGET_PULSE_DURATION_MS = 180
 const LOOP_BAND_ALPHA = 0.15
 const LOOP_BAND_EDGE_FADE_PX = 12
 const CELEBRATION_DURATION_MS = 400
+const PRACTICE_BURST_DURATION_MS = 520
 
 interface TargetPulse {
   color: number
@@ -27,6 +28,10 @@ interface Celebration {
   y: number
   color: number
   startMs: number
+  radiusStart: number
+  radiusGrow: number
+  alpha: number
+  durationMs: number
 }
 
 export interface LoopBandState {
@@ -89,7 +94,53 @@ export class LearnOverlay implements RenderLayer {
   // Soft radial swell used on clean-loop-pass and piece-completion moments.
   // Keep these rare — the design principle is "breath, not fanfare".
   celebrationSwell(x: number, y: number, color: number, now: number = performance.now()): void {
-    this.celebrations.push({ x, y, color, startMs: now })
+    this.pushCelebration({
+      x,
+      y,
+      color,
+      startMs: now,
+      radiusStart: 36,
+      radiusGrow: 60,
+      alpha: 0.18,
+      durationMs: CELEBRATION_DURATION_MS,
+    })
+  }
+
+  practiceSuccessBurst(x: number, y: number, color: number, now: number = performance.now()): void {
+    this.pushCelebration({
+      x,
+      y,
+      color,
+      startMs: now,
+      radiusStart: 26,
+      radiusGrow: 92,
+      alpha: 0.26,
+      durationMs: PRACTICE_BURST_DURATION_MS,
+    })
+    this.pushCelebration({
+      x: x - 28,
+      y: y + 10,
+      color,
+      startMs: now + 24,
+      radiusStart: 18,
+      radiusGrow: 72,
+      alpha: 0.16,
+      durationMs: PRACTICE_BURST_DURATION_MS - 40,
+    })
+    this.pushCelebration({
+      x: x + 28,
+      y: y - 10,
+      color,
+      startMs: now + 40,
+      radiusStart: 18,
+      radiusGrow: 72,
+      alpha: 0.16,
+      durationMs: PRACTICE_BURST_DURATION_MS - 60,
+    })
+  }
+
+  private pushCelebration(next: Celebration): void {
+    this.celebrations.push(next)
     // Cap so a misbehaving caller can't grow the list unbounded. Older
     // celebrations fade out first anyway.
     if (this.celebrations.length > 6) this.celebrations.shift()
@@ -179,11 +230,15 @@ export class LearnOverlay implements RenderLayer {
     void ctx // viewport not needed — celebrations use absolute coords
     for (const swell of this.celebrations) {
       const age = now - swell.startMs
-      if (age >= CELEBRATION_DURATION_MS) continue
-      const k = 1 - age / CELEBRATION_DURATION_MS
-      const radius = 36 + (1 - k) * 60
+      if (age < 0) {
+        next.push(swell)
+        continue
+      }
+      if (age >= swell.durationMs) continue
+      const k = 1 - age / swell.durationMs
+      const radius = swell.radiusStart + (1 - k) * swell.radiusGrow
       g.circle(swell.x, swell.y, radius)
-      g.fill({ color: swell.color, alpha: 0.18 * k })
+      g.fill({ color: swell.color, alpha: swell.alpha * k })
       next.push(swell)
     }
     this.celebrations = next

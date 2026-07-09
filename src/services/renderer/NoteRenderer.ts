@@ -81,6 +81,8 @@ export class NoteRenderer {
     viewport: Viewport,
     visibleTrackIds: Set<string>,
     practiceFocusTrackIds: ReadonlySet<string> | null,
+    practiceAcceptedPitches: ReadonlySet<number> | null,
+    liveHeldPitches: ReadonlySet<number> | null,
   ): void {
     const { noteRadius } = this.theme
     const nowLineY = viewport.nowLineY
@@ -105,8 +107,6 @@ export class NoteRenderer {
       if (!visibleTrackIds.has(track.id)) continue
 
       const noteColor = getTrackColor(track, this.theme)
-      const practiceInactive =
-        practiceFocusTrackIds !== null && !practiceFocusTrackIds.has(track.id)
       const colorR = (noteColor >> 16) & 0xff
       const colorG = (noteColor >> 8) & 0xff
       const colorB = noteColor & 0xff
@@ -125,6 +125,15 @@ export class NoteRenderer {
         const y = noteTop
 
         // Velocity 鈫?alpha (0.5 minimum so faint notes are still visible)
+        const noteActive = note.time <= currentTime && note.time + note.duration >= currentTime
+        const practiceActivated =
+          noteActive &&
+          ((practiceAcceptedPitches?.has(note.pitch) ?? false) ||
+            (liveHeldPitches?.has(note.pitch) ?? false))
+        const practiceInactive =
+          practiceFocusTrackIds !== null &&
+          practiceFocusTrackIds.has(track.id) &&
+          !practiceActivated
         const alpha =
           (0.5 + note.velocity * 0.5) * (practiceInactive ? PRACTICE_INACTIVE_ALPHA_SCALE : 1)
 
@@ -134,8 +143,7 @@ export class NoteRenderer {
 
         if (
           !practiceInactive &&
-          note.time <= currentTime &&
-          note.time + note.duration >= currentTime
+          noteActive
         ) {
           this.glowGraphics.roundRect(x, y, w, h, noteRadius)
           this.glowGraphics.fill({ color: noteColor, alpha: 0.9 })

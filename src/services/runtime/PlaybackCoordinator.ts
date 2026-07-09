@@ -37,7 +37,7 @@ interface PlaybackCoordinatorOptions {
     seek(value: number): void
   }
   renderer: {
-    burstParticleAt(pitch: number): void
+    burstParticleAt(pitch: number, options?: { force?: boolean }): void
   }
   liveNotes: LiveNoteStore
   loopNotes: LiveNoteStore
@@ -134,10 +134,9 @@ export class PlaybackCoordinator {
     const captures = routeCapturesLive(target)
 
     this.opts.performanceBus.routeNoteOff(evt)
+    this.opts.liveNotes.release(evt.pitch, evt.clockTime)
 
-    if (captures) {
-      this.opts.liveNotes.release(evt.pitch, evt.clockTime)
-    }
+    if (!captures) return
   }
 
   deferToCtxTime(ctxTime: number, fn: () => void): void {

@@ -31,9 +31,16 @@ const runnerState = {
 const sessionSummaryShow = vi.fn()
 const playAlongSummaryShow = vi.fn()
 const playAlongSummaryDismiss = vi.fn()
+const guidedModePromptShow = vi.fn()
+const guidedModePromptDismiss = vi.fn()
 let playAlongSummaryOptions: {
   onContinuePractice: () => void
   onCancel: () => void
+} | null = null
+let guidedModePromptOptions: {
+  reason: 'start' | 'replay'
+  fallbackMode: 'demo' | 'practice'
+  onConfirm: (mode: 'demo' | 'practice') => void
 } | null = null
 
 function resetRunnerState() {
@@ -45,7 +52,10 @@ function resetRunnerState() {
   sessionSummaryShow.mockReset()
   playAlongSummaryShow.mockReset()
   playAlongSummaryDismiss.mockReset()
+  guidedModePromptShow.mockReset()
+  guidedModePromptDismiss.mockReset()
   playAlongSummaryOptions = null
+  guidedModePromptOptions = null
 }
 
 vi.mock('@/features/learn/overlays/LearnOverlay', () => ({
@@ -89,6 +99,17 @@ vi.mock('@/features/learn/exercises/play-along/PlayAlongSummary', () => ({
   createPlayAlongSummary: (opts: { onContinuePractice: () => void; onCancel: () => void }) => {
     playAlongSummaryOptions = opts
     return { show: playAlongSummaryShow, dismiss: playAlongSummaryDismiss }
+  },
+}))
+
+vi.mock('@/features/learn/exercises/play-along/PlayAlongGuidedModePrompt', () => ({
+  createPlayAlongGuidedModePrompt: (opts: {
+    reason: 'start' | 'replay'
+    fallbackMode: 'demo' | 'practice'
+    onConfirm: (mode: 'demo' | 'practice') => void
+  }) => {
+    guidedModePromptOptions = opts
+    return { show: guidedModePromptShow, dismiss: guidedModePromptDismiss }
   },
 }))
 
@@ -168,6 +189,7 @@ function makeDeps(pendingMidi: MidiFile | null = null) {
       removeLayer: vi.fn(),
       setVisible: vi.fn(),
       setPracticeTrackFocus: vi.fn(),
+      setParticleEffectsSuppressed: vi.fn(),
     },
     input: null as never,
     metronome: null as never,
@@ -206,10 +228,27 @@ async function flushMicrotasks(times = 3) {
   for (let i = 0; i < times; i++) await Promise.resolve()
 }
 
+async function confirmLatestGuidedMode(mode: 'demo' | 'practice' = 'demo') {
+  guidedModePromptOptions?.onConfirm(mode)
+  await flushMicrotasks()
+}
+
 describe('PlayAlongPageRuntime pending MIDI flow', () => {
   beforeEach(() => {
     resetRunnerState()
     localStorage.clear()
+    localStorage.setItem(
+      'midee.learn.playAlong.state.v1',
+      JSON.stringify({
+        prefs: {
+          waitEnabled: true,
+          tempoRampEnabled: false,
+          speedPct: 100,
+          hand: 'both',
+          guidedMode: 'demo',
+        },
+      }),
+    )
   })
 
   it('does not consume MIDI before enter() is called', () => {
@@ -263,6 +302,10 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(makeDeps(makeMidi('autostart.mid')) as never)
     runtime.enter()
     await flushMicrotasks()
+    expect(guidedModePromptShow).toHaveBeenCalledOnce()
+    expect(runnerState.launchCalls).toHaveLength(0)
+    guidedModePromptOptions?.onConfirm('demo')
+    await flushMicrotasks()
     expect(runnerState.launchCalls).toHaveLength(1)
     expect(runnerState.launchCalls[0]?.id).toBe('play-along')
   })
@@ -272,6 +315,9 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(deps as never)
     runtime.enter()
     await flushMicrotasks()
+    expect(guidedModePromptShow).toHaveBeenCalledOnce()
+    await confirmLatestGuidedMode('demo')
+    guidedModePromptShow.mockClear()
     const synthLoadCallsBeforeStart = deps.services.synth.load.mock.calls.length
     const launchCallsBeforeStart = runnerState.launchCalls.length
     const resetTransportCallsBeforeStart = deps.services.synth.resetTransport.mock.calls.length
@@ -284,6 +330,9 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
 
     await runtime.startPlayAlong()
     await flushMicrotasks()
+    expect(guidedModePromptShow).toHaveBeenCalledOnce()
+    expect(runnerState.launchCalls).toHaveLength(launchCallsBeforeStart)
+    await confirmLatestGuidedMode('demo')
 
     expect(deps.services.synth.resetTransport.mock.calls.length).toBe(
       resetTransportCallsBeforeStart + 1,
@@ -302,6 +351,8 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(deps as never)
 
     runtime.enter()
+    await flushMicrotasks()
+    guidedModePromptOptions?.onConfirm('demo')
     await flushMicrotasks()
 
     expect(deps.services.clock.prime).toHaveBeenCalledOnce()
@@ -324,6 +375,10 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     expect(runnerState.launchCalls).toHaveLength(0)
 
     deferred.resolve()
+    await flushMicrotasks()
+    expect(guidedModePromptShow).toHaveBeenCalledOnce()
+    expect(runnerState.launchCalls).toHaveLength(0)
+    guidedModePromptOptions?.onConfirm('demo')
     await flushMicrotasks()
 
     expect(runtime.learnState.state.loadedMidi?.name).toBe('delayed-load.mid')
@@ -352,6 +407,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(makeDeps(makeMidi('active.mid')) as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
 
     runtime.exit()
 
@@ -363,6 +419,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(deps as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
 
     runtime.returnToList()
 
@@ -385,6 +442,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(deps as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
 
     ;(
       runtime as unknown as { closeActiveExercise(reason: 'completed' | 'abandoned'): void }
@@ -419,6 +477,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(makeDeps(makeMidi('song-end.mid')) as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
 
     ;(
       runtime as unknown as { closeActiveExercise(reason: 'completed' | 'abandoned'): void }
@@ -451,6 +510,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(makeDeps(makeMidi('song-end-empty.mid')) as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
 
     ;(
       runtime as unknown as { closeActiveExercise(reason: 'completed' | 'abandoned'): void }
@@ -488,6 +548,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(deps as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
     const clearMidiCallsBeforeClose = deps.services.renderer.clearMidi.mock.calls.length
     const setVisibleCallsBeforeClose = deps.services.renderer.setVisible.mock.calls.length
     const setLearnFileNameCallsBeforeClose = deps.setLearnFileName.mock.calls.length
@@ -532,6 +593,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(deps as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
     const clearMidiCallsBeforeClose = deps.services.renderer.clearMidi.mock.calls.length
 
     ;(
@@ -573,6 +635,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     const runtime = new PlayAlongPageRuntime(deps as never)
     runtime.enter()
     await flushMicrotasks()
+    await confirmLatestGuidedMode('demo')
     const clearMidiCallsBeforeClose = deps.services.renderer.clearMidi.mock.calls.length
     const setVisibleCallsBeforeClose = deps.services.renderer.setVisible.mock.calls.length
     const setLearnFileNameCallsBeforeClose = deps.setLearnFileName.mock.calls.length
@@ -584,6 +647,10 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     ).closeActiveExercise('completed')
 
     playAlongSummaryOptions?.onContinuePractice()
+    await flushMicrotasks()
+    expect(guidedModePromptOptions?.reason).toBe('replay')
+    expect(runnerState.launchCalls).toHaveLength(launchCallsBeforeContinue)
+    guidedModePromptOptions?.onConfirm('demo')
     await flushMicrotasks()
 
     expect(playAlongSummaryDismiss).toHaveBeenCalledOnce()
@@ -606,5 +673,38 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     })
     expect(runtime.learnState.state.loadedMidi?.name).toBe('continue.mid')
     expect(runtime.view.value).toBe('exercise')
+  })
+
+  it('uses the previously persisted mode as the default timed choice', async () => {
+    localStorage.setItem(
+      'midee.learn.playAlong.state.v1',
+      JSON.stringify({
+        prefs: {
+          waitEnabled: true,
+          tempoRampEnabled: false,
+          speedPct: 100,
+          hand: 'both',
+          guidedMode: 'practice',
+        },
+      }),
+    )
+    const runtime = new PlayAlongPageRuntime(makeDeps(makeMidi('saved-mode.mid')) as never)
+
+    runtime.enter()
+    await flushMicrotasks()
+
+    expect(guidedModePromptOptions?.fallbackMode).toBe('practice')
+  })
+
+  it('persists the confirmed guided mode before launching', async () => {
+    const runtime = new PlayAlongPageRuntime(makeDeps(makeMidi('persist-mode.mid')) as never)
+
+    runtime.enter()
+    await flushMicrotasks()
+    guidedModePromptOptions?.onConfirm('practice')
+    await flushMicrotasks()
+
+    const stored = JSON.parse(localStorage.getItem('midee.learn.playAlong.state.v1') ?? '{}')
+    expect(stored.prefs?.guidedMode).toBe('practice')
   })
 })

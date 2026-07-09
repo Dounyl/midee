@@ -8,8 +8,13 @@ import {
 } from '@/features/learn/core/LearnState'
 import { createLearnProgressStore, type LearnProgressStore } from '@/features/learn/core/progress'
 import { playAlongDescriptor } from '@/features/learn/exercises/play-along'
+import { createPlayAlongGuidedModePrompt } from '@/features/learn/exercises/play-along/PlayAlongGuidedModePrompt'
 import { createPlayAlongSummary } from '@/features/learn/exercises/play-along/PlayAlongSummary'
-import { stagePlayAlongReplayState } from '@/features/learn/exercises/play-along/state'
+import {
+  readPlayAlongPreferences,
+  stagePlayAlongReplayState,
+  writePlayAlongPreferences,
+} from '@/features/learn/exercises/play-along/state'
 import { findExercise } from '@/features/learn/hub/registry'
 import { LearnOverlay } from '@/features/learn/overlays/LearnOverlay'
 import learnHostStyles from '@/features/learn/ui/LearnHost.module.css'
@@ -45,6 +50,9 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
   private exerciseHost: HTMLElement | null = null
   private summaryHost: HTMLElement | null = null
   private summaryAutoHide: ReturnType<typeof setTimeout> | null = null
+  private guidedModePrompt:
+    | ReturnType<typeof createPlayAlongGuidedModePrompt>
+    | null = null
   private unsubs: Array<() => void> = []
   private firstPlayLogged = false
   private readonly session: PlayAlongMidiSession
@@ -59,9 +67,11 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
       onMidiReady: async () => {
         if (this.runner?.isActive) this.runner.close('abandoned')
         this.hideSummaryHost()
-        this.deps.services.synth.resetTransport()
-        this.primeInteractiveAudio()
-        await this.launchExercise(playAlongDescriptor)
+        this.openGuidedModePrompt('start', async () => {
+          this.deps.services.synth.resetTransport()
+          this.primeInteractiveAudio()
+          await this.launchExercise(playAlongDescriptor)
+        })
       },
     })
   }
@@ -98,9 +108,11 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
   async startPlayAlong(): Promise<void> {
     if (!this.learnState.state.loadedMidi || this.runner?.isActive) return
     this.hideSummaryHost()
-    this.deps.services.synth.resetTransport()
-    this.primeInteractiveAudio()
-    await this.launchExercise(playAlongDescriptor)
+    this.openGuidedModePrompt('start', async () => {
+      this.deps.services.synth.resetTransport()
+      this.primeInteractiveAudio()
+      await this.launchExercise(playAlongDescriptor)
+    })
   }
 
   returnToList(): void {
@@ -125,6 +137,8 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
     this.unsubs = []
     if (this.summaryAutoHide) clearTimeout(this.summaryAutoHide)
     this.summaryAutoHide = null
+    this.guidedModePrompt?.dismiss()
+    this.guidedModePrompt = null
     this.unmountHostElements()
     if (this.overlay) {
       this.deps.services.renderer.removeLayer(this.overlay)
@@ -208,7 +222,9 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
         this.deps.services.synth.seek(0)
         this.learnState.setState('currentTime', 0)
       }
-      void this.launchExercise(playAlongDescriptor)
+      this.openGuidedModePrompt('replay', async () => {
+        await this.launchExercise(playAlongDescriptor)
+      })
     }
 
     if (reason === 'completed' && result && lastDescriptor && this.summaryHost) {
@@ -356,5 +372,34 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
 
   private hideSummaryHost(): void {
     this.summaryHost?.classList.add(learnHostStyles.learnHostHidden!)
+  }
+
+  private openGuidedModePrompt(
+    reason: 'start' | 'replay',
+    onConfirm: () => Promise<void> | void,
+  ): void {
+    if (!this.summaryHost) {
+      void onConfirm()
+      return
+    }
+    this.summaryHost.classList.remove(learnHostStyles.learnHostHidden!)
+    this.guidedModePrompt?.dismiss()
+    const prefs = readPlayAlongPreferences()
+    const prompt = createPlayAlongGuidedModePrompt({
+      reason,
+      fallbackMode: prefs.guidedMode,
+      onConfirm: async (mode) => {
+        writePlayAlongPreferences({
+          ...prefs,
+          guidedMode: mode,
+        })
+        prompt.dismiss()
+        this.guidedModePrompt = null
+        this.hideSummaryHost()
+        await onConfirm()
+      },
+    })
+    this.guidedModePrompt = prompt
+    prompt.show(this.summaryHost)
   }
 }

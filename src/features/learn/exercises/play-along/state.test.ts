@@ -17,6 +17,7 @@ describe('play-along persisted state', () => {
       tempoRampEnabled: false,
       speedPct: 100,
       hand: 'both',
+      guidedMode: 'demo',
     })
   })
 
@@ -26,6 +27,7 @@ describe('play-along persisted state', () => {
       tempoRampEnabled: true,
       speedPct: 80,
       hand: 'left',
+      guidedMode: 'practice',
     })
 
     expect(readPlayAlongPreferences()).toEqual({
@@ -33,6 +35,29 @@ describe('play-along persisted state', () => {
       tempoRampEnabled: true,
       speedPct: 80,
       hand: 'left',
+      guidedMode: 'practice',
+    })
+  })
+
+  it('falls back to demo mode when old persisted state has no guided mode', () => {
+    localStorage.setItem(
+      'midee.learn.playAlong.state.v1',
+      JSON.stringify({
+        prefs: {
+          waitEnabled: false,
+          tempoRampEnabled: true,
+          speedPct: 60,
+          hand: 'right',
+        },
+      }),
+    )
+
+    expect(readPlayAlongPreferences()).toEqual({
+      waitEnabled: false,
+      tempoRampEnabled: true,
+      speedPct: 60,
+      hand: 'right',
+      guidedMode: 'demo',
     })
   })
 

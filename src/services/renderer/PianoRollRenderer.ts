@@ -145,6 +145,7 @@ export class PianoRollRenderer {
   private practiceHintPending: ReadonlySet<number> | null = null
   private practiceHintAccepted: ReadonlySet<number> | null = null
   private pitchLabelsVisible = true
+  private particleEffectsSuppressed = false
 
   // External RenderLayers (Learn-mode overlays, future sheet-music cursor,
   // etc.) kept sorted by `zIndex` ascending so a single forward iteration
@@ -391,6 +392,12 @@ export class PianoRollRenderer {
     this.particles.setStyle(style)
   }
 
+  setParticleEffectsSuppressed(suppressed: boolean): void {
+    if (this.particleEffectsSuppressed === suppressed) return
+    this.particleEffectsSuppressed = suppressed
+    if (suppressed) this.particles.clear()
+  }
+
   setPitchLabelsVisible(visible: boolean): void {
     if (this.pitchLabelsVisible === visible) return
     this.pitchLabelsVisible = visible
@@ -457,6 +464,8 @@ export class PianoRollRenderer {
 
   private renderFrame(currentTime: number, dt: number, emitParticles: boolean): void {
     this.lastRenderTime = currentTime
+    const allowParticles = emitParticles && !this.particleEffectsSuppressed
+    const liveHeldPitches = this.liveNoteStore?.heldNotes ?? null
     const curr = this.currActive
     const activeColors = this.activeKeyColors
     curr.clear()
@@ -490,7 +499,7 @@ export class PianoRollRenderer {
         const track = tracks[ti]!
         if (!this.visibleTrackIds.has(track.id)) continue
         const practiceInactive =
-          this.practiceFocusTrackIds !== null && !this.practiceFocusTrackIds.has(track.id)
+          this.practiceFocusTrackIds !== null && this.practiceFocusTrackIds.has(track.id)
         // Always compute the track color 鈥?we now use it for the keyboard
         // overlay too, not just particle bursts.
         const trackColor = getTrackColor(track, this.theme)
@@ -502,12 +511,25 @@ export class PianoRollRenderer {
 
           const key = keyBase + note.pitch
           const awaitingPracticePress = this.practiceHintPending?.has(note.pitch) ?? false
-          if (!practiceInactive && !awaitingPracticePress) {
+          const noteActive = note.time <= currentTime && note.time + note.duration >= currentTime
+          const practiceActivated =
+            noteActive &&
+            ((this.practiceHintAccepted?.has(note.pitch) ?? false) ||
+              (liveHeldPitches?.has(note.pitch) ?? false))
+          if ((!practiceInactive || practiceActivated) && !awaitingPracticePress) {
             curr.add(key)
             if (!beforeFirstPlay) activeColors.set(note.pitch, trackColor)
           }
 
-          if (!emitParticles || practiceInactive || awaitingPracticePress) continue
+          const allowPracticeParticles =
+            emitParticles && this.particleEffectsSuppressed && practiceActivated
+          if (
+            (!allowParticles && !allowPracticeParticles) ||
+            (practiceInactive && !practiceActivated) ||
+            awaitingPracticePress
+          ) {
+            continue
+          }
 
           const w = this.viewport.pitchWidth(note.pitch)
           const cx = this.viewport.pitchToX(note.pitch) + w / 2
@@ -546,6 +568,8 @@ export class PianoRollRenderer {
         this.viewport,
         this.visibleTrackIds,
         this.practiceFocusTrackIds,
+        this.practiceHintAccepted,
+        liveHeldPitches,
       )
     } else {
       this.noteRenderer.clear()
@@ -569,7 +593,7 @@ export class PianoRollRenderer {
 
       for (const [pitch] of held) {
         activeColors.set(pitch, liveColor)
-        if (!emitParticles) continue
+        if (!allowParticles) continue
 
         const nextAt = this.liveEmitNext.get(pitch)
         if (nextAt === undefined) {
@@ -663,7 +687,8 @@ export class PianoRollRenderer {
     for (const layer of this.externalLayers) layer.rebuild?.(ctx)
   }
 
-  burstParticleAt(pitch: number): void {
+  burstParticleAt(pitch: number, options?: { force?: boolean }): void {
+    if (this.particleEffectsSuppressed && !options?.force) return
     const w = this.viewport.pitchWidth(pitch)
     const cx = this.viewport.pitchToX(pitch) + w / 2
     const color = this.theme.trackColors[0] ?? this.theme.nowLine

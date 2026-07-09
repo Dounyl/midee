@@ -66,6 +66,7 @@ export function PlayAlongHudView(props: PlayAlongHudOptions) {
 
   const isWaitOn = () => engine.state.waitEnabled
   const isRampOn = () => engine.state.tempoRampEnabled
+  const isDemoMode = () => engine.state.guidedMode === 'demo'
 
   const loopBandStyle = createMemo<Record<string, string>>(() => {
     const dur = engine.state.duration
@@ -156,6 +157,31 @@ export function PlayAlongHudView(props: PlayAlongHudOptions) {
             </div>
             <span class="pa-hud__time pa-hud__time--muted">{fmtTime(engine.state.duration)}</span>
           </div>
+          <fieldset class="pa-hud__segmented pa-hud__segmented--mode" aria-label={t('learn.pa.modeAria')}>
+            <span class="pa-hud__seg-label">{t('learn.pa.modeLabel')}</span>
+            <div class="pa-hud__seg-track pa-hud__seg-track--mode">
+              <button
+                class="pa-hud__seg"
+                classList={{ 'is-active': isDemoMode() }}
+                type="button"
+                aria-label={t('learn.pa.modeDemoAria')}
+                data-tip={t('learn.pa.modeDemoTip')}
+                onClick={() => engine.setGuidedMode('demo')}
+              >
+                {t('learn.pa.modeDemoLabel')}
+              </button>
+              <button
+                class="pa-hud__seg"
+                classList={{ 'is-active': !isDemoMode() }}
+                type="button"
+                aria-label={t('learn.pa.modePracticeAria')}
+                data-tip={t('learn.pa.modePracticeTip')}
+                onClick={() => engine.setGuidedMode('practice')}
+              >
+                {t('learn.pa.modePracticeLabel')}
+              </button>
+            </div>
+          </fieldset>
         </div>
 
         <div class="pa-hud__options">

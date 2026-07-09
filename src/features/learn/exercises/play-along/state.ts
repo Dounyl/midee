@@ -1,12 +1,14 @@
 import type { LoopRegion } from '@/features/learn/engines/LoopRegion'
 
 export type PlayAlongHandFilter = 'left' | 'right' | 'both'
+export type PlayAlongGuidedMode = 'demo' | 'practice'
 
 export interface PlayAlongPreferences {
   waitEnabled: boolean
   tempoRampEnabled: boolean
   speedPct: number
   hand: PlayAlongHandFilter
+  guidedMode: PlayAlongGuidedMode
 }
 
 export interface PlayAlongReplayState {
@@ -27,6 +29,7 @@ export const DEFAULT_PLAY_ALONG_PREFERENCES: PlayAlongPreferences = {
   tempoRampEnabled: false,
   speedPct: 100,
   hand: 'both',
+  guidedMode: 'demo',
 }
 
 export function readPlayAlongPreferences(): PlayAlongPreferences {
@@ -37,6 +40,7 @@ export function readPlayAlongPreferences(): PlayAlongPreferences {
     tempoRampEnabled: typeof prefs?.tempoRampEnabled === 'boolean' ? prefs.tempoRampEnabled : false,
     speedPct: normalizeSpeedPct(prefs?.speedPct),
     hand: normalizeHand(prefs?.hand),
+    guidedMode: normalizeGuidedMode(prefs?.guidedMode),
   }
 }
 
@@ -48,6 +52,7 @@ export function writePlayAlongPreferences(prefs: PlayAlongPreferences): void {
       tempoRampEnabled: prefs.tempoRampEnabled,
       speedPct: normalizeSpeedPct(prefs.speedPct),
       hand: normalizeHand(prefs.hand),
+      guidedMode: normalizeGuidedMode(prefs.guidedMode),
     },
   })
 }
@@ -95,6 +100,10 @@ function normalizeSpeedPct(value: unknown): number {
 
 function normalizeHand(value: unknown): PlayAlongHandFilter {
   return value === 'left' || value === 'right' || value === 'both' ? value : 'both'
+}
+
+function normalizeGuidedMode(value: unknown): PlayAlongGuidedMode {
+  return value === 'practice' || value === 'demo' ? value : 'demo'
 }
 
 function normalizeReplay(replay: unknown): PlayAlongReplayState | null {
