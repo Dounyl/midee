@@ -18,6 +18,7 @@ import {
   readPlayAlongPreferences,
   writePlayAlongPreferences,
 } from './state'
+import { wireScoreDragSeek } from './wireScoreDragSeek'
 
 const PLAY_ALONG_LOOK_AHEAD_SEC = 0.005
 
@@ -33,6 +34,7 @@ class PlayAlongExercise implements Exercise {
   private readonly hudOpts: PlayAlongHudOptions
   private harness: ReturnType<typeof createExerciseHarness>
   private prevLookAhead: number | null = null
+  private detachScoreDrag: (() => void) | null = null
   private unsubs: Array<() => void> = []
   private completionRequested = false
   private completionTarget: 'song-end' | 'loop-end' | null = null
@@ -81,6 +83,17 @@ class PlayAlongExercise implements Exercise {
     this.engine.attach(midi)
     this.restorePreferences()
     this.restoreReplayState()
+    this.detachScoreDrag?.()
+    this.detachScoreDrag = wireScoreDragSeek({
+      canvas: this.ctx.services.renderer.canvas,
+      getPixelsPerSecond: () => this.ctx.services.renderer.currentViewport.config.pixelsPerSecond,
+      getRollHeight: () => this.ctx.services.renderer.currentViewport.rollHeight,
+      getNowLineY: () => this.ctx.services.renderer.currentViewport.nowLineY,
+      getCurrentTime: () => this.ctx.services.clock.currentTime,
+      canSeekFromScoreDrag: () =>
+        this.ctx.learnState.state.status === 'paused' && !this.engine.state.userWantsToPlay,
+      seek: (time) => this.engine.seek(time),
+    })
     this.renderLoopBand(this.engine.state.loopRegion)
     this.unsubs.push(
       watch(
@@ -119,6 +132,8 @@ class PlayAlongExercise implements Exercise {
 
   stop(): void {
     this.harness.detachKeys()
+    this.detachScoreDrag?.()
+    this.detachScoreDrag = null
     for (const off of this.unsubs) off()
     this.unsubs = []
     this.ctx.services.renderer.setPracticeHints(null, null)
