@@ -510,9 +510,10 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
   // Event handlers
   const handlePlayClick = () => {
     if (!isPlayRouteTarget(routeTarget())) return
-    const s = status()
+    const s = store.state.status
 
     if (s === 'playing') {
+      setStatus('paused')
       clock.pause()
       store.setState('status', 'paused')
       const dur = store.state.duration
@@ -521,6 +522,7 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
         position_pct: dur > 0 ? Math.round((clock.currentTime / dur) * 100) : 0,
       })
     } else if (s === 'paused' || s === 'ready') {
+      setStatus('playing')
       clock.play()
       store.setState('status', 'playing')
     }
