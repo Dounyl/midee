@@ -30,14 +30,14 @@ interface RouteEntryShell {
 interface RouteSyncShell {
   syncConsolePanel(): void
   currentRouteTarget(): RouteTarget | null
-  enterPlayRoute(options?: PlayRouteEnterOptions): void
+  enterPlayRoute(options?: PlayRouteEnterOptions): Promise<void>
 }
 
-export function applyPlayRouteEntry(
+export async function applyPlayRouteEntry(
   store: AppStore,
   shell: Omit<RouteEntryShell, 'resetInteractionState'>,
   options: PlayRouteEnterOptions = {},
-): void {
+): Promise<void> {
   const { skipAnalytics = false } = options
   const midi = store.state.loadedMidi
   const status = store.state.status
@@ -53,9 +53,11 @@ export function applyPlayRouteEntry(
   }
 
   store.enterPlay(false)
-  void shell.playbackAudio
-    .load(midi)
-    .catch((err) => console.error('[applyPlayRouteEntry] Failed to sync SynthEngine MIDI:', err))
+  try {
+    await shell.playbackAudio.load(midi)
+  } catch (err) {
+    console.error('[applyPlayRouteEntry] Failed to load audio:', err)
+  }
   shell.renderer.loadMidi(midi)
   shell.trackPanel.render(midi)
   shell.dropzone.hide()
@@ -81,5 +83,5 @@ export function applyLiveRouteEntry(store: AppStore, shell: RouteEntryShell): vo
 export function syncLoadedMidiForCurrentRoute(shell: RouteSyncShell): void {
   shell.syncConsolePanel()
   if (!isPlayRouteTarget(shell.currentRouteTarget())) return
-  shell.enterPlayRoute({ skipAnalytics: true })
+  void shell.enterPlayRoute({ skipAnalytics: true })
 }

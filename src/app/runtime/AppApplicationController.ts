@@ -17,7 +17,7 @@ import type {
   PlayRouteEnterOptions,
 } from '@/stores/app/AppCtx'
 import type { AppStore } from '@/stores/app/state'
-import { isLearnRouteTarget } from '@/stores/routing/routeTarget'
+import { isLearnRouteTarget, isPlayRouteTarget } from '@/stores/routing/routeTarget'
 import type { MidiFile } from '@/types/midi/types'
 
 interface AppApplicationControllerOptions {
@@ -48,8 +48,8 @@ export class AppApplicationController implements AppIntentDriver {
     this.opts.navigation.navigate(target, options)
   }
 
-  enterPlayRoute(options: PlayRouteEnterOptions = {}): void {
-    applyPlayRouteEntry(
+  enterPlayRoute(options: PlayRouteEnterOptions = {}): Promise<void> {
+    return applyPlayRouteEntry(
       this.routeEntryStore(),
       {
         renderer: this.opts.services.renderer,
@@ -154,6 +154,7 @@ export class AppApplicationController implements AppIntentDriver {
     this.opts.ui.closeConsole()
     this.opts.services.clock.pause()
     this.opts.services.clock.seek(0)
+    this.opts.services.synth.resetTransport()
     this.opts.services.renderer.clearMidi()
     this.opts.services.renderer.setLiveNotesVisible(false)
     this.opts.ui.closeTrackPanel()
@@ -169,6 +170,12 @@ export class AppApplicationController implements AppIntentDriver {
     this.opts.services.renderer.setVisible(true)
     this.opts.services.renderer.setLiveNotesVisible(true)
     this.opts.syncConsolePanel()
+    const store = this.routeEntryStore()
+    if (isPlayRouteTarget(this.opts.navigation.getCurrentTarget()) && store.state.loadedMidi) {
+      void this.opts.services.synth.load(store.state.loadedMidi).catch((err) => {
+        console.error('[exitLearnShell] Failed to restore audio:', err)
+      })
+    }
   }
 
   currentOpenTarget(explicit?: MidiOpenTarget): MidiOpenTarget {

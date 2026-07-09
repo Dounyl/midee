@@ -80,7 +80,7 @@ describe('route entry helpers', () => {
     expect(telemetryMocks.trackEvent).not.toHaveBeenCalled()
   })
 
-  it('applyPlayRouteEntry loads the play shell and only tracks analytics when requested', () => {
+  it('applyPlayRouteEntry loads the play shell and only tracks analytics when requested', async () => {
     const store = createAppStore()
     const shell = makeRouteEntryShell()
     const midi = fakeMidi('song.mid', 20)
@@ -88,7 +88,7 @@ describe('route entry helpers', () => {
     store.setState('currentTime', 7.5)
     store.setState('status', 'paused')
 
-    applyPlayRouteEntry(store, shell, { skipAnalytics: true })
+    await applyPlayRouteEntry(store, shell, { skipAnalytics: true })
 
     expect(store.state.status).toBe('ready')
     expect(store.state.currentTime).toBe(7.5)
@@ -100,20 +100,20 @@ describe('route entry helpers', () => {
     expect(telemetryMocks.track).not.toHaveBeenCalled()
     expect(telemetryMocks.trackEvent).not.toHaveBeenCalled()
 
-    applyPlayRouteEntry(store, shell)
+    await applyPlayRouteEntry(store, shell)
 
     expect(telemetryMocks.trackEvent).toHaveBeenCalledWith('play_mode_entered', { duration_s: 20 })
     expect(telemetryMocks.track).toHaveBeenCalledWith('file_mode_entered', { duration_s: 20 })
     expect(document.title).toBe('song.mid - midee')
   })
 
-  it('applyPlayRouteEntry re-syncs playback audio from the play session midi', () => {
+  it('applyPlayRouteEntry re-syncs playback audio from the play session midi', async () => {
     const store = createAppStore()
     const shell = makeRouteEntryShell()
     const midi = fakeMidi('play-session.mid', 18)
     store.completePlayLoad(midi)
 
-    applyPlayRouteEntry(store, shell, { skipAnalytics: true })
+    await applyPlayRouteEntry(store, shell, { skipAnalytics: true })
 
     expect(shell.playbackAudio.load).toHaveBeenCalledTimes(1)
     expect(shell.playbackAudio.load).toHaveBeenCalledWith(midi)

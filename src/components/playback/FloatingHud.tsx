@@ -110,6 +110,7 @@ export function FloatingHud(props: FloatingHudProps) {
   let dragOriginX = 0
   let dragOriginY = 0
   let dragRafId: number | null = null
+  let resizeRafId: number | null = null
   let cachedHudWidth = 0
   let cachedHudHeight = 0
   let topStripObserver: ResizeObserver | null = null
@@ -276,8 +277,12 @@ export function FloatingHud(props: FloatingHudProps) {
 
     if ('ResizeObserver' in window) {
       hudResizeObserver = new ResizeObserver(() => {
-        readHudMetrics()
-        commitOffset(offsetX, offsetY)
+        if (resizeRafId !== null) return
+        resizeRafId = requestAnimationFrame(() => {
+          resizeRafId = null
+          readHudMetrics()
+          commitOffset(offsetX, offsetY)
+        })
       })
       hudResizeObserver.observe(rootEl)
     }
@@ -295,6 +300,7 @@ export function FloatingHud(props: FloatingHudProps) {
 
   onCleanup(() => {
     clearTimer()
+    if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
     window.removeEventListener('resize', onResize)
     document.removeEventListener('pointermove', onPointerMove)
     document.removeEventListener('pointerup', onPointerUp)
