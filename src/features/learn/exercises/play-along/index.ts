@@ -166,8 +166,6 @@ class PlayAlongExercise implements Exercise {
     if (kind === 'advanced') {
       this.ctx.log.hit(evt.pitch)
       if (this.shouldRenderPracticeFeedback(evt.pitch)) this.emitPracticeSuccessFeedback(evt.pitch)
-    } else if (kind === 'accepted') {
-      if (this.shouldRenderPracticeFeedback(evt.pitch)) this.emitPracticeSuccessFeedback(evt.pitch)
     } else if (kind === 'rejected') {
       this.ctx.log.error()
     }

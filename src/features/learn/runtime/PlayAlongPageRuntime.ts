@@ -50,9 +50,7 @@ export class PlayAlongPageRuntime implements PlayAlongPageRuntimeHandle {
   private exerciseHost: HTMLElement | null = null
   private summaryHost: HTMLElement | null = null
   private summaryAutoHide: ReturnType<typeof setTimeout> | null = null
-  private guidedModePrompt:
-    | ReturnType<typeof createPlayAlongGuidedModePrompt>
-    | null = null
+  private guidedModePrompt: ReturnType<typeof createPlayAlongGuidedModePrompt> | null = null
   private unsubs: Array<() => void> = []
   private firstPlayLogged = false
   private readonly session: PlayAlongMidiSession

@@ -21,18 +21,17 @@ interface ViewProps {
 function PostSessionView(props: ViewProps) {
   return (
     <Portal mount={props.container}>
-      {/* biome-ignore-start lint/a11y/useKeyWithClickEvents: modal backdrop; Escape maps to 'discard' at document level */}
-      {/* biome-ignore-start lint/a11y/noStaticElementInteractions: modal backdrop; click dismisses */}
       <div
         id="post-session-modal"
         class={styles.postSessionModal}
         classList={{ [styles.open!]: props.isOpen() }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) props.onAction('discard')
-        }}
       >
-        {/* biome-ignore-end lint/a11y/useKeyWithClickEvents */}
-        {/* biome-ignore-end lint/a11y/noStaticElementInteractions */}
+        <button
+          type="button"
+          class={styles.postSessionBackdrop}
+          aria-label={t('postSession.discard.title')}
+          onClick={() => props.onAction('discard')}
+        />
         <div class={cssModuleClass(styles, 'post-session-card', 'modal-scroll')}>
           <header class={styles['export-header']!}>
             <div class={styles['export-card-icon']!} innerHTML={icons.waveform()} />

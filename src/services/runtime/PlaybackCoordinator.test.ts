@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
+import { LiveNoteStore } from '@/services/midi/LiveNoteStore'
 import { PlaybackCoordinator } from './PlaybackCoordinator'
 
 function makeCoordinator(route: { kind: 'play' | 'live' | 'exercise' }) {
-  const liveNotes = {
-    releaseAll: vi.fn(),
-    release: vi.fn(),
-    reset: vi.fn(),
-  }
+  const liveNotes = new LiveNoteStore()
+  const loopNotes = new LiveNoteStore()
+  const releaseAllSpy = vi.spyOn(liveNotes, 'releaseAll')
+  const releaseSpy = vi.spyOn(liveNotes, 'release')
+  const resetSpy = vi.spyOn(liveNotes, 'reset')
   const performanceBus = {
     forceReleaseAll: vi.fn(),
     routeNoteOn: vi.fn(),
@@ -37,9 +38,7 @@ function makeCoordinator(route: { kind: 'play' | 'live' | 'exercise' }) {
       burstParticleAt: vi.fn(),
     },
     liveNotes,
-    loopNotes: {
-      reset: vi.fn(),
-    },
+    loopNotes,
     liveLooper: {
       clear: vi.fn(),
       layerCount: { value: 0 },
@@ -60,9 +59,11 @@ function makeCoordinator(route: { kind: 'play' | 'live' | 'exercise' }) {
     closeTransientOverlays: vi.fn(),
   }
   return {
-    coordinator: new PlaybackCoordinator(opts),
+    coordinator: new PlaybackCoordinator(
+      opts as unknown as ConstructorParameters<typeof PlaybackCoordinator>[0],
+    ),
     opts,
-    liveNotes,
+    liveNotes: { store: liveNotes, releaseAllSpy, releaseSpy, resetSpy },
     performanceBus,
   }
 }
@@ -86,7 +87,7 @@ describe('PlaybackCoordinator', () => {
       clockTime: 4,
       source: 'keyboard',
     })
-    expect(liveNotes.release).toHaveBeenCalledWith(60, 4)
+    expect(liveNotes.releaseSpy).toHaveBeenCalledWith(60, 4)
   })
 
   it('emits particles only on capture routes while still releasing the key everywhere', () => {

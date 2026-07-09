@@ -1,8 +1,8 @@
 import { createSignal, onCleanup, onMount } from 'solid-js'
 import { createMountHandle } from '@/features/learn/ui/mountComponent'
 import { t } from '@/i18n'
-import type { PlayAlongGuidedMode } from './state'
 import styles from './PlayAlongGuidedModePrompt.module.css'
+import type { PlayAlongGuidedMode } from './state'
 
 export interface PlayAlongGuidedModePromptOptions {
   reason: 'start' | 'replay'
@@ -51,7 +51,12 @@ function PlayAlongGuidedModePromptView(props: ViewProps) {
 
   return (
     <div class={styles.prompt}>
-      <section class={styles.card} role="dialog" aria-modal="true" aria-labelledby="play-along-mode-title">
+      <section
+        class={styles.card}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="play-along-mode-title"
+      >
         <header class={styles.header}>
           <p class={styles.eyebrow}>{t('learn.pa.modeLabel')}</p>
           <h2 id="play-along-mode-title" class={styles.title}>

@@ -93,7 +93,7 @@ describe('NoteRenderer', () => {
     const viewport = makeViewport()
 
     renderer.setTracks([track])
-    renderer.draw([track], 10, viewport, new Set([track.id]), null)
+    renderer.draw([track], 10, viewport, new Set([track.id]), null, null, null)
 
     const labels = Reflect.get(renderer, 'labelPool') as Array<{ y: number }>
     expect(labels).toHaveLength(2)

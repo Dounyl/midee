@@ -78,7 +78,9 @@ describe('PlayAlongHudView', () => {
 
   it('switches guided modes from the transport row control', () => {
     const engine = createEngine()
-    render(() => <PlayAlongHudView engine={engine as never} onMarkLoop={vi.fn()} onClearLoop={vi.fn()} />)
+    render(() => (
+      <PlayAlongHudView engine={engine as never} onMarkLoop={vi.fn()} onClearLoop={vi.fn()} />
+    ))
 
     const buttons = Array.from(document.querySelectorAll('.pa-hud__seg-track--mode .pa-hud__seg'))
     expect(buttons).toHaveLength(2)

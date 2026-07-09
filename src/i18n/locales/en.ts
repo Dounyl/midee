@@ -441,7 +441,8 @@ export const en = {
   'learn.pa.prompt.startSubtitle': 'Pick a guided mode before play-along starts.',
   'learn.pa.prompt.replayTitle': 'Choose how to start the next loop',
   'learn.pa.prompt.replaySubtitle': 'Switch modes here before the loop begins again.',
-  'learn.pa.prompt.defaultCountdown': 'Defaulting to {mode} in {seconds}s based on your last choice.',
+  'learn.pa.prompt.defaultCountdown':
+    'Defaulting to {mode} in {seconds}s based on your last choice.',
   'learn.pa.prompt.startNow': 'Start now',
 
   // Streak row (Learn hub topbar).

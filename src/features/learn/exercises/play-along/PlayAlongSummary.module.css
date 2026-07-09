@@ -11,7 +11,19 @@
     z-index: 140;
   }
 
+  .playAlongSummaryBackdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    appearance: none;
+    cursor: pointer;
+  }
+
   .playAlongSummaryCard {
+    position: relative;
     width: min(560px, calc(100vw - 28px));
     display: flex;
     flex-direction: column;
@@ -25,6 +37,7 @@
       0 24px 64px rgba(0, 0, 0, 0.42),
       inset 0 1px 0 rgba(255, 255, 255, 0.04);
     animation: playAlongSummaryIn 0.22s var(--ease-out) both;
+    z-index: 1;
   }
 
   @keyframes playAlongSummaryIn {

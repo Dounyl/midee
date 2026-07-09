@@ -465,7 +465,7 @@ export class PianoRollRenderer {
   private renderFrame(currentTime: number, dt: number, emitParticles: boolean): void {
     this.lastRenderTime = currentTime
     const allowParticles = emitParticles && !this.particleEffectsSuppressed
-    const liveHeldPitches = this.liveNoteStore?.heldNotes ?? null
+    const liveHeldPitches = this.liveNoteStore ? new Set(this.liveNoteStore.heldNotes.keys()) : null
     const curr = this.currActive
     const activeColors = this.activeKeyColors
     curr.clear()
@@ -498,8 +498,7 @@ export class PianoRollRenderer {
       for (let ti = 0; ti < tracks.length; ti++) {
         const track = tracks[ti]!
         if (!this.visibleTrackIds.has(track.id)) continue
-        const practiceInactive =
-          this.practiceFocusTrackIds !== null && this.practiceFocusTrackIds.has(track.id)
+        const practiceInactive = this.practiceFocusTrackIds?.has(track.id) ?? false
         // Always compute the track color 鈥?we now use it for the keyboard
         // overlay too, not just particle bursts.
         const trackColor = getTrackColor(track, this.theme)

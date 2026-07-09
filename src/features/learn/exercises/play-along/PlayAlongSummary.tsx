@@ -34,22 +34,13 @@ function PlayAlongSummaryView(props: ViewProps) {
   }
 
   return (
-    <div
-      class={styles.playAlongSummary}
-      aria-label={t('learn.pa.summary.cancel')}
-      role="button"
-      tabIndex={0}
-      onClick={(event) => {
-        if (event.target !== event.currentTarget) return
-        cancelSummary()
-      }}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return
-        if (event.key !== 'Enter' && event.key !== ' ') return
-        event.preventDefault()
-        cancelSummary()
-      }}
-    >
+    <div class={styles.playAlongSummary}>
+      <button
+        type="button"
+        class={styles.playAlongSummaryBackdrop}
+        aria-label={t('learn.pa.summary.cancel')}
+        onClick={cancelSummary}
+      />
       <section
         class={styles.playAlongSummaryCard}
         role="dialog"

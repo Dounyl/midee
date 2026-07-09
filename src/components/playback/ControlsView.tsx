@@ -203,11 +203,7 @@ export function TopStripView(props: TopStripProps) {
           <span />
           <span />
         </span>
-        <span
-          id="ts-chord-slot"
-          class="ts-chord-slot"
-          ref={(el) => props.registerChordSlot(el)}
-        />
+        <span id="ts-chord-slot" class="ts-chord-slot" ref={(el) => props.registerChordSlot(el)} />
       </div>
 
       <div class="ts-end">

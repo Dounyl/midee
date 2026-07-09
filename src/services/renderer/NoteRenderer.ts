@@ -131,9 +131,7 @@ export class NoteRenderer {
           ((practiceAcceptedPitches?.has(note.pitch) ?? false) ||
             (liveHeldPitches?.has(note.pitch) ?? false))
         const practiceInactive =
-          practiceFocusTrackIds !== null &&
-          practiceFocusTrackIds.has(track.id) &&
-          !practiceActivated
+          (practiceFocusTrackIds?.has(track.id) ?? false) && !practiceActivated
         const alpha =
           (0.5 + note.velocity * 0.5) * (practiceInactive ? PRACTICE_INACTIVE_ALPHA_SCALE : 1)
 
@@ -141,10 +139,7 @@ export class NoteRenderer {
         g.fill({ color: noteColor, alpha })
         labelIndex = this.drawNoteLabel(labelIndex, note.pitch, x, y, w, h, noteColor, alpha)
 
-        if (
-          !practiceInactive &&
-          noteActive
-        ) {
+        if (!practiceInactive && noteActive) {
           this.glowGraphics.roundRect(x, y, w, h, noteRadius)
           this.glowGraphics.fill({ color: noteColor, alpha: 0.9 })
           sumR += colorR

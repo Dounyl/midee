@@ -201,7 +201,7 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
     exercise.stop()
   })
 
-  it('fires enlarged success feedback only for accepted notes in practice mode', () => {
+  it('fires enlarged success feedback only for advanced notes in practice mode', () => {
     const ctx = makeContext()
     ctx.learnState.setState('loadedMidi', {
       name: 'practice.mid',
@@ -230,7 +230,7 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
     expect(engine).toBeDefined()
 
     engine!.state.guidedMode = 'practice'
-    engine!.onNoteOn.mockReturnValueOnce('accepted')
+    engine!.onNoteOn.mockReturnValueOnce('none')
 
     exercise.onNoteOn?.({ pitch: 59, velocity: 1, clockTime: 2.2, source: 'midi' })
 
@@ -274,7 +274,9 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
     expect(ctx.services.renderer.setParticleEffectsSuppressed).toHaveBeenCalledWith(false)
 
     engine!.state.guidedMode = 'practice'
-    ;(exercise as unknown as { syncGuidedModePresentation: () => void }).syncGuidedModePresentation()
+    ;(
+      exercise as unknown as { syncGuidedModePresentation: () => void }
+    ).syncGuidedModePresentation()
 
     expect(ctx.services.renderer.setParticleEffectsSuppressed).toHaveBeenLastCalledWith(true)
 
