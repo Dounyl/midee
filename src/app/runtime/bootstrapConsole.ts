@@ -24,9 +24,14 @@ export interface RequestConsoleKeyboardModeChangeOptions {
 export function requestConsoleKeyboardModeChange(
   options: RequestConsoleKeyboardModeChangeOptions,
 ): void {
-  options.coordinator.requestModeChange(options.mode, options.activeMidi, {
-    onTranspose: options.onTranspose,
-  }, options.currentTranspose)
+  options.coordinator.requestModeChange(
+    options.mode,
+    options.activeMidi,
+    {
+      onTranspose: options.onTranspose,
+    },
+    options.currentTranspose,
+  )
 }
 
 export interface CreateConsolePanelOptions {

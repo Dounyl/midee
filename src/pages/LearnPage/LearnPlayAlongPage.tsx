@@ -34,6 +34,24 @@ export function LearnPlayAlongPage() {
 
   return (
     <LearnLayout backToHub>
+      <Show when={isExerciseView()}>
+        <div class={styles.learnPlayalongBackRow}>
+          <button
+            type="button"
+            class={styles.learnPlayalongBackButton}
+            aria-label={t('learn.pa.backToListAria')}
+            title={t('learn.pa.backToListTip')}
+            onClick={() => runtime.returnToList()}
+          >
+            <span
+              class={styles.learnPlayalongBackButtonIcon}
+              aria-hidden="true"
+              innerHTML={icons.skipBack(14)}
+            />
+            <span>{t('learn.pa.backToList')}</span>
+          </button>
+        </div>
+      </Show>
       <div
         class={`${learnLayoutStyles.learnRouteShell} ${learnLayoutStyles.learnRouteShellPlayalong}`}
       >

@@ -10,6 +10,17 @@ export interface WeakSpot {
   count: number
 }
 
+export interface PlayAlongExerciseSummary {
+  kind: 'play-along'
+  completionTarget: 'song-end' | 'loop-end'
+  perfect: number
+  good: number
+  errors: number
+  heldTicks: number
+  cleanPasses: number
+  loopRegion: { start: number; end: number } | null
+}
+
 // Payload committed to progress when an exercise ends. Every exercise
 // returns this shape from `Exercise.result()`; the runner passes it to
 // `LearnProgressStore.commit` before unmounting.
@@ -30,4 +41,6 @@ export interface ExerciseResult {
   // Drives the completions counter and the exercise_completed vs abandoned
   // analytics split.
   completed: boolean
+  // Optional exercise-specific payload for richer end-of-run UI.
+  summary?: PlayAlongExerciseSummary
 }

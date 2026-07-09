@@ -1,3 +1,53 @@
+.learn-playalong-back-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+  margin-left: calc(50% - 50vw + 20px);
+}
+
+.learn-playalong-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(11, 14, 24, 0.78);
+  color: var(--text);
+  font: 600 12px / 1 var(--font);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 10px 26px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 0.15s var(--ease-spring),
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.learn-playalong-back-button:hover {
+  border-color: var(--border-hi);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.learn-playalong-back-button:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.learn-playalong-back-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+  outline-offset: 3px;
+}
+
+.learn-playalong-back-button__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+}
+
 .learn-playalong-empty-state {
   display: flex;
   flex-direction: column;
@@ -170,6 +220,10 @@
 }
 
 @media (max-width: 720px) {
+  .learn-playalong-back-row {
+    margin-left: calc(50% - 50vw + 14px);
+  }
+
   .learn-playalong-card {
     grid-template-columns: 1fr;
   }

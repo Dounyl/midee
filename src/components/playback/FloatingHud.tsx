@@ -95,19 +95,26 @@ const HUD_TOP_GAP = 12
 
 export function FloatingHud(props: FloatingHudProps) {
   const init = loadOffset(props.storageKey)
-  const [offsetX, setOffsetX] = createSignal(init.x)
-  const [offsetY, setOffsetY] = createSignal(init.y)
   const [pinned, setPinned] = createSignal(loadPin(props.storageKey))
   const [dragging, setDragging] = createSignal(false)
   const [idle, setIdle] = createSignal(false)
 
   let rootEl!: HTMLDivElement
   let idleTimer: ReturnType<typeof setTimeout> | null = null
+  let offsetX = init.x
+  let offsetY = init.y
+  let pendingOffsetX = init.x
+  let pendingOffsetY = init.y
   let dragStartX = 0
   let dragStartY = 0
   let dragOriginX = 0
   let dragOriginY = 0
+  let dragRafId: number | null = null
+  let resizeRafId: number | null = null
+  let cachedHudWidth = 0
+  let cachedHudHeight = 0
   let topStripObserver: ResizeObserver | null = null
+  let hudResizeObserver: ResizeObserver | null = null
   let rootStyleObserver: MutationObserver | null = null
 
   // ── Idle-fade ───────────────────────────────────────────────────────────
@@ -136,10 +143,10 @@ export function FloatingHud(props: FloatingHudProps) {
 
   // ── Drag ────────────────────────────────────────────────────────────────
 
-  function applyOffset(): void {
+  function applyOffset(x: number = offsetX, y: number = offsetY): void {
     if (!rootEl) return
-    rootEl.style.setProperty('--hud-dx', `${offsetX()}px`)
-    rootEl.style.setProperty('--hud-dy', `${offsetY()}px`)
+    rootEl.style.setProperty('--hud-dx', `${x}px`)
+    rootEl.style.setProperty('--hud-dy', `${y}px`)
   }
 
   // Cached CSS layout vars — updated once on mount and on resize.
@@ -157,46 +164,69 @@ export function FloatingHud(props: FloatingHudProps) {
       : 80
   }
 
-  function clampOffset(): void {
+  function readHudMetrics(): void {
     if (!rootEl) return
     const rect = rootEl.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) {
-      applyOffset()
-      return
+    cachedHudWidth = rect.width
+    cachedHudHeight = rect.height
+  }
+
+  function clampOffsetValues(nextX: number, nextY: number): { x: number; y: number } {
+    if (cachedHudWidth === 0 || cachedHudHeight === 0) {
+      applyOffset(nextX, nextY)
+      readHudMetrics()
+      if (cachedHudWidth === 0 || cachedHudHeight === 0) {
+        return { x: nextX, y: nextY }
+      }
     }
     const kh = cachedKbdH
     const gap = cachedHudGap
-    const defaultLeft = (window.innerWidth - rect.width) / 2
-    const bottomLimit = window.innerHeight - kh - rect.height - HUD_EDGE_MARGIN
+    const defaultLeft = (window.innerWidth - cachedHudWidth) / 2
+    const bottomLimit = window.innerHeight - kh - cachedHudHeight - HUD_EDGE_MARGIN
     const defaultTop = bottomLimit - gap
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
     const nextLeft = clamp(
-      defaultLeft + offsetX(),
+      defaultLeft + nextX,
       HUD_EDGE_MARGIN,
-      Math.max(HUD_EDGE_MARGIN, window.innerWidth - rect.width - HUD_EDGE_MARGIN),
+      Math.max(HUD_EDGE_MARGIN, window.innerWidth - cachedHudWidth - HUD_EDGE_MARGIN),
     )
-    const nextTop = clamp(
-      defaultTop + offsetY(),
-      cachedTopLimit,
-      Math.max(cachedTopLimit, bottomLimit),
-    )
-    setOffsetX(nextLeft - defaultLeft)
-    setOffsetY(nextTop - defaultTop)
+    const nextTop = clamp(defaultTop + nextY, cachedTopLimit, Math.max(cachedTopLimit, bottomLimit))
+    return {
+      x: nextLeft - defaultLeft,
+      y: nextTop - defaultTop,
+    }
+  }
+
+  function commitOffset(nextX: number, nextY: number): void {
+    const clamped = clampOffsetValues(nextX, nextY)
+    offsetX = clamped.x
+    offsetY = clamped.y
+    applyOffset()
+  }
+
+  function flushPendingOffset(): void {
+    dragRafId = null
+    commitOffset(pendingOffsetX, pendingOffsetY)
   }
 
   function onPointerMove(e: PointerEvent): void {
     if (!dragging()) return
-    setOffsetX(dragOriginX + (e.clientX - dragStartX))
-    setOffsetY(dragOriginY + (e.clientY - dragStartY))
-    clampOffset()
+    pendingOffsetX = dragOriginX + (e.clientX - dragStartX)
+    pendingOffsetY = dragOriginY + (e.clientY - dragStartY)
+    if (dragRafId !== null) return
+    dragRafId = requestAnimationFrame(flushPendingOffset)
   }
 
   function onPointerUp(): void {
     if (!dragging()) return
+    if (dragRafId !== null) {
+      cancelAnimationFrame(dragRafId)
+      flushPendingOffset()
+    }
     setDragging(false)
     document.removeEventListener('pointermove', onPointerMove)
     document.removeEventListener('pointerup', onPointerUp)
-    saveOffset(props.storageKey, { x: offsetX(), y: offsetY() })
+    saveOffset(props.storageKey, { x: offsetX, y: offsetY })
     props.onHasDragged?.()
   }
 
@@ -204,8 +234,10 @@ export function FloatingHud(props: FloatingHudProps) {
     e.preventDefault()
     dragStartX = e.clientX
     dragStartY = e.clientY
-    dragOriginX = offsetX()
-    dragOriginY = offsetY()
+    dragOriginX = offsetX
+    dragOriginY = offsetY
+    pendingOffsetX = offsetX
+    pendingOffsetY = offsetY
     setDragging(true)
     document.addEventListener('pointermove', onPointerMove)
     document.addEventListener('pointerup', onPointerUp)
@@ -223,13 +255,15 @@ export function FloatingHud(props: FloatingHudProps) {
 
   function onResize(): void {
     readLayoutVars()
-    clampOffset()
+    readHudMetrics()
+    commitOffset(offsetX, offsetY)
   }
 
   onMount(() => {
     readLayoutVars()
     applyOffset()
-    clampOffset()
+    readHudMetrics()
+    commitOffset(offsetX, offsetY)
     wake()
     window.addEventListener('resize', onResize)
     props.wakeRef?.(wake)
@@ -241,9 +275,22 @@ export function FloatingHud(props: FloatingHudProps) {
       topStripObserver.observe(topStrip)
     }
 
+    if ('ResizeObserver' in window) {
+      hudResizeObserver = new ResizeObserver(() => {
+        if (resizeRafId !== null) return
+        resizeRafId = requestAnimationFrame(() => {
+          resizeRafId = null
+          readHudMetrics()
+          commitOffset(offsetX, offsetY)
+        })
+      })
+      hudResizeObserver.observe(rootEl)
+    }
+
     rootStyleObserver = new MutationObserver(() => {
       readLayoutVars()
-      clampOffset()
+      readHudMetrics()
+      commitOffset(offsetX, offsetY)
     })
     rootStyleObserver.observe(document.documentElement, {
       attributes: true,
@@ -253,17 +300,14 @@ export function FloatingHud(props: FloatingHudProps) {
 
   onCleanup(() => {
     clearTimer()
+    if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
     window.removeEventListener('resize', onResize)
     document.removeEventListener('pointermove', onPointerMove)
     document.removeEventListener('pointerup', onPointerUp)
+    if (dragRafId !== null) cancelAnimationFrame(dragRafId)
     topStripObserver?.disconnect()
+    hudResizeObserver?.disconnect()
     rootStyleObserver?.disconnect()
-  })
-
-  createEffect(() => {
-    offsetX()
-    offsetY()
-    applyOffset()
   })
 
   // Persist pin and notify caller whenever it changes.

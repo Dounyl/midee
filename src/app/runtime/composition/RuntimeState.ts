@@ -1,34 +1,7 @@
 import type { VideoExporter } from '@/services/export/VideoExporter'
 import type { CapturedEvent } from '@/services/midi/MidiEncoding'
+import type { DisplayPrefsState, PlaybackSessionState } from '@/services/runtime/contracts'
 import type { MidiFile } from '@/types/midi/types'
-
-// Forward declare the port types to avoid circular dependencies
-interface DisplayPrefsStatePort {
-  getBaseMidi(): MidiFile | null
-  setBaseMidi(value: MidiFile | null): void
-  getTransposeSemitones(): number
-  setTransposeSemitones(value: number): void
-  getPitchLabelsVisible(): boolean
-  setPitchLabelsVisible(value: boolean): void
-  getChordOverlayOn(): boolean
-  setChordOverlayOn(value: boolean): void
-  getThemeIndex(): number
-  setThemeIndex(value: number): void
-  getInstrumentIndex(): number
-  setInstrumentIndex(value: number): void
-  getParticleIndex(): number
-  setParticleIndex(value: number): void
-  saveThemeIndex(value: number): void
-  saveInstrumentIndex(value: number): void
-  saveParticleIndex(value: number): void
-  saveChordOverlay(value: boolean): void
-  savePitchLabels(value: boolean): void
-}
-
-interface PlaybackSessionStatePort {
-  getRecording(): boolean
-  getElapsedSec(): number
-}
 
 /**
  * RuntimeState
@@ -61,8 +34,8 @@ export class RuntimeState {
   pendingSession: { events: CapturedEvent[]; duration: number } | null = null
 
   // ========== State Ports（用于 coordinators） ==========
-  readonly displayPrefs: DisplayPrefsStatePort
-  readonly playbackSession: PlaybackSessionStatePort
+  readonly displayPrefs: DisplayPrefsState
+  readonly playbackSession: PlaybackSessionState
 
   constructor(
     hydratedPreferences: {
@@ -72,8 +45,8 @@ export class RuntimeState {
       instrumentIndex: number
       particleIndex: number
     },
-    createDisplayPrefsState: (state: RuntimeState) => DisplayPrefsStatePort,
-    createPlaybackSessionState: () => PlaybackSessionStatePort,
+    createDisplayPrefsState: (state: RuntimeState) => DisplayPrefsState,
+    createPlaybackSessionState: () => PlaybackSessionState,
   ) {
     this.chordOverlayOn = hydratedPreferences.chordOverlay
     this.pitchLabelsVisible = hydratedPreferences.pitchLabels

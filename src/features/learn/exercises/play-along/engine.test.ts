@@ -35,6 +35,7 @@ function makeClock() {
     },
     seek(newT: number) {
       t = Math.max(0, newT)
+      for (const fn of listeners) fn(t)
     },
     subscribe(fn: (t: number) => void) {
       listeners.add(fn)
@@ -197,6 +198,8 @@ describe('PlayAlongEngine', () => {
     const onCleanPass = vi.fn()
     const engine = new PlayAlongEngine({ services, learnState, onCleanPass })
     engine.attach(makeMidi())
+    engine.play()
+    learnState.setState('status', 'playing')
     // 4 bars @ 120 BPM = 8 s. Playhead at 10 → loop = [2, 10].
     clock.currentTime = 10
     engine.setLoopFromBars(4, 10, 60, 120)
@@ -208,10 +211,95 @@ describe('PlayAlongEngine', () => {
     expect(onCleanPass).toHaveBeenCalledOnce()
   })
 
+  it('reports loop completion instead of wrapping when a completion callback is wired', () => {
+    const { services, clock, synth, learnState } = makeServices()
+    const onSegmentComplete = vi.fn()
+    const engine = new PlayAlongEngine({ services, learnState, onSegmentComplete })
+    engine.attach(makeMidi())
+    engine.play()
+    learnState.setState('status', 'playing')
+    clock.currentTime = 10
+    engine.setLoopFromBars(4, 10, 60, 120)
+
+    clock.emit(10.001)
+
+    expect(clock.currentTime).toBeCloseTo(10)
+    expect(synth.seekCalls.at(-1)).toBeCloseTo(10)
+    expect(onSegmentComplete).toHaveBeenCalledWith('loop-end')
+    expect(engine.state.userWantsToPlay).toBe(false)
+  })
+
+  it('does not re-enter loop completion when the completion path seeks to loop end', () => {
+    const { services, clock, learnState } = makeServices()
+    const onSegmentComplete = vi.fn()
+    const engine = new PlayAlongEngine({ services, learnState, onSegmentComplete })
+    engine.attach(makeMidi())
+    engine.play()
+    learnState.setState('status', 'playing')
+    engine.play()
+    learnState.setState('status', 'playing')
+    engine.play()
+    learnState.setState('status', 'playing')
+    clock.currentTime = 10
+    engine.setLoopFromBars(4, 10, 60, 120)
+
+    clock.emit(10.001)
+    expect(onSegmentComplete).toHaveBeenCalledTimes(1)
+
+    clock.seek(10)
+
+    expect(onSegmentComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('restarts from the loop start when play is pressed after a loop-end completion pause', () => {
+    const { services, clock, synth, learnState } = makeServices()
+    const onSegmentComplete = vi.fn()
+    const engine = new PlayAlongEngine({ services, learnState, onSegmentComplete })
+    engine.attach(makeMidi())
+    engine.play()
+    learnState.setState('status', 'playing')
+    engine.play()
+    learnState.setState('status', 'playing')
+    engine.play()
+    learnState.setState('status', 'playing')
+    clock.currentTime = 10
+    engine.setLoopFromBars(4, 10, 60, 120)
+
+    clock.emit(10.001)
+    expect(clock.currentTime).toBeCloseTo(10)
+    expect(engine.state.userWantsToPlay).toBe(false)
+
+    engine.play()
+
+    expect(clock.currentTime).toBeCloseTo(2)
+    expect(synth.seekCalls.at(-1)).toBeCloseTo(2)
+    expect(learnState.state.currentTime).toBeCloseTo(2)
+    expect(engine.state.currentTime).toBeCloseTo(2)
+    expect(engine.state.userWantsToPlay).toBe(true)
+    expect(learnState.state.status).toBe('playing')
+  })
+
+  it('reports song completion when playback reaches the piece end', () => {
+    const { services, clock, learnState } = makeServices()
+    const onSegmentComplete = vi.fn()
+    const engine = new PlayAlongEngine({ services, learnState, onSegmentComplete })
+    engine.attach(makeMidi())
+    engine.play()
+    learnState.setState('status', 'playing')
+
+    clock.emit(60.001)
+
+    expect(clock.currentTime).toBeCloseTo(60)
+    expect(onSegmentComplete).toHaveBeenCalledWith('song-end')
+    expect(engine.state.userWantsToPlay).toBe(false)
+  })
+
   it('ramp-toggles bump the tempo preset on each clean pass when enabled', () => {
     const { services, clock, learnState } = makeServices()
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi())
+    engine.play()
+    learnState.setState('status', 'playing')
     engine.setTempoRamp(true)
     // Base: 60 (first preset), since zero clean passes → ramp returns 60.
     // Using custom presets is the engine's concern — verify the public
@@ -602,6 +690,8 @@ describe('PlayAlongEngine held-tick eligibility clearing', () => {
     const engine = new PlayAlongEngine({ services, learnState })
     engine.attach(makeMidi()) // chord at t=2, latestEnd=2.5, eligible until 2.55
     engine.setWaitEnabled(true)
+    engine.play()
+    learnState.setState('status', 'playing')
 
     // Short loop [2, 2.3] — wraps well before the eligibility window expires.
     engine.markLoopPoint(2)

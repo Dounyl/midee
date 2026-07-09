@@ -451,6 +451,21 @@ describe('SynthEngine.play 鈥?paused resume fast path', () => {
     expect(holder.transport.start).toHaveBeenCalledTimes(1)
   })
 
+  it('rebuilds instead of fast-resuming when transport is paused but no Part is scheduled', async () => {
+    const midi = makeMidi([track('a', [note(60, 0), note(62, 1)])], 120)
+    const engine = await loadedEngine(midi)
+
+    holder.transport.state = 'paused'
+    holder.transport.start.mockClear()
+
+    await engine.play(0)
+
+    expect(holder.parts.length).toBe(1)
+    expect(holder.transport.start).toHaveBeenCalledTimes(1)
+    expect(holder.order).toContain('part.start')
+    expect(holder.transport.stop).toHaveBeenCalled()
+  })
+
   it('rebuilds the Part when resuming at a different fromTime', async () => {
     const midi = makeMidi([track('a', [note(60, 0), note(62, 5)])], 120)
     const engine = await loadedEngine(midi)
@@ -481,6 +496,25 @@ describe('SynthEngine.play 鈥?paused resume fast path', () => {
     expect(holder.transport.stop).toHaveBeenCalled()
     expect(holder.parts.length).toBe(2)
     expect(holder.parts[1]!.events.length).toBe(2)
+  })
+
+  it('resetTransport clears the paused snapshot so a later play() rebuilds instead of resuming it', async () => {
+    const midi = makeMidi([track('a', [note(60, 0), note(62, 1)])], 120)
+    const engine = await loadedEngine(midi)
+
+    await engine.play(0)
+    const firstPart = holder.parts[0]!
+    holder.transport.state = 'paused'
+    holder.transport.start.mockClear()
+    holder.transport.stop.mockClear()
+
+    engine.resetTransport()
+    await engine.play(0.01)
+
+    expect(firstPart.dispose).toHaveBeenCalled()
+    expect(holder.transport.stop).toHaveBeenCalled()
+    expect(holder.transport.start).toHaveBeenCalledTimes(1)
+    expect(holder.parts.length).toBe(2)
   })
 })
 

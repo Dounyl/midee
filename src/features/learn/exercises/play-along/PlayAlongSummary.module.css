@@ -1,0 +1,191 @@
+@layer components {
+  .playAlongSummary {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(6, 8, 12, 0.62);
+    pointer-events: auto;
+    z-index: 140;
+  }
+
+  .playAlongSummaryCard {
+    width: min(560px, calc(100vw - 28px));
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px;
+    border-radius: 24px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 36%), rgba(10, 12, 18, 0.96);
+    border: 1px solid color-mix(in srgb, var(--border-hi) 78%, transparent);
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    animation: playAlongSummaryIn 0.22s var(--ease-out) both;
+  }
+
+  @keyframes playAlongSummaryIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .playAlongSummaryHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .playAlongSummaryEyebrow {
+    margin: 0 0 6px;
+    color: var(--accent);
+    font: 700 11px / 1 var(--font);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .playAlongSummaryTitle {
+    margin: 0;
+    color: var(--text);
+    font: 700 26px / 1.1 var(--font-display, var(--font));
+  }
+
+  .playAlongSummaryStreak {
+    flex-shrink: 0;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 36%, transparent);
+    color: var(--text);
+    font: 600 11px / 1 var(--font);
+  }
+
+  .playAlongSummaryGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .playAlongSummaryMetric {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 96px;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .playAlongSummaryMetric[data-accent="accent"] {
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--border) 68%);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  .playAlongSummaryMetric[data-tone="success"] {
+    border-color: color-mix(in srgb, #7ee2b1 24%, var(--border) 76%);
+    background: color-mix(in srgb, #7ee2b1 8%, transparent);
+  }
+
+  .playAlongSummaryMetric[data-tone="danger"] {
+    border-color: color-mix(in srgb, #f08aa3 24%, var(--border) 76%);
+    background: color-mix(in srgb, #f08aa3 8%, transparent);
+  }
+
+  .playAlongSummaryMetricValue {
+    color: var(--text);
+    font: 700 28px / 1 var(--font-display, var(--font));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .playAlongSummaryMetricLabel {
+    color: var(--text-muted);
+    font: 600 11px / 1.35 var(--font);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .playAlongSummaryFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .playAlongSummaryBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    font: 600 12px / 1 var(--font);
+    cursor: pointer;
+    transition:
+      transform 0.16s var(--ease-spring),
+      background 0.16s,
+      border-color 0.16s;
+  }
+
+  .playAlongSummaryBtn:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-hi);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .playAlongSummaryBtnPrimary {
+    border-color: transparent;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 12px 28px var(--accent-glow);
+  }
+
+  .playAlongSummaryBtnPrimary:hover {
+    background: var(--accent);
+    filter: brightness(1.05);
+  }
+
+  @media (max-width: 640px) {
+    .playAlongSummary {
+      padding: 16px;
+    }
+
+    .playAlongSummaryCard {
+      padding: 18px;
+      border-radius: 20px;
+    }
+
+    .playAlongSummaryHeader {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .playAlongSummaryTitle {
+      font-size: 22px;
+    }
+
+    .playAlongSummaryGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .playAlongSummaryFooter {
+      flex-direction: column-reverse;
+    }
+
+    .playAlongSummaryBtn {
+      width: 100%;
+    }
+  }
+}

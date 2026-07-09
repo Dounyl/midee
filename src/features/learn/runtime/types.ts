@@ -41,6 +41,7 @@ export interface PlayAlongPageRuntimeHandle
   readonly learnState: LearnState
   readonly view: EventSignal<'page' | 'exercise'>
   startPlayAlong(): Promise<void>
+  returnToList(): void
 }
 
 export interface CreateExercisePageRuntimeOptions {

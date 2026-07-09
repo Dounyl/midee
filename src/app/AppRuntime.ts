@@ -128,8 +128,8 @@ export class App {
     this.dependencies = new RuntimeDependencies(store)
     this.state = new RuntimeState(
       this.hydratedPreferences,
-      (state) => this.createDisplayPrefsPort(state) as any,
-      () => createPlaybackSessionState({ store: this.store }) as any,
+      (state) => this.createDisplayPrefsPort(state),
+      () => createPlaybackSessionState({ store: this.store }),
     )
   }
 
@@ -329,8 +329,8 @@ export class App {
         services: ports.services,
         ui: ports.ui,
         navigation: ports.navigation,
-        displayPrefs: this.state.displayPrefs as any,
-        playbackSession: this.state.playbackSession as any,
+        displayPrefs: this.state.displayPrefs,
+        playbackSession: this.state.playbackSession,
         keyboardInput: this.dependencies.keyboardInput,
         onSyncConsolePanel: () => this.dependencies.runtimeOverlay?.syncConsolePanel(),
         onResetInteractionState: () => this.resetInteractionState(),
@@ -342,8 +342,8 @@ export class App {
         services: ports.services,
         ui: ports.ui,
         navigation: ports.navigation,
-        displayPrefs: this.state.displayPrefs as any,
-        playbackSession: this.state.playbackSession as any,
+        displayPrefs: this.state.displayPrefs,
+        playbackSession: this.state.playbackSession,
         liveNotes: this.dependencies.liveNotes,
         exporterRef: {
           get current() {
@@ -359,8 +359,8 @@ export class App {
         ui: ports.ui,
         navigation: ports.navigation,
         learnRuntimeRegistry: this.dependencies.learnRuntimeRegistry,
-        displayPrefs: this.state.displayPrefs as any,
-        playbackSession: this.state.playbackSession as any,
+        displayPrefs: this.state.displayPrefs,
+        playbackSession: this.state.playbackSession,
         liveNotes: this.dependencies.liveNotes,
         loopNotes: this.dependencies.loopNotes,
         liveLooper: this.dependencies.liveLooper,
@@ -389,8 +389,8 @@ export class App {
       ui: ports.ui,
       navigation: ports.navigation,
       learnRuntimeRegistry: this.dependencies.learnRuntimeRegistry,
-      displayPrefs: this.state.displayPrefs as any,
-      playbackSession: this.state.playbackSession as any,
+      displayPrefs: this.state.displayPrefs,
+      playbackSession: this.state.playbackSession,
       keyboardInput: {
         enable: () => this.dependencies.keyboardInput.enable(),
       },

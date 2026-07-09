@@ -18,9 +18,24 @@ export function createMountHandle<P>(
   let dispose: (() => void) | null = null
   let wrapper: HTMLDivElement | null = null
 
+  const reset = (): void => {
+    const currentDispose = dispose
+    const currentWrapper = wrapper
+    dispose = null
+    wrapper = null
+
+    // If an ancestor already removed the mount root from the DOM, Solid's
+    // disposer can walk sibling pointers that no longer exist. In that case
+    // there's nothing left to detach from the document, so just drop refs.
+    if (currentWrapper?.isConnected === false) return
+
+    currentDispose?.()
+    currentWrapper?.remove()
+  }
+
   return {
     mount(host: HTMLElement, props: P): void {
-      wrapper?.remove()
+      reset()
       const div = document.createElement('div')
       setup?.(div)
       host.appendChild(div)
@@ -28,10 +43,7 @@ export function createMountHandle<P>(
       dispose = render(() => component(props), div)
     },
     unmount(): void {
-      dispose?.()
-      wrapper?.remove()
-      dispose = null
-      wrapper = null
+      reset()
     },
   }
 }

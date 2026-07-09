@@ -1,6 +1,9 @@
 import type { ExercisePageRuntime } from '@/features/learn/runtime/ExercisePageRuntime'
 import type { PlayAlongPageRuntime } from '@/features/learn/runtime/PlayAlongPageRuntime'
-import type { CreateExercisePageRuntimeOptions } from '@/features/learn/runtime/types'
+import type {
+  CreateExercisePageRuntimeOptions,
+  LearnRuntimeHandle,
+} from '@/features/learn/runtime/types'
 import type { AppServices } from '@/types/app/AppServices'
 import { createExerciseRuntime, createPlayAlongRuntime } from '../learnRuntimeFactories'
 import type { RuntimeDependencies } from './RuntimeDependencies'
@@ -24,8 +27,8 @@ export class RuntimeLearnFactory {
     private readonly lifecycle: RuntimeLifecycle,
     private readonly overlay: HTMLElement,
     private readonly getLearnRuntimeLifecycle: () => {
-      activate: (runtime: any) => void
-      deactivate: (runtime: any) => void
+      activate: (runtime: LearnRuntimeHandle) => void
+      deactivate: (runtime: LearnRuntimeHandle) => void
     },
   ) {}
 

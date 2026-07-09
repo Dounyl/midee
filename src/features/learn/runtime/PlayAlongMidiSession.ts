@@ -16,6 +16,7 @@ export interface PlayAlongMidiSessionDeps {
 export class PlayAlongMidiSession {
   private baseMidi: MidiFile | null = null
   private transposeSemitones = 0
+  private loadGeneration = 0
 
   constructor(private readonly deps: PlayAlongMidiSessionDeps) {}
 
@@ -28,10 +29,11 @@ export class PlayAlongMidiSession {
   }
 
   clearSession(): void {
+    this.loadGeneration++
     const { services } = this.deps
     services.clock.pause()
     services.clock.seek(0)
-    services.synth.pause()
+    services.synth.resetTransport()
     this.deps.learnState.clearMidi()
     this.baseMidi = null
     this.transposeSemitones = 0
@@ -40,8 +42,9 @@ export class PlayAlongMidiSession {
   }
 
   async loadPreparedMidi(midi: MidiFile): Promise<void> {
+    const generation = ++this.loadGeneration
     this.deps.learnState.beginLoad()
-    await this.consumeMidi(midi)
+    await this.consumeMidi(midi, generation)
   }
 
   isTransposeEnabled(): boolean {
@@ -87,7 +90,7 @@ export class PlayAlongMidiSession {
     this.deps.updateConsolePanel()
   }
 
-  private async consumeMidi(midi: MidiFile): Promise<void> {
+  private async consumeMidi(midi: MidiFile, generation: number): Promise<void> {
     const { services } = this.deps
     services.clock.pause()
     services.clock.seek(0)
@@ -97,19 +100,20 @@ export class PlayAlongMidiSession {
     if (
       !this.deps.keyboardMode.ensureMidiFitsCurrentMode(midi, midi, {
         onTranspose: async (target) => {
-          await this.consumeMidi(transposeMidiFile(midi, target))
+          await this.consumeMidi(transposeMidiFile(midi, target), generation)
         },
         onSwitchTo88: async () => {
-          await this.consumeMidi(midi)
+          await this.consumeMidi(midi, generation)
         },
       })
     )
       return
     this.baseMidi = midi
     this.transposeSemitones = 0
-    services.synth.load(midi).catch((err) => {
+    await services.synth.load(midi).catch((err) => {
       console.error('[PlayAlongMidiSession] SynthEngine.load failed:', err)
     })
+    if (generation !== this.loadGeneration) return
     this.deps.learnState.completeLoad(midi)
     services.renderer.setKeyboardMode(this.deps.keyboardMode.getMode())
     this.deps.setLearnFileName(midi.name)

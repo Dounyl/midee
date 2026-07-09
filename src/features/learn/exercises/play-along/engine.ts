@@ -37,6 +37,7 @@ export interface EngineOptions {
   // transport isn't disturbed while an exercise runs.
   learnState: LearnState
   onCleanPass?: () => void
+  onSegmentComplete?: (target: 'song-end' | 'loop-end') => void
 }
 
 export interface PlayAlongState {
@@ -46,6 +47,7 @@ export interface PlayAlongState {
   // B has not. The HUD renders this as a single tick on the scrubber so the
   // user can see their pending mark before completing the pair.
   loopMark: number | null
+  waitEnabled: boolean
   speedPct: number
   hand: HandFilter
   tempoRampEnabled: boolean
@@ -95,6 +97,7 @@ export class PlayAlongEngine {
     const [state, setState] = createStore<PlayAlongState>({
       loopRegion: null,
       loopMark: null,
+      waitEnabled: true,
       speedPct: 100,
       hand: 'both',
       tempoRampEnabled: false,
@@ -197,9 +200,19 @@ export class PlayAlongEngine {
 
   play(): void {
     if (!this.active) return
-    this.setState('userWantsToPlay', true)
     const { services, learnState } = this.opts
-    this.practice.notifySeek(services.clock.currentTime)
+    const region = this.state.loopRegion
+    const restartAtLoopStart = region !== null && services.clock.currentTime >= region.end
+    const startTime = restartAtLoopStart ? region.start : services.clock.currentTime
+    if (restartAtLoopStart) {
+      services.clock.seek(startTime)
+      services.synth.seek(startTime)
+      learnState.setState('currentTime', startTime)
+      this.setState('currentTime', startTime)
+      this.heldEligible.clear()
+    }
+    this.setState('userWantsToPlay', true)
+    this.practice.notifySeek(startTime)
     // Status BEFORE clock: clock.play()'s synchronous first tick may engage
     // wait-mode, which flips status back to paused. Set playing first so
     // synth.play is already in flight; SynthEngine's generation guard
@@ -283,6 +296,7 @@ export class PlayAlongEngine {
   }
 
   setWaitEnabled(enabled: boolean): void {
+    this.setState('waitEnabled', enabled)
     const wasWaiting = this.practice.isWaiting
     this.practice.setEnabled(enabled)
     if (!enabled && wasWaiting && this.state.userWantsToPlay) {
@@ -385,6 +399,13 @@ export class PlayAlongEngine {
     })
   }
 
+  setLoopRegion(region: LoopRegion | null): void {
+    batch(() => {
+      this.setState('loopRegion', region)
+      this.setState('loopMark', null)
+    })
+  }
+
   // ── Internal ──────────────────────────────────────────────────────────
 
   private applySpeed(): void {
@@ -445,12 +466,30 @@ export class PlayAlongEngine {
     if (dur > 0 && time >= dur && this.state.isPlaying) {
       this.pause()
       this.opts.services.clock.seek(dur)
+      this.opts.onSegmentComplete?.('song-end')
       return
     }
+    // Loop completion only counts during active playback. Real MasterClock.seek()
+    // emits synchronously, so programmatic clamps to `region.end` during
+    // completion teardown would otherwise re-enter this branch and suppress the
+    // intended summary flow.
+    if (!this.state.isPlaying) return
     const region = this.state.loopRegion
     if (!region) return
     const wrapTo = wrapIfAtEnd(time, region)
     if (wrapTo !== null) {
+      this.setState('cleanPasses', this.state.cleanPasses + 1)
+      this.opts.onCleanPass?.()
+      if (this.state.tempoRampEnabled) this.applyRampedSpeed()
+      if (this.opts.onSegmentComplete) {
+        this.pause()
+        this.opts.services.clock.seek(region.end)
+        this.opts.services.synth.seek(region.end)
+        this.practice.notifySeek(region.end)
+        this.heldEligible.clear()
+        this.opts.onSegmentComplete('loop-end')
+        return
+      }
       this.opts.services.clock.seek(wrapTo)
       this.opts.services.synth.seek(wrapTo)
       // A wrap is a seek — practice has to recompute `nextStepIdx` against
@@ -462,9 +501,6 @@ export class PlayAlongEngine {
       // pass — invalidate it so the legato bonus doesn't accumulate ticks for
       // notes that no longer correspond to the new playhead.
       this.heldEligible.clear()
-      this.setState('cleanPasses', this.state.cleanPasses + 1)
-      this.opts.onCleanPass?.()
-      if (this.state.tempoRampEnabled) this.applyRampedSpeed()
     }
   }
 
