@@ -1,19 +1,10 @@
 import { createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
-import { FEEDBACK_URL, isNarrowViewport } from '@/components/common/utils'
+import { isNarrowViewport } from '@/components/common/utils'
 import { LOCALES, type LocaleCode, locale, t } from '@/i18n'
 import type { ParticleStyle, ParticleStyleInfo } from '@/services/renderer/ParticleSystem'
 import type { Theme } from '@/services/renderer/theme'
-import { trackEvent } from '@/services/telemetry'
 import styles from './CustomizeMenu.module.css'
-
-// Aesthetics popover — collapses theme, particles, and chord overlay (three
-// previously-separate topbar pills) into one trigger. Reduces topbar noise
-// while keeping every option one tap away once opened.
-//
-// Pattern mirrors InstrumentMenu: a pill trigger anchored in the topbar +
-// an absolutely-positioned popover anchored under it (or rendered as a
-// bottom sheet on narrow viewports via shared CSS).
 
 export interface CustomizeMenuCallbacks {
   onSelectTheme: (index: number) => void
@@ -156,7 +147,7 @@ function MenuView(props: MenuProps) {
                     class={styles.customizeParticleChipGlyph}
                     data-style={p.id}
                     aria-hidden="true"
-                    innerHTML={PARTICLE_GLYPHS[p.id] ?? PARTICLE_GLYPHS['sparks'] ?? ''}
+                    innerHTML={PARTICLE_GLYPHS[p.id] ?? PARTICLE_GLYPHS.sparks ?? ''}
                   />
                   <span class={styles.customizeParticleChipLabel}>{p.name}</span>
                 </button>
@@ -209,48 +200,6 @@ function MenuView(props: MenuProps) {
             </span>
           </button>
         </div>
-
-        <div class={`${styles.customizeSection} ${styles.customizeSectionFooter}`}>
-          <a
-            class={styles.customizeFeedbackCard}
-            href={FEEDBACK_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent('feedback_clicked', { source: 'customize_menu' })}
-          >
-            <span class={styles.customizeFeedbackIcon} aria-hidden="true">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.9"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.6 9.6 0 0 1-4-.9L3 21l1.9-5.5a8.38 8.38 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z" />
-              </svg>
-            </span>
-            <span class={styles.customizeFeedbackLabel}>{t('feedback.menu')}</span>
-            <svg
-              class={styles.customizeFeedbackArrow}
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M7 17L17 7" />
-              <path d="M8 7h9v9" />
-            </svg>
-          </a>
-        </div>
       </div>
     </div>
   )
@@ -281,9 +230,11 @@ export class CustomizeMenu {
     if (this.trigger.contains(target)) return
     this.close()
   }
+
   private onKey = (e: KeyboardEvent): void => {
     if (e.key === 'Escape' && this.isOpen) this.close()
   }
+
   private onResize = (): void => {
     if (!this.isOpen) return
     if (this.menu.classList.contains('popover--sheet') || isNarrowViewport()) {
@@ -319,9 +270,6 @@ export class CustomizeMenu {
     this.setLabel = setLabel
     this.setSwatch = setSwatch
 
-    // Trigger: render into its own wrapper so the host gets exactly our pill
-    // and nothing else. We capture the button ref so existing callers can
-    // continue treating `.trigger` as a real DOM node.
     const triggerWrapper = document.createElement('div')
     triggerWrapper.style.display = 'contents'
     triggerHost.appendChild(triggerWrapper)
@@ -368,7 +316,6 @@ export class CustomizeMenu {
     )
   }
 
-  // ── Public state setters (App pushes the active selection in) ──────────
   setTheme(index: number): void {
     this.setThemeIdx(index)
     const theme = this.themes[index]
@@ -390,7 +337,6 @@ export class CustomizeMenu {
     this.setChordOn(on)
   }
 
-  // ── Open / close ──────────────────────────────────────────────────────
   private toggle(): void {
     this.isOpen ? this.close() : this.open()
   }
@@ -434,16 +380,19 @@ export class CustomizeMenu {
     this.menu.style.top = `${top}px`
     this.menu.style.left = ''
     const desiredLeft = window.innerWidth - right - menuW
-    if (desiredLeft < 12)
+    if (desiredLeft < 12) {
       this.menu.style.right = `${Math.max(12, window.innerWidth - menuW - 12)}px`
+    }
   }
 
   getCurrentTheme(): number {
     return this.themeIdxFn()
   }
+
   getCurrentParticle(): number {
     return this.particleIdxFn()
   }
+
   isChordOn(): boolean {
     return this.chordOnFn()
   }
@@ -459,7 +408,6 @@ export class CustomizeMenu {
   }
 }
 
-// Kept for call sites that still import the ParticleStyle type by name.
 export type { ParticleStyle }
 
 function numToHexCss(n: number): string {
@@ -467,8 +415,6 @@ function numToHexCss(n: number): string {
   return `#${hex}`
 }
 
-// Lightweight inline SVGs that hint at each particle style's behaviour.
-// All use currentColor so they pick up theme accent on hover / when active.
 const PARTICLE_GLYPHS: Record<string, string> = {
   sparks: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
     <path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/>

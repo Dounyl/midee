@@ -1,19 +1,5 @@
 import type { PostHog, PostHogConfig } from 'posthog-js'
 
-// Thin wrapper around posthog-js + a typed event registry. Kept as a single
-// flat file (not `src/analytics/*`) because common ad blockers treat
-// `/analytics/` paths as trackers and block them outright — during Vite dev
-// that means blank module loads and cryptic import errors. The file has also
-// been renamed away from `analytics.ts` to avoid the same heuristic.
-//
-// Event-name convention: snake_case, past tense. Don't rename existing event
-// names without dual-firing for at least two weeks (see play_mode_entered /
-// file_mode_entered for the pattern).
-//
-// posthog-js is dynamic-imported on idle (see `loadPostHog`) so it doesn't
-// block the initial bundle (~70 KB gz at the time of writing). Calls made
-// before the SDK loads are queued and replayed in-order on `loadPostHog`.
-
 let ph: PostHog | null = null
 let phLoadFailed = false
 const queue: Array<(client: PostHog) => void> = []
@@ -159,6 +145,7 @@ const MIDI_VENDORS = [
   'casio',
   'presonus',
 ] as const
+
 export function categorizeMidiDevice(name: string): string {
   const lower = name.toLowerCase()
   for (const v of MIDI_VENDORS) if (lower.includes(v)) return v
@@ -182,7 +169,6 @@ type EventMap = {
     exercise_id: string
     action: 'again' | 'next' | 'dismissed' | 'cancel' | 'continue_practice'
   }
-  feedback_clicked: { source: 'customize_menu' | 'post_session' }
   seeked: { from_s: number; to_s: number; method: 'scrub' | 'skip' }
   playback_paused: { position_s: number; position_pct: number }
   speed_changed: { speed: number }

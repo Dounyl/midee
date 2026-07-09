@@ -31,6 +31,9 @@ export default defineConfig(({ mode }) => ({
   // `file:///@solid-refresh` virtual module can break suite loading before
   // any assertions run. Keep HMR for dev, disable it only for tests.
   plugins: [solid({ hot: mode !== 'test' }), preloadBodyFont()],
+  server: {
+    port: 3000,
+  },
   css: {
     transformer: 'postcss',
     modules: {

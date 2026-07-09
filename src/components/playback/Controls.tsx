@@ -647,21 +647,7 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
   return (
     <ControlsContext.Provider value={contextValue}>
       <div style={{ display: 'contents' }}>
-        {/* Hidden slots for external panels - with IDs for querySelector */}
-        <div
-          id="ts-instrument-slot"
-          ref={(el) => (instrumentSlotRef = el)}
-          style={{ display: 'none' }}
-        />
-        <div id="ts-chord-slot" ref={(el) => (chordSlotRef = el)} style={{ display: 'none' }} />
-        <div
-          id="ts-customize-slot"
-          ref={(el) => (customizeSlotRef = el)}
-          style={{ display: 'none' }}
-        />
-
         <TopStripView
-          ref={(el: HTMLElement) => (topStripRef = el)}
           routeTarget={routeTarget}
           status={status}
           hasFile={hasFile}
@@ -687,8 +673,19 @@ export const Controls = (props: ControlsProps, hooks?: ControlsInternalHooks) =>
           onMidi={() => props.onMidiConnect?.()}
           onRecord={() => props.onRecord?.()}
           onLearnThis={() => void props.actions.learn.enter({ kind: 'current-midi' })}
-          registerEl={(_el) => {}}
+          registerEl={(el) => {
+            topStripRef = el
+          }}
           registerTracksBtn={(el) => (tracksButtonRef = el)}
+          registerInstrumentSlot={(el) => {
+            instrumentSlotRef = el
+          }}
+          registerChordSlot={(el) => {
+            chordSlotRef = el
+          }}
+          registerCustomizeSlot={(el) => {
+            customizeSlotRef = el
+          }}
         />
 
         <LearnCoachmark

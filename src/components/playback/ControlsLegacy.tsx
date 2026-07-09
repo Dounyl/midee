@@ -220,6 +220,9 @@ export class Controls {
             registerTracksBtn={(el) => {
               this.tracksBtn = el
             }}
+            registerInstrumentSlot={() => {}}
+            registerChordSlot={() => {}}
+            registerCustomizeSlot={() => {}}
           />
           <LearnCoachmark
             eligible={() =>

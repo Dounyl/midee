@@ -39,6 +39,9 @@ export interface TopStripProps {
   onLearnThis: () => void
   registerEl: (el: HTMLElement) => void
   registerTracksBtn: (el: HTMLButtonElement) => void
+  registerInstrumentSlot: (el: HTMLElement) => void
+  registerChordSlot: (el: HTMLElement) => void
+  registerCustomizeSlot: (el: HTMLElement) => void
 }
 
 export interface HudProps {
@@ -200,7 +203,11 @@ export function TopStripView(props: TopStripProps) {
           <span />
           <span />
         </span>
-        <span id="ts-chord-slot" class="ts-chord-slot" />
+        <span
+          id="ts-chord-slot"
+          class="ts-chord-slot"
+          ref={(el) => props.registerChordSlot(el)}
+        />
       </div>
 
       <div class="ts-end">
@@ -252,7 +259,7 @@ export function TopStripView(props: TopStripProps) {
           <span innerHTML={icons.practice()} />
           <span>{t('topStrip.learnThis.label')}</span>
         </button>
-        <span id="ts-instrument-slot" />
+        <span id="ts-instrument-slot" ref={(el) => props.registerInstrumentSlot(el)} />
         <div class="ts-sep" aria-hidden="true" />
         <button
           class="ts-pill ts-pill--midi"
@@ -269,7 +276,7 @@ export function TopStripView(props: TopStripProps) {
             {props.midiPillLabel()}
           </span>
         </button>
-        <span id="ts-customize-slot" />
+        <span id="ts-customize-slot" ref={(el) => props.registerCustomizeSlot(el)} />
         <button
           class="ts-record-btn"
           classList={{

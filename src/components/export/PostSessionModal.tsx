@@ -1,13 +1,12 @@
 // Shown when live-mode session recording ends. Offers three clear next
-// steps so users aren't forced into an immediate download — they can
+// steps so users are not forced into an immediate download: they can
 // visualize the take, save it as MIDI, or discard it.
 
 import { createSignal } from 'solid-js'
 import { Portal, render } from 'solid-js/web'
 import { icons } from '@/components/common/icons'
-import { cssModuleClass, FEEDBACK_URL } from '@/components/common/utils'
+import { cssModuleClass } from '@/components/common/utils'
 import { t, tn } from '@/i18n'
-import { trackEvent } from '@/services/telemetry'
 import styles from './PostSessionModal.module.css'
 
 export type SessionAction = 'open-in-file' | 'download' | 'discard'
@@ -22,8 +21,8 @@ interface ViewProps {
 function PostSessionView(props: ViewProps) {
   return (
     <Portal mount={props.container}>
-      {/* biome-ignore-start lint/a11y/useKeyWithClickEvents: modal backdrop — Escape maps to 'discard' at document level */}
-      {/* biome-ignore-start lint/a11y/noStaticElementInteractions: modal backdrop, click dismisses */}
+      {/* biome-ignore-start lint/a11y/useKeyWithClickEvents: modal backdrop; Escape maps to 'discard' at document level */}
+      {/* biome-ignore-start lint/a11y/noStaticElementInteractions: modal backdrop; click dismisses */}
       <div
         id="post-session-modal"
         class={styles.postSessionModal}
@@ -32,8 +31,8 @@ function PostSessionView(props: ViewProps) {
           if (e.target === e.currentTarget) props.onAction('discard')
         }}
       >
-        {/* biome-ignore-end lint/a11y/useKeyWithClickEvents: — */}
-        {/* biome-ignore-end lint/a11y/noStaticElementInteractions: — */}
+        {/* biome-ignore-end lint/a11y/useKeyWithClickEvents */}
+        {/* biome-ignore-end lint/a11y/noStaticElementInteractions */}
         <div class={cssModuleClass(styles, 'post-session-card', 'modal-scroll')}>
           <header class={styles['export-header']!}>
             <div class={styles['export-card-icon']!} innerHTML={icons.waveform()} />
@@ -93,16 +92,6 @@ function PostSessionView(props: ViewProps) {
               </span>
             </button>
           </div>
-
-          <a
-            class={styles['post-session-feedback']!}
-            href={FEEDBACK_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent('feedback_clicked', { source: 'post_session' })}
-          >
-            {t('feedback.postSession')} ↗
-          </a>
         </div>
       </div>
     </Portal>
@@ -126,7 +115,7 @@ export class PostSessionModal {
 
   constructor(container: HTMLElement) {
     const [isOpen, setIsOpen] = createSignal(false)
-    const [stats, setStats] = createSignal('—')
+    const [stats, setStats] = createSignal('...')
 
     this.setIsOpen = setIsOpen
     this.readIsOpen = isOpen
@@ -152,8 +141,6 @@ export class PostSessionModal {
   }
 
   open(durationSec: number, noteCount: number): void {
-    // Plural via tn() — handles English one/other and any locale's CLDR
-    // categories (Polish few/many, Arabic six forms, etc.) automatically.
     this.setStats(
       tn('postSession.stats', noteCount, {
         duration: formatMMSS(durationSec),
