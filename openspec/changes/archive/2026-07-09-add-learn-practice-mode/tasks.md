@@ -1,4 +1,4 @@
-## 1. Guided mode state and naming
+﻿## 1. Guided mode state and naming
 
 - [x] 1.1 在 play-along 状态层新增可持久化的 `guidedMode` 偏好，并以保持当前可发声行为的默认值初始化。
 - [x] 1.2 扩展 play-along runtime/engine 状态，使 guided mode 可以在 session 内切换，而不重新加载 MIDI、也不离开 `play-along` 路由。
@@ -21,4 +21,4 @@
 
 - [x] 4.1 增加或更新集成式测试，覆盖已加载 play-along session 中的模式切换行为。
 - [x] 4.2 运行 `pnpm run test`，验证 play-along/runtime 相关覆盖并修复回归。
-- [ ] 4.3 运行 `pnpm run check`，在实现完成前做整体验证。
+- [x] 4.3 运行 `pnpm run check`，在实现完成前做整体验证。
