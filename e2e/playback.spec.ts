@@ -32,8 +32,8 @@ import { expect, type Locator, type Page, test } from '@playwright/test'
 // `:not(:hover)` in the CSS means hovering keeps it interactable. Before any click on
 // `#hud-play` we hover it first so Playwright's actionability check never races the fade.
 
-const FIXTURE_MID = fileURLToPath(new URL('../fixtures/multi-track.mid', import.meta.url))
-const FIXTURE_DURATION_S = 1.95 // `@tonejs/midi` parse of fixtures/multi-track.mid
+const FIXTURE_MID = fileURLToPath(new URL('../fixtures/single-track.mid', import.meta.url))
+const FIXTURE_MIN_DURATION_S = 4
 
 /** Read the live playhead (seconds) straight from the scrubber's numeric value. */
 async function playhead(scrubber: Locator): Promise<number> {
@@ -81,7 +81,7 @@ test.describe('Golden-path playback', () => {
       .poll(async () => Number.parseFloat((await scrubber.getAttribute('max')) ?? '0'), {
         timeout: 15_000,
       })
-      .toBeGreaterThan(FIXTURE_DURATION_S * 0.5)
+      .toBeGreaterThan(FIXTURE_MIN_DURATION_S)
 
     // Start at (approximately) zero before playing.
     expect(await playhead(scrubber)).toBeLessThan(0.2)

@@ -38,12 +38,27 @@ jobs:
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Install rsync
         run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Verify SSH access
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$DEPLOY_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "echo deploy-ssh-ok"
 
       - name: Sync dist to server
         env:
@@ -53,6 +68,6 @@ jobs:
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
         run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT" \
+            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
             dist/ \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
