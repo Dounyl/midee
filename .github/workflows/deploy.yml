@@ -42,9 +42,6 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-      - name: Install rsync
-        run: sudo apt-get update && sudo apt-get install -y rsync
-
       - name: Verify SSH access
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
@@ -60,14 +57,32 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "echo deploy-ssh-ok"
 
-      - name: Sync dist to server
+      - name: Package dist
+        run: tar -czf /tmp/midee-dist.tar.gz -C dist .
+
+      - name: Replace dist on server
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
         run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
-            dist/ \
-            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+          if [ -z "$DEPLOY_PATH" ] || [ "$DEPLOY_PATH" = "/" ]; then
+            echo "Refusing to deploy to unsafe DEPLOY_PATH: $DEPLOY_PATH"
+            exit 1
+          fi
+          scp \
+            -i ~/.ssh/deploy_key \
+            -P "$DEPLOY_PORT" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            /tmp/midee-dist.tar.gz \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/midee-dist.tar.gz"
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$DEPLOY_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "mkdir -p \"$DEPLOY_PATH\" && find \"$DEPLOY_PATH\" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + && tar -xzf /tmp/midee-dist.tar.gz -C \"$DEPLOY_PATH\" && rm -f /tmp/midee-dist.tar.gz"
