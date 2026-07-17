@@ -112,12 +112,82 @@ vi.mock('tone', () => {
   }
 })
 
-// Fake instrument runtime that records every trigger. createInstrument is async
-// and resolves immediately so `ensureInstrument` settles on the first
-// microtask flush.
-const instrumentTriggers = vi.hoisted(
-  () => [] as Array<{ note: string; duration: number; time: number; velocity: number }>,
-)
+// Fake instrument runtime that records every trigger. Tests can optionally hold
+// instrument loading open to simulate slower machines and verify live-input
+// buffering behavior.
+const instrumentState = vi.hoisted(() => {
+  const liveAttacks: Array<{ note: string; time: number; velocity: number }> = []
+  const liveReleases: Array<{ note: string; time: number }> = []
+  const scheduledAttacks: Array<{ note: string; duration: number; time: number; velocity: number }> =
+    []
+
+  let deferredPromise: Promise<{
+    triggerAttack(note: string, time: number, velocity: number): void
+    triggerRelease(note: string, time: number): void
+    triggerAttackRelease(note: string, duration: number, time: number, velocity: number): void
+    releaseAll(): void
+    dispose(): void
+  }> | null = null
+  let deferredResolve:
+    | ((
+        runtime: {
+          triggerAttack(note: string, time: number, velocity: number): void
+          triggerRelease(note: string, time: number): void
+          triggerAttackRelease(
+            note: string,
+            duration: number,
+            time: number,
+            velocity: number,
+          ): void
+          releaseAll(): void
+          dispose(): void
+        },
+      ) => void)
+    | null = null
+
+  const makeRuntime = () => ({
+    triggerAttack: vi.fn((note: string, time: number, velocity: number) => {
+      liveAttacks.push({ note, time, velocity })
+    }),
+    triggerRelease: vi.fn((note: string, time: number) => {
+      liveReleases.push({ note, time })
+    }),
+    triggerAttackRelease: vi.fn((note: string, duration: number, time: number, velocity: number) => {
+      scheduledAttacks.push({ note, duration, time, velocity })
+    }),
+    releaseAll: vi.fn(),
+    dispose: vi.fn(),
+  })
+
+  return {
+    liveAttacks,
+    liveReleases,
+    scheduledAttacks,
+    createInstrument() {
+      return deferredPromise ?? Promise.resolve(makeRuntime())
+    },
+    deferNextLoad() {
+      deferredPromise = new Promise((resolve) => {
+        deferredResolve = resolve
+      })
+    },
+    resolveDeferredLoad() {
+      if (!deferredResolve) throw new Error('no deferred instrument load to resolve')
+      const resolve = deferredResolve
+      deferredResolve = null
+      deferredPromise = null
+      resolve(makeRuntime())
+    },
+    reset() {
+      liveAttacks.length = 0
+      liveReleases.length = 0
+      scheduledAttacks.length = 0
+      deferredPromise = null
+      deferredResolve = null
+    },
+  }
+})
+const instrumentTriggers = instrumentState.scheduledAttacks
 
 vi.mock('./instruments', async () => {
   // Pull in the real (tone-free) note-name table so slicing assertions read
@@ -126,17 +196,7 @@ vi.mock('./instruments', async () => {
   return {
     INSTRUMENTS: [],
     midiToNoteName,
-    createInstrument: vi.fn(async () => ({
-      triggerAttack: vi.fn(),
-      triggerRelease: vi.fn(),
-      triggerAttackRelease: vi.fn(
-        (note: string, duration: number, time: number, velocity: number) => {
-          instrumentTriggers.push({ note, duration, time, velocity })
-        },
-      ),
-      releaseAll: vi.fn(),
-      dispose: vi.fn(),
-    })),
+    createInstrument: vi.fn(() => instrumentState.createInstrument()),
   }
 })
 
@@ -198,7 +258,7 @@ beforeEach(() => {
   holder.transport.pause.mockClear()
   holder.destinationVolume.value = 0
   holder.immediateTime = 0
-  instrumentTriggers.length = 0
+  instrumentState.reset()
 })
 
 afterEach(() => {
@@ -348,6 +408,36 @@ describe('SynthEngine.play 鈥?latest-wins race guard', () => {
 })
 
 // 鈹€鈹€ 3. binary-search note slicing at fromTime boundary 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+describe('SynthEngine live input buffering', () => {
+  async function expectBufferedLiveNotesDropped(
+    pitch: number,
+    velocity: number,
+    stop: (engine: SynthEngine) => void,
+  ): Promise<void> {
+    instrumentState.deferNextLoad()
+    const engine = new SynthEngine()
+
+    engine.liveNoteOn(pitch, velocity)
+    stop(engine)
+    instrumentState.resolveDeferredLoad()
+    await Promise.resolve()
+
+    expect(instrumentState.liveAttacks).toEqual([])
+  }
+
+  it('pause() drops pending live notes so a later instrument load does not replay stale presses', async () => {
+    await expectBufferedLiveNotesDropped(60, 0.8, (engine) => engine.pause())
+  })
+
+  it('seek() drops pending live notes so a later instrument load does not replay stale presses', async () => {
+    await expectBufferedLiveNotesDropped(62, 0.7, (engine) => engine.seek(5))
+  })
+
+  it('resetTransport() drops pending live notes so a later instrument load does not replay stale presses', async () => {
+    await expectBufferedLiveNotesDropped(64, 0.6, (engine) => engine.resetTransport())
+  })
+})
 
 describe('SynthEngine.play 鈥?binary-search slicing at fromTime', () => {
   it('includes notes at exactly fromTime (boundary not dropped)', async () => {

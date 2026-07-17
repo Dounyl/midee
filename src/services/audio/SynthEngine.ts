@@ -27,52 +27,48 @@ interface NoteEvent {
   trackId: string
 }
 
+interface PendingLiveNote {
+  pitch: number
+  velocity: number
+}
+
 export class SynthEngine implements AudioEngine {
   private instruments = new Map<InstrumentId, InstrumentRuntime>()
   private loadingPromises = new Map<InstrumentId, Promise<InstrumentRuntime>>()
   // Default voice is Upright (1.2 MB of our own samples) instead of the 30 MB
-  // Salamander Grand set that @tonejs/piano pulls from an external CDN 鈥?
-  // 25脳 lighter first-load, bulletproof against upstream CDN outages, still
-  // musically pleasing. Users who specifically want the concert grand are
-  // one tap away in the instrument dropdown.
+  // Salamander Grand set that @tonejs/piano pulls from an external CDN.
+  // Much lighter on first load, more reliable offline, still musically useful.
   private currentId: InstrumentId = 'upright'
-  // Emits the currently-active instrument id while its samples/patch are
-  // loading, null otherwise. Only tracks the *current* instrument 鈥?background
-  // preloads of other voices don't flicker the signal.
+  // Emits the active instrument id while its samples/patch are loading, null
+  // otherwise. Only tracks the current instrument; background preloads of
+  // other voices do not flicker the signal.
   readonly loadingInstrument = createEventSignal<InstrumentId | null>(null)
   private midi: MidiFile | null = null
-  // Tone.Part holding every note as a single transport entry. Replaces N脳2
-  // transport.schedule calls on play/seek 鈥?O(N) work to build, but building a
-  // Part is ~10脳 faster than N individual schedules on dense MIDIs (tested
-  // 10k+ notes), and seek reuses the same Part via `part.start(0, offset)`.
+  // Tone.Part holding every note as a single transport entry. Replaces many
+  // individual transport.schedule calls on play/seek.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private scheduledPart: Part<[number, NoteEvent]> | null = null
   private _speed = 1
   private scheduledFromTime = 0
   private readyPromise: Promise<void> = Promise.resolve()
   private liveWarmupStarted = false
-  // Latest-wins guard for `play()`. `play()` is async (awaits readyPromise +
-  // Tone.start) and can be racing against a subsequent `pause()`. Without
-  // this, calling pause during the async window lets the next transport.start
-  // at the tail of play() fire after we thought we paused 鈥?audio leaks.
-  // Each play() call increments; if a newer call or a pause() ran, the older
-  // play() bails before hitting transport.start.
+  private liveWarmupPendingId: InstrumentId | null = null
+  private pendingLiveNotes = new Map<number, PendingLiveNote>()
+  // Latest-wins guard for play(). play() is async (awaits readyPromise +
+  // Tone.start) and can race with a later pause()/seek()/play().
   private playGeneration = 0
   // Tracks the user has muted via the Tracks panel. Checked at trigger time
-  // inside the scheduled Part 鈥?new notes from a disabled track are skipped,
-  // notes already in flight finish their natural decay (we don't track per-track
-  // voice handles, and stealing them mid-note would click).
+  // inside the scheduled Part so notes from a disabled track are skipped while
+  // notes already sounding are allowed to decay naturally.
   private disabledTrackIds = new Set<string>()
 
   async load(source: MidiFile | AudioBuffer): Promise<void> {
     // Loading a different file must invalidate any paused transport snapshot
-    // from the previous one; otherwise play() can hit the paused-resume fast
-    // path and revive the old Part instead of building the new song.
+    // from the previous one; otherwise play() can revive the old song.
     this.resetTransport()
     if (!(source instanceof AudioBuffer)) {
       this.midi = source as MidiFile
     }
-    // A new file's tracks are unrelated to whatever the user muted previously.
     this.disabledTrackIds.clear()
     this.readyPromise = this.ensureInstrument(this.currentId).then(() => undefined)
     return this.readyPromise
@@ -87,20 +83,19 @@ export class SynthEngine implements AudioEngine {
     return this.disabledTrackIds
   }
 
-  // Kick off piano sample download in the background 鈥?safe to call at app
-  // boot. AudioContext still requires a user gesture before `play()`.
+  // Kick off default instrument loading in the background. AudioContext still
+  // requires a user gesture before play().
   preloadDefault(): void {
     void this.ensureInstrument(this.currentId).catch(() => undefined)
   }
 
   // Switch the active instrument for both scheduled and live playback.
-  // Loading is lazy; selecting an unloaded instrument kicks off its init.
   async setInstrument(id: InstrumentId): Promise<void> {
     if (id === this.currentId) return
-    // Release anything currently sounding on the old instrument
     this.instruments.get(this.currentId)?.releaseAll()
     this.currentId = id
     await this.ensureInstrument(id)
+    this.flushPendingLiveNotes()
   }
 
   get instrument(): InstrumentId {
@@ -113,8 +108,6 @@ export class SynthEngine implements AudioEngine {
     const existing = this.loadingPromises.get(id)
     if (existing) return existing
 
-    // Reflect loading in the signal only when we're loading the *current*
-    // instrument 鈥?preloads of others happen silently in the background.
     if (id === this.currentId) this.loadingInstrument.set(id)
 
     const clearIfCurrent = (): void => {
@@ -142,8 +135,6 @@ export class SynthEngine implements AudioEngine {
     const gen = ++this.playGeneration
     await this.readyPromise
     await toneStart()
-    // A pause() or a newer play() happened during the awaits 鈥?abandon this
-    // invocation so we don't resurrect transport audio against user intent.
     if (gen !== this.playGeneration) return
 
     const transport = getTransport()
@@ -161,23 +152,12 @@ export class SynthEngine implements AudioEngine {
     transport.position = 0
     this.scheduledFromTime = fromTime
 
-    // Tone converts seconds鈫抰icks using the *current* bpm at schedule time.
-    // We schedule at the nominal tempo so every event's tick position encodes
-    // the note's original musical moment, then reapply the speed-scaled bpm
-    // right before start(). The transport then ticks `speed 脳` faster and
-    // events fire at `t / speed` wall time 鈥?matching MasterClock.currentTime,
-    // which advances at `speed 脳 wall`. If we schedule while bpm is already
-    // `midi.bpm 脳 speed`, the two scalings cancel and audio plays at 1脳 while
-    // the visual clock is at `speed 脳` 鈫?desync on fresh play / seek.
+    // Schedule against the nominal tempo first, then apply speed immediately
+    // before transport.start() so Tone's tick conversion and MasterClock stay
+    // phase-aligned after fresh play/seek.
     const nominalBpm = this.midi.bpm
     transport.bpm.value = nominalBpm
 
-    // Build (or rebuild) a single Tone.Part containing every note from fromTime
-    // onward. One transport entry instead of 2脳N 鈥?on a 10k-note MIDI, seek
-    // goes from "visible stall" to "imperceptible".
-    //
-    // Notes are time-sorted (parser invariant) so binary-search skips past
-    // events before fromTime without scanning them.
     const partEvents: [number, NoteEvent][] = []
     for (const track of this.midi.tracks) {
       const notes = track.notes
@@ -202,12 +182,7 @@ export class SynthEngine implements AudioEngine {
       }
     }
 
-    // Tone's Part type also accepts `[time, payload]` tuples, which lets us
-    // keep the playback payload compact without dropping type information.
     const part = new Part<[number, NoteEvent]>((time: number, ev: NoteEvent) => {
-      // Re-resolve the instrument each tick so mid-playback switches take
-      // effect without rebuilding the Part. setInstrument() releases the old
-      // voice so overlapping notes from the previous instrument don't linger.
       if (this.disabledTrackIds.has(ev.trackId)) return
       const inst = this.instruments.get(this.currentId)
       inst?.triggerAttackRelease(ev.note, ev.duration, time, ev.velocity)
@@ -220,11 +195,9 @@ export class SynthEngine implements AudioEngine {
   }
 
   pause(): void {
-    // Bump the generation so any in-flight `play()` aborts before it can
-    // reach `transport.start()` and resurrect audio after the pause.
     this.playGeneration++
     getTransport().pause()
-    this.releaseAllInstruments()
+    this.stopLivePlayback()
   }
 
   resetTransport(): void {
@@ -233,18 +206,16 @@ export class SynthEngine implements AudioEngine {
     const transport = getTransport()
     transport.stop()
     transport.position = 0
-    this.releaseAllInstruments()
+    this.stopLivePlayback()
     this.scheduledFromTime = 0
   }
 
   seek(time: number): void {
     const wasPlaying = getTransport().state === 'started'
-    // Same latest-wins guard 鈥?a concurrent play() racing with a seek would
-    // otherwise restart transport at a stale fromTime.
     this.playGeneration++
     getTransport().stop()
     this.clearScheduled()
-    this.releaseAllInstruments()
+    this.stopLivePlayback()
     if (wasPlaying) void this.play(time)
   }
 
@@ -257,30 +228,34 @@ export class SynthEngine implements AudioEngine {
     getTransport().bpm.value = (this.midi?.bpm ?? 120) * s
   }
 
-  // 鈹€鈹€ Live MIDI keyboard input 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
   primeLiveInput(): void {
-    if (this.liveWarmupStarted) return
-    this.liveWarmupStarted = true
-    void toneStart().catch(() => undefined)
-    void this.ensureInstrument(this.currentId).catch(() => undefined)
+    if (!this.liveWarmupStarted) {
+      this.liveWarmupStarted = true
+      void toneStart().catch(() => undefined)
+    }
+    this.warmCurrentLiveInstrument()
   }
 
   liveNoteOn(pitch: number, velocity: number): void {
     this.primeLiveInput()
     const inst = this.instruments.get(this.currentId)
-    if (!inst) return // still loading 鈥?first notes may drop, acceptable tradeoff
+    if (!inst) {
+      this.pendingLiveNotes.set(pitch, { pitch, velocity })
+      return
+    }
+    this.pendingLiveNotes.delete(pitch)
     inst.triggerAttack(midiToNoteName(pitch), immediate(), velocity)
   }
 
   liveNoteOff(pitch: number): void {
+    if (this.pendingLiveNotes.delete(pitch)) return
     const inst = this.instruments.get(this.currentId)
     if (!inst) return
     inst.triggerRelease(midiToNoteName(pitch), immediate())
   }
 
   liveReleaseAll(): void {
-    this.releaseAllInstruments()
+    this.stopLivePlayback()
   }
 
   // Scheduled variants for loop playback. Caller supplies an AudioContext time
@@ -299,12 +274,10 @@ export class SynthEngine implements AudioEngine {
   }
 
   // Exposed so non-audio modules (UI, visuals) can convert AudioContext time
-  // into a setTimeout delay without pulling Tone into their imports.
+  // into a setTimeout delay without importing Tone directly.
   get audioContextTime(): number {
     return getContext().currentTime
   }
-
-  // 鈹€鈹€ Scheduled playback (internal) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
   private clearScheduled(): void {
     if (this.scheduledPart) {
@@ -319,9 +292,39 @@ export class SynthEngine implements AudioEngine {
     for (const inst of this.instruments.values()) inst.releaseAll()
   }
 
+  private stopLivePlayback(): void {
+    this.pendingLiveNotes.clear()
+    this.releaseAllInstruments()
+  }
+
+  private warmCurrentLiveInstrument(): void {
+    const id = this.currentId
+    if (this.instruments.has(id) || this.liveWarmupPendingId === id) return
+    this.liveWarmupPendingId = id
+    void this.ensureInstrument(id).then(
+      () => {
+        if (this.liveWarmupPendingId === id) this.liveWarmupPendingId = null
+        if (this.currentId === id) this.flushPendingLiveNotes()
+      },
+      () => {
+        if (this.liveWarmupPendingId === id) this.liveWarmupPendingId = null
+      },
+    )
+  }
+
+  private flushPendingLiveNotes(): void {
+    const inst = this.instruments.get(this.currentId)
+    if (!inst || this.pendingLiveNotes.size === 0) return
+    for (const { pitch, velocity } of this.pendingLiveNotes.values()) {
+      inst.triggerAttack(midiToNoteName(pitch), immediate(), velocity)
+    }
+    this.pendingLiveNotes.clear()
+  }
+
   dispose(): void {
     this.clearScheduled()
     getTransport().stop()
+    this.stopLivePlayback()
     for (const inst of this.instruments.values()) inst.dispose()
     this.instruments.clear()
   }
