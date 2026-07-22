@@ -1,4 +1,4 @@
-// Renders a standalone HTML preview of midee's Google SERP card and its
+// Renders a standalone HTML preview of midora's Google SERP card and its
 // social unfurl (Slack / Twitter / Discord / LinkedIn). Reads the live
 // index.html for title / description / canonical / OG tags, inlines the
 // 96×96 favicon and og:image (if it can find one on disk), and writes a
@@ -38,7 +38,7 @@ const description = metaByName('description') ?? ''
 const canonical =
   (html.match(/<link[^>]*rel="canonical"[^>]*>/i)?.[0] &&
     attr(html.match(/<link[^>]*rel="canonical"[^>]*>/i)?.[0] ?? '', 'href')) ||
-  'https://midee.app'
+  'https://midora.top'
 const ogTitle = metaByProp('og:title') ?? title
 const ogDescription = metaByProp('og:description') ?? description
 const ogSiteName = metaByProp('og:site_name') ?? new URL(canonical).hostname

@@ -21,7 +21,7 @@ const layout = readFileSync(resolve(contentDir, '_layout.html'), 'utf8')
 // ~360 ms render-blocking on first load.
 const { fontFaces, fontPreload } = renderFontTags(resolve(distDir, 'assets'))
 
-const SITE = 'https://midee.app'
+const SITE = 'https://midora.top'
 
 marked.setOptions({ gfm: true, breaks: false })
 
@@ -82,7 +82,7 @@ function buildJsonLd({ data, html }) {
     author: { '@type': 'Person', name: 'Aayush Dutt' },
     publisher: {
       '@type': 'Organization',
-      name: 'midee',
+      name: 'midora',
       url: SITE,
     },
   }
@@ -104,7 +104,7 @@ function buildJsonLd({ data, html }) {
 // trail that Google shows above a result's URL.
 function buildBreadcrumbJsonLd({ data }) {
   const items = [
-    { '@type': 'ListItem', position: 1, name: 'midee', item: `${SITE}/` },
+    { '@type': 'ListItem', position: 1, name: 'midora', item: `${SITE}/` },
   ]
   if (data.path.startsWith('/blog/')) {
     items.push({ '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE}/blog/` })
@@ -181,7 +181,7 @@ function render(mdPath) {
     throw new Error(`Missing required frontmatter in ${relative(root, mdPath)}`)
   }
 
-  // Inline CTAs in markdown — `[midee](/)`, `[Open it](/)`, etc. — all
+  // Inline CTAs in markdown — `[midora](/)`, `[Open it](/)`, etc. — all
   // render as <a href="/">. Rewrite them so authors don't have to hand-
   // attach UTMs in every post. Scoped to <a …> so future markdown features
   // that emit other href="/" values (e.g. canonical <link>) aren't caught.
@@ -259,14 +259,14 @@ function writeBlogIndex(results) {
     .map(([href, label]) => `<a href="${href}">${escapeHtml(label)}</a>`)
     .join(' · ')
 
-  const body = `<h1>Blog</h1>\n<p class="lede">Writing about midee — how it is built, technical decisions, and how to get more out of the browser MIDI player, visualizer, live mode, and Learn mode.</p>\n<h2>Latest posts</h2>\n<ul class="post-list">\n${listHtml}\n</ul>\n<details>\n<summary class="post-meta-inline">More midee guides</summary>\n<p class="post-meta-inline">${guidesHtml}</p>\n</details>`
+  const body = `<h1>Blog</h1>\n<p class="lede">Writing about midora — how it is built, technical decisions, and how to get more out of the browser MIDI player, visualizer, live mode, and Learn mode.</p>\n<h2>Latest posts</h2>\n<ul class="post-list">\n${listHtml}\n</ul>\n<details>\n<summary class="post-meta-inline">More midora guides</summary>\n<p class="post-meta-inline">${guidesHtml}</p>\n</details>`
 
-  const indexData = { title: 'Blog', description: 'Writing about midee — how it is built, technical decisions, and how to get more out of the MIDI visualizer.', path: '/blog/' }
+  const indexData = { title: 'Blog', description: 'Writing about midora — how it is built, technical decisions, and how to get more out of the MIDI visualizer.', path: '/blog/' }
   const breadcrumb = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'midee', item: `${SITE}/` },
+      { '@type': 'ListItem', position: 1, name: 'midora', item: `${SITE}/` },
       { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE}/blog/` },
     ],
   }, null, 2)
@@ -280,12 +280,12 @@ function writeBlogIndex(results) {
     .replaceAll('{{jsonLd}}', JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Blog',
-      name: 'midee blog',
+      name: 'midora blog',
       description: indexData.description,
       url: `${SITE}/blog/`,
       publisher: {
         '@type': 'Organization',
-        name: 'midee',
+        name: 'midora',
         url: SITE,
       },
     }, null, 2))
@@ -325,17 +325,17 @@ function writeRssFeed(posts) {
       <guid isPermaLink="true">${url}</guid>
       <pubDate>${pubDate}</pubDate>
       <description>${escapeXml(p.description)}</description>
-      <author>hello@midee.app (Aayush Dutt)</author>
+      <author>hello@midora.top (Aayush Dutt)</author>
     </item>`
   }).join('\n')
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>midee blog</title>
+    <title>midora blog</title>
     <link>${SITE}/blog/</link>
     <atom:link href="${SITE}/blog/rss.xml" rel="self" type="application/rss+xml" />
-    <description>Writing about midee — a free, open-source MIDI visualizer in the browser. Technical decisions, release notes, and how to get more out of the app.</description>
+    <description>Writing about midora — a free MIDI visualizer in the browser. Technical decisions, release notes, and how to get more out of the app.</description>
     <language>en-us</language>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
 ${items}

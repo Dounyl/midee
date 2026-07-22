@@ -38,9 +38,9 @@ describe('createAppPreferences', () => {
   })
 
   it('falls back to defaults when persisted values are malformed', () => {
-    localStorage.setItem('midee.metronomeBpm', 'oops')
-    localStorage.setItem('midee.chordOverlay', 'not-a-bool')
-    localStorage.setItem('midee.themeIndex', '9999')
+    localStorage.setItem('midora.metronomeBpm', 'oops')
+    localStorage.setItem('midora.chordOverlay', 'not-a-bool')
+    localStorage.setItem('midora.themeIndex', '9999')
 
     const prefs = createAppPreferences()
     expect(prefs.hydrate()).toMatchObject({

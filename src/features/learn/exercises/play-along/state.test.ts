@@ -41,7 +41,7 @@ describe('play-along persisted state', () => {
 
   it('falls back to demo mode when old persisted state has no guided mode', () => {
     localStorage.setItem(
-      'midee.learn.playAlong.state.v1',
+      'midora.learn.playAlong.state.v1',
       JSON.stringify({
         prefs: {
           waitEnabled: false,

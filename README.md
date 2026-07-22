@@ -1,11 +1,11 @@
-# midee
+# midora
 
 English version: [README.en.md](./README.en.md)
 
-`midee` 是一个运行在浏览器里的 MIDI 可视化、实时演奏、练习与导出工具。
+`midora` 是一个运行在浏览器里的 MIDI 可视化、实时演奏、练习与导出工具。
 
 在线地址：
-[http://139.196.37.239/](http://139.196.37.239/)
+[https://midora.top/](https://midora.top/)
 
 GitHub：
 [https://github.com/Dounyl/midee](https://github.com/Dounyl/midee)
@@ -23,7 +23,7 @@ GitHub：
 
 ## 当前定位
 
-`midee` 当前仍然是一个静态部署的 Vite SPA。核心能力都在浏览器端完成，包括：
+`midora` 当前仍然是一个静态部署的 Vite SPA。核心能力都在浏览器端完成，包括：
 
 - MIDI 加载与播放
 - 音频合成与实时输入
@@ -142,6 +142,7 @@ pnpm run test
 pnpm run check
 ```
 
-## License
+## 授权说明
 
-项目当前按 MIT 口径维护；如果你准备对外分发或进一步商业化使用，建议同时核对仓库顶层许可证文件与第三方资源许可证说明。
+本项目基于原作者的邮件授权进行 fork、修改与部署。
+当前暂未单独对第三方再分发发布新的开源许可证。

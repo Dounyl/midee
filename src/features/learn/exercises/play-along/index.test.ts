@@ -71,7 +71,7 @@ vi.mock('./engine', () => ({
     readonly clearLoop = vi.fn()
     readonly setSpeedPreset = vi.fn()
     readonly setLoopRegion = vi.fn()
-    readonly onNoteOn = vi.fn(() => 'none')
+    readonly onNoteOn = vi.fn(() => ({ kind: 'none' }))
     readonly onNoteOff = vi.fn()
     readonly replaceMidi = vi.fn()
 
@@ -203,25 +203,6 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
 
   it('fires enlarged success feedback only for advanced notes in practice mode', () => {
     const ctx = makeContext()
-    ctx.learnState.setState('loadedMidi', {
-      name: 'practice.mid',
-      duration: 30,
-      bpm: 120,
-      timeSignature: [4, 4],
-      keySignature: null,
-      tracks: [
-        {
-          id: 'rh',
-          name: 'Right',
-          channel: 0,
-          instrument: 0,
-          isDrum: false,
-          color: 0xffffff,
-          colorIndex: 0,
-          notes: [{ pitch: 60, time: 2, duration: 1, velocity: 1 }],
-        },
-      ],
-    } as never)
     ;(ctx.services.clock as { currentTime: number }).currentTime = 2.2
     const exercise = playAlongDescriptor.factory(ctx)
     exercise.start()
@@ -230,7 +211,7 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
     expect(engine).toBeDefined()
 
     engine!.state.guidedMode = 'practice'
-    engine!.onNoteOn.mockReturnValueOnce('none')
+    engine!.onNoteOn.mockReturnValueOnce({ kind: 'none' })
 
     exercise.onNoteOn?.({ pitch: 59, velocity: 1, clockTime: 2.2, source: 'midi' })
 
@@ -238,7 +219,10 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
     expect(ctx.services.renderer.burstParticleAt).not.toHaveBeenCalled()
     expect(ctx.overlay.practiceSuccessBurst).not.toHaveBeenCalled()
 
-    engine!.onNoteOn.mockReturnValueOnce('advanced')
+    engine!.onNoteOn.mockReturnValueOnce({
+      kind: 'advanced',
+      clearedStep: { time: 2, latestEnd: 3, pitches: new Set([60]) },
+    })
 
     exercise.onNoteOn?.({ pitch: 60, velocity: 1, clockTime: 2.2, source: 'midi' })
 
@@ -252,7 +236,15 @@ describe('PlayAlongExercise keyboard shortcuts', () => {
     ;(ctx.services.renderer.burstParticleAt as ReturnType<typeof vi.fn>).mockClear()
     ;(ctx.log.error as ReturnType<typeof vi.fn>).mockClear()
 
-    engine!.onNoteOn.mockReturnValueOnce('rejected')
+    engine!.onNoteOn.mockReturnValueOnce({ kind: 'advanced', clearedStep: { time: 3, latestEnd: 4, pitches: new Set([61]) } })
+    ;(ctx.services.clock as { currentTime: number }).currentTime = 2.2
+    exercise.onNoteOn?.({ pitch: 61, velocity: 1, clockTime: 2.2, source: 'midi' })
+
+    expect(ctx.overlay.pulseTargetZone).not.toHaveBeenCalled()
+    expect(ctx.services.renderer.burstParticleAt).not.toHaveBeenCalled()
+    expect(ctx.overlay.practiceSuccessBurst).not.toHaveBeenCalled()
+
+    engine!.onNoteOn.mockReturnValueOnce({ kind: 'rejected' })
     exercise.onNoteOn?.({ pitch: 61, velocity: 1, clockTime: 0, source: 'midi' })
 
     expect(ctx.log.error).toHaveBeenCalled()

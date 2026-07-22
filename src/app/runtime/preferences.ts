@@ -44,7 +44,7 @@ export function createAppPreferences(): {
 
   const stores: AppPreferenceStores = {
     themeIndex: indexPersisted(
-      'midee.themeIndex',
+      'midora.themeIndex',
       Math.max(
         0,
         THEMES.findIndex((t) => t.name === 'Sunset'),
@@ -52,22 +52,22 @@ export function createAppPreferences(): {
       THEMES.length,
     ),
     instrumentIndex: indexPersisted(
-      'midee.instrumentIndex',
+      'midora.instrumentIndex',
       Math.max(0, instrumentIds.indexOf('upright')),
       instrumentIds.length,
     ),
     particleIndex: indexPersisted(
-      'midee.particleIndex',
+      'midora.particleIndex',
       Math.max(
         0,
         PARTICLE_STYLES.findIndex((s) => s.id === 'embers'),
       ),
       PARTICLE_STYLES.length,
     ),
-    metronomeBpm: numberPersisted('midee.metronomeBpm', 120, 40, 240),
-    chordOverlay: booleanPersisted('midee.chordOverlay', true),
-    pitchLabels: booleanPersisted('midee.pitchLabels', false),
-    keyboardMode61: booleanPersisted('midee.keyboardMode61', false),
+    metronomeBpm: numberPersisted('midora.metronomeBpm', 120, 40, 240),
+    chordOverlay: booleanPersisted('midora.chordOverlay', true),
+    pitchLabels: booleanPersisted('midora.pitchLabels', false),
+    keyboardMode61: booleanPersisted('midora.keyboardMode61', false),
   }
 
   return {

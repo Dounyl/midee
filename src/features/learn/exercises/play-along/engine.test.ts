@@ -590,6 +590,30 @@ describe('PlayAlongEngine', () => {
     expect(engine.state.streak).toBe(1)
   })
 
+  it('returns the cleared step when a practice chord advances', () => {
+    const { services, learnState } = makeServices()
+    const engine = new PlayAlongEngine({ services, learnState })
+    engine.attach(makeMidi())
+    engine.setGuidedMode('practice')
+    engine.setWaitEnabled(true)
+    const clock = services.clock as unknown as { emit: (t: number) => void }
+    clock.emit(2.01)
+
+    expect(engine.onNoteOn({ pitch: 60, velocity: 1, clockTime: 2.01, source: 'midi' })).toEqual({
+      kind: 'none',
+    })
+    expect(engine.onNoteOn({ pitch: 64, velocity: 1, clockTime: 2.01, source: 'midi' })).toEqual({
+      kind: 'none',
+    })
+    const result = engine.onNoteOn({ pitch: 67, velocity: 1, clockTime: 2.01, source: 'midi' })
+
+    expect(result.kind).toBe('advanced')
+    if (result.kind !== 'advanced') throw new Error('expected advanced result')
+    expect(result.clearedStep.time).toBeCloseTo(2)
+    expect(result.clearedStep.latestEnd).toBeCloseTo(2.5)
+    expect(Array.from(result.clearedStep.pitches).sort((a, b) => a - b)).toEqual([60, 64, 67])
+  })
+
   it('held-tick bonus increments while a cleared pitch is still held', () => {
     // Clear the first chord, then keep holding through the song; ticks
     // accumulate for each held pitch until each pitch's held-eligibility

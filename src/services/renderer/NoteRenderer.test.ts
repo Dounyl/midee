@@ -105,4 +105,20 @@ describe('NoteRenderer', () => {
     expect(longBottom - labels[1]!.y).toBeCloseTo(16)
     expect(labels[0]!.y).toBeCloseTo(labels[1]!.y)
   })
+
+  it('reuses label style objects when text and sizing stay the same across frames', () => {
+    const renderer = new NoteRenderer(darkTheme)
+    const track = makeTrack()
+    const viewport = makeViewport()
+
+    renderer.setTracks([track])
+    renderer.draw([track], 10, viewport, new Set([track.id]), null, null, null)
+
+    const labels = Reflect.get(renderer, 'labelPool') as Array<{ style: Record<string, unknown> }>
+    const firstStyle = labels[0]!.style
+
+    renderer.draw([track], 10, viewport, new Set([track.id]), null, null, null)
+
+    expect(labels[0]!.style).toBe(firstStyle)
+  })
 })

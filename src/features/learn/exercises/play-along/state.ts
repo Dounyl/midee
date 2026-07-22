@@ -22,7 +22,7 @@ interface StoredPlayAlongState {
   replay?: PlayAlongReplayState | null
 }
 
-const STORAGE_KEY = 'midee.learn.playAlong.state.v1'
+const STORAGE_KEY = 'midora.learn.playAlong.state.v1'
 
 export const DEFAULT_PLAY_ALONG_PREFERENCES: PlayAlongPreferences = {
   waitEnabled: true,

@@ -1,12 +1,12 @@
 import { parseMidiFile } from '@/types/midi/parser'
 import type { MidiFile } from '@/types/midi/types'
 
-const DB_NAME = 'midee-midi-library'
+const DB_NAME = 'midora-midi-library'
 const DB_VERSION = 1
 const STORE_NAME = 'midis'
 const LOCAL_MIDI_LIMIT = 20
-export const MIDI_LIBRARY_CHANGED = 'midee:midi-library-changed'
-const SAMPLE_HISTORY_KEY = 'midee.sample-history'
+export const MIDI_LIBRARY_CHANGED = 'midora:midi-library-changed'
+const SAMPLE_HISTORY_KEY = 'midora.sample-history'
 
 export interface LocalMidiEntry {
   id: string

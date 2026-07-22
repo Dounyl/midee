@@ -149,7 +149,7 @@
           font-weight="400"
           font-size="168"
           fill="#fafafa"
-          letter-spacing="-4">midee</text>
+          letter-spacing="-4">midora</text>
 
     <!-- Tagline -->
     <text x="0" y="352"
@@ -164,7 +164,7 @@
           font-family="Inter"
           font-size="18"
           font-weight="400"
-          fill="#8a8a9c">Free, open-source, runs entirely in your browser.</text>
+          fill="#8a8a9c">Free, browser-based, runs entirely in your browser.</text>
     <text x="0" y="422"
           font-family="Inter"
           font-size="18"
@@ -190,12 +190,12 @@
         font-family="JetBrains Mono"
         font-size="15"
         font-weight="400"
-        fill="#8a8a9c">midee.app</text>
+        fill="#8a8a9c">midora.top</text>
 
   <text x="1118" y="598"
         font-family="Inter"
         font-size="14"
         font-weight="400"
         fill="#606070"
-        text-anchor="end">Free · Open source · MIT</text>
+        text-anchor="end">Free · Browser-based · Client-side</text>
 </svg>

@@ -36,7 +36,7 @@ export const LOCALES: Array<{ code: LocaleCode; nativeName: string }> = [
 ]
 
 const SUPPORTED_SET = new Set<string>(SUPPORTED_LOCALES)
-const STORAGE_KEY = 'midee.locale'
+const STORAGE_KEY = 'midora.locale'
 
 // Explicit loader map (not import.meta.glob) so Vite can code-split each
 // locale into its own async chunk and the types remain concrete.
@@ -195,7 +195,7 @@ export async function setLocale(code: LocaleCode): Promise<void> {
 // locale is non-English. Caller uses this to show a subtle one-time
 // onboarding hint pointing at the locale picker. Idempotent: marks the
 // flag immediately so a refresh doesn't re-trigger.
-const HINT_SHOWN_KEY = 'midee.localeHintShown'
+const HINT_SHOWN_KEY = 'midora.localeHintShown'
 export function shouldShowLocaleHint(): boolean {
   if (typeof window === 'undefined') return false
   if (locale.value === 'en') return false

@@ -226,7 +226,7 @@ export class ExerciseRunner {
   }
 
   private buildStorage(descriptor: ExerciseDescriptor): ExerciseStorage {
-    const prefix = `midee.learn.ex.${descriptor.id}.`
+    const prefix = `midora.learn.ex.${descriptor.id}.`
     return {
       get<T>(key: string, fallback: T): T {
         try {

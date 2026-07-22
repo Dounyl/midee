@@ -5,7 +5,7 @@ import { Coachmark } from '@/components/common/Coachmark'
 // loaded MIDI — long enough after the file load that they've had a moment to
 // orient.
 
-const STORAGE_KEY = 'midee.coachmark.learnShown'
+const STORAGE_KEY = 'midora.coachmark.learnShown'
 const SHOW_DELAY_MS = 8000
 const AUTO_DISMISS_MS = 14000
 const ANCHOR_ID = 'ts-learn-this'

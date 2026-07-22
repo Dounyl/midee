@@ -104,7 +104,7 @@ describe('route entry helpers', () => {
 
     expect(telemetryMocks.trackEvent).toHaveBeenCalledWith('play_mode_entered', { duration_s: 20 })
     expect(telemetryMocks.track).toHaveBeenCalledWith('file_mode_entered', { duration_s: 20 })
-    expect(document.title).toBe('song.mid - midee')
+    expect(document.title).toBe('song.mid - midora')
   })
 
   it('applyPlayRouteEntry re-syncs playback audio from the play session midi', async () => {

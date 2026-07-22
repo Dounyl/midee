@@ -5,7 +5,7 @@ import { Coachmark } from './Coachmark'
 // competing for attention on the same screen — and dismisses immediately the
 // first time the user drags the HUD (proving they discovered the affordance).
 
-const STORAGE_KEY = 'midee.coachmark.dragShown'
+const STORAGE_KEY = 'midora.coachmark.dragShown'
 const SHOW_DELAY_MS = 6000
 const AUTO_DISMISS_MS = 10000
 const ANCHOR_ID = 'hud-drag'

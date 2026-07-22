@@ -19,7 +19,7 @@ export const en = {
   // translator-controlled (French/Spanish/Portuguese put the emphasised
   // noun in different positions). No user-controlled interpolation, so no
   // XSS risk.
-  'home.kicker': 'midee · MIDI visualizer',
+  'home.kicker': 'midora · MIDI visualizer',
   'home.title.html': 'Play <em>notes</em>,<br/>see them bloom.',
   'home.subtitle':
     'Open a MIDI file to animate it, or go live and play with your keyboard, mouse, or a MIDI controller.',
@@ -39,8 +39,8 @@ export const en = {
   'home.metaLink.blog': 'Read the blog',
   'home.metaLink.github': 'Source on GitHub',
   'home.metaLink.discord': 'Join the Discord community',
-  'home.metaLinks.aria': 'midee links',
-  'home.aria': 'midee home',
+  'home.metaLinks.aria': 'midora links',
+  'home.aria': 'midora home',
 
   // ── Top strip (primary nav) ─────────────────────────────────
   'topStrip.home': 'Home',
@@ -91,6 +91,8 @@ export const en = {
   'customize.chord': 'Chord readout',
   'customize.chord.sub': "Name what's sounding · live mode",
   'customize.language': 'Language',
+  'customize.credits': 'Acknowledgement',
+  'customize.credits.github': 'aayushdutt/midee on GitHub',
   'feedback.menu': 'Feedback & feature requests',
   'feedback.postSession': 'Wish this worked differently? Tell us',
 
@@ -247,9 +249,9 @@ export const en = {
   'modeError.retry': 'Try again',
 
   // ── Document title (browser tab) ───────────────────────────
-  'doc.title.home': 'midee — drop a MIDI, watch it sing',
-  'doc.title.live': 'midee · live',
-  'doc.title.learn': 'midee · learn',
+  'doc.title.home': 'midora — drop a MIDI, watch it sing',
+  'doc.title.live': 'midora · live',
+  'doc.title.learn': 'midora · learn',
 
   // ── Learn hub ───────────────────────────────────────────────
   'learn.hub.recommended': 'Recommended',
@@ -539,8 +541,8 @@ export const en = {
 
   // ── Toasts / confirmations ─────────────────────────────────
   'toast.export.ready': '{filename} ready',
-  'toast.session.saved': 'midee-session.mid · {seconds}s',
-  'toast.loop.saved': 'midee-loop.mid',
+  'toast.session.saved': 'midora-session.mid · {seconds}s',
+  'toast.loop.saved': 'midora-loop.mid',
   'toast.recording.empty': 'Nothing recorded — play a few notes while Record is on.',
 
   // ── Onboarding ─────────────────────────────────────────────

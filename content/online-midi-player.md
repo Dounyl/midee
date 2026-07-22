@@ -8,13 +8,13 @@ modified: 2026-05-07
 
 # Free online MIDI player
 
-[midee](/) is a free online MIDI player for opening `.mid` and `.midi` files in your browser. Drop in a file and it starts playing with a full piano-roll visualizer, instrument audio, track colors, and transport controls.
+[midora](/) is a free online MIDI player for opening `.mid` and `.midi` files in your browser. Drop in a file and it starts playing with a full piano-roll visualizer, instrument audio, track colors, and transport controls.
 
 It is built for the small, common moment: you found a MIDI file, downloaded an arrangement, exported something from a DAW, or received a `.mid` from a friend, and you just want to hear it without installing a desktop MIDI player.
 
 ## Quick steps
 
-1. Open [midee.app](/).
+1. Open [midora.top](/).
 2. Drag a `.mid` or `.midi` file onto the page.
 3. Press play.
 4. Leave the tab open if you want it playing while you work.
@@ -28,9 +28,9 @@ MIDI is not audio. A `.mid` file is a compact set of note events, timing, tracks
 
 A browser MIDI player solves the practical problem: open the file, hear the notes, see what is happening, and move on.
 
-## What midee does as a MIDI player
+## What midora does as a MIDI player
 
-| Need | How midee helps |
+| Need | How midora helps |
 | --- | --- |
 | Listen to a MIDI file | Drop the file in and press play |
 | See the arrangement | Notes appear on a falling piano-roll visualizer |
@@ -39,11 +39,11 @@ A browser MIDI player solves the practical problem: open the file, hear the note
 | Avoid uploads | The MIDI file stays in your browser |
 | Share the result | Export a piano-roll MP4 when you want a video |
 
-midee is not trying to be a full DAW. It is the fast path for previewing, listening, visualizing, and optionally exporting a MIDI.
+midora is not trying to be a full DAW. It is the fast path for previewing, listening, visualizing, and optionally exporting a MIDI.
 
 ## Background MIDI playback
 
-A lot of people use midee like a tiny music player: drop in a file, press play, switch to another tab, and let the MIDI run. That works well on desktop as long as the browser tab stays open.
+A lot of people use midora like a tiny music player: drop in a file, press play, switch to another tab, and let the MIDI run. That works well on desktop as long as the browser tab stays open.
 
 A few honest notes:
 
@@ -52,13 +52,13 @@ A few honest notes:
 - If you close the tab, playback stops.
 - If you want a shareable file, use [MIDI to MP4 export](/midi-to-mp4/) instead.
 
-For background listening, the best workflow is simple: open midee in a browser tab, load the MIDI, choose an instrument you like, and let it play.
+For background listening, the best workflow is simple: open midora in a browser tab, load the MIDI, choose an instrument you like, and let it play.
 
 ## Online MIDI player vs desktop MIDI player
 
 | Option | Best for | Tradeoff |
 | --- | --- | --- |
-| midee | Quick playback, visualizer, no install, no upload | Requires a modern browser |
+| midora | Quick playback, visualizer, no install, no upload | Requires a modern browser |
 | DAW | Editing, mixing, production | Slow if you only want to listen |
 | Native MIDI player | Offline playback | Often uses basic system sounds |
 | Upload converter | Sharing converted files | Requires uploading your MIDI |
@@ -78,28 +78,28 @@ The piano roll helps you notice things that are hard to hear at first:
 - Which notes are held while other parts move.
 - Whether a file is actually playable on piano.
 
-That is why midee pairs playback with visualization. It is not just a transport bar; it is a way to inspect the music.
+That is why midora pairs playback with visualization. It is not just a transport bar; it is a way to inspect the music.
 
 ## Common questions
 
 **Can I play MIDI files online for free?**
-Yes. midee is free and opens standard `.mid` and `.midi` files in the browser.
+Yes. midora is free and opens standard `.mid` and `.midi` files in the browser.
 
 **Do I need to upload my MIDI file?**
-No. The file is read locally by your browser. midee does not need a server upload to play it.
+No. The file is read locally by your browser. midora does not need a server upload to play it.
 
-**Can I use midee as a background MIDI player?**
+**Can I use midora as a background MIDI player?**
 Yes on desktop, as long as the tab stays open. Mobile browsers may pause background tabs depending on the device and settings.
 
-**Does midee play audio or only show notes?**
+**Does midora play audio or only show notes?**
 It plays audio and shows notes. You can listen while watching the piano-roll visualization.
 
 **Can I export what I am hearing?**
 Yes. Use the export control to create an MP4 piano-roll video with audio. For details, see [MIDI to MP4](/midi-to-mp4/).
 
 **Can I play a MIDI keyboard too?**
-Yes. midee supports live play through Web MIDI controllers and a computer keyboard. See the [browser MIDI keyboard guide](/blog/playing-your-midi-keyboard-in-the-browser/).
+Yes. midora supports live play through Web MIDI controllers and a computer keyboard. See the [browser MIDI keyboard guide](/blog/playing-your-midi-keyboard-in-the-browser/).
 
 ## Try it
 
-[Open midee](/), drop in a `.mid`, and press play. If the file is worth sharing, export it as a clean MP4 afterward.
+[Open midora](/), drop in a `.mid`, and press play. If the file is worth sharing, export it as a clean MP4 afterward.

@@ -1,11 +1,11 @@
-# midee
+# midora
 
 简体中文: [README.md](./README.md)
 
-`midee` is a browser-native MIDI visualizer, live-play, practice, and export tool.
+`midora` is a browser-native MIDI visualizer, live-play, practice, and export tool.
 
 Live site:
-[http://139.196.37.239/](http://139.196.37.239/)
+[https://midora.top/](https://midora.top/)
 
 GitHub:
 [https://github.com/Dounyl/midee](https://github.com/Dounyl/midee)
@@ -23,7 +23,7 @@ This repository will keep evolving in its own direction. Over time, its features
 
 ## Current position
 
-`midee` is still a static Vite SPA. Its core capabilities run in the browser, including:
+`midora` is still a static Vite SPA. Its core capabilities run in the browser, including:
 
 - MIDI loading and playback
 - audio synthesis and live input
@@ -142,6 +142,7 @@ pnpm run test
 pnpm run check
 ```
 
-## License
+## Authorization
 
-The project is currently maintained under MIT terms. If you plan to redistribute or commercialize it further, also verify the top-level license file and any third-party asset licenses used in the repository.
+This project is maintained based on direct email authorization from the original author for fork, modification, and deployment.
+It does not currently publish a separate open-source license for third-party redistribution.

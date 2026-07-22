@@ -46,8 +46,8 @@ const version =
   process.env.GITHUB_SHA?.slice(0, 7) ??
   'local'
 
-const args = ['posthog-cli', 'sourcemap', 'process', '--directory', distDir, '--release-name', 'midee', '--release-version', version]
+const args = ['posthog-cli', 'sourcemap', 'process', '--directory', distDir, '--release-name', 'midora', '--release-version', version]
 
-console.log(`[posthog-sourcemaps] processing ${distDir} (release midee@${version})`)
+console.log(`[posthog-sourcemaps] processing ${distDir} (release midora@${version})`)
 const r = spawnSync('npx', args, { stdio: 'inherit' })
 process.exit(r.status ?? 1)

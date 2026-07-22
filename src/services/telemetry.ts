@@ -122,7 +122,7 @@ export function registerAnalyticsContext(): void {
   })
 }
 
-const ACTIVATED_KEY = 'midee.activated'
+const ACTIVATED_KEY = 'midora.activated'
 export function trackActivation(trigger: 'playback_30s' | 'live_note' | 'export_started'): void {
   try {
     if (localStorage.getItem(ACTIVATED_KEY)) return

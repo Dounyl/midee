@@ -9,7 +9,7 @@ readingTime: 8 min read
 
 # Why I replaced ffmpeg.wasm with WebCodecs for video export
 
-The first version of midee's MP4 export pipeline worked like this: capture the canvas with `MediaRecorder` into a WebM blob, then transcode that blob to H.264 MP4 via `ffmpeg.wasm`. It shipped in a day, it worked, and it was also the single worst-performing subsystem in the app.
+The first version of midora's MP4 export pipeline worked like this: capture the canvas with `MediaRecorder` into a WebM blob, then transcode that blob to H.264 MP4 via `ffmpeg.wasm`. It shipped in a day, it worked, and it was also the single worst-performing subsystem in the app.
 
 A 60-second MIDI took 30–120 seconds to export depending on the machine. Every export re-downloaded 30 MB of WASM from unpkg. And because the browser was double-encoding (first WebM via a hardware VP9 encoder, then H.264 via WASM with no GPU access), the output quality was capped by the first pass, and then the second pass could only make things worse.
 
@@ -206,7 +206,7 @@ If your app does both, you can combine them: WebCodecs for the capture path, ffm
 | Safari | ✅ 16.4+ (March 2023) |
 | Firefox | ✅ 130+ (Sept 2024) |
 
-Firefox was the last holdout. With 130+ shipping hardware-accelerated `VideoEncoder` on every desktop platform, WebCodecs is now broadly deployable, and I was comfortable defaulting to it in midee and keeping the ffmpeg fallback only for truly ancient browsers. In practice, the fallback basically never runs.
+Firefox was the last holdout. With 130+ shipping hardware-accelerated `VideoEncoder` on every desktop platform, WebCodecs is now broadly deployable, and I was comfortable defaulting to it in midora and keeping the ffmpeg fallback only for truly ancient browsers. In practice, the fallback basically never runs.
 
 ## Takeaways
 
@@ -219,4 +219,4 @@ If you're shipping a browser app that needs to produce a video file — a record
 
 ---
 
-*[midee](/) is the MIDI visualizer I built this pipeline for. It's free, open source, and runs entirely in your browser. [Source on GitHub](https://github.com/aayushdutt/midee).*
+*[midora](/) is the MIDI visualizer I built this pipeline for. It's free and runs entirely in your browser. [Source repository on GitHub](https://github.com/aayushdutt/midee).*

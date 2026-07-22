@@ -115,7 +115,7 @@ function SrControlBar(props: SightReadHudOptions) {
   }
 
   return (
-    <FloatingHud class="sr-hud" storageKey="midee.learn.sr" idleMs={2600}>
+    <FloatingHud class="sr-hud" storageKey="midora.learn.sr" idleMs={2600}>
       {/* Streak — hidden at 0 */}
       <Show when={engine.state.streak > 0}>
         <span class={streakClass()}>

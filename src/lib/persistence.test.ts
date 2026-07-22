@@ -28,7 +28,7 @@ function installLocalStorageShim(): () => void {
 }
 
 describe('jsonPersisted', () => {
-  const key = 'midee.test.json'
+  const key = 'midora.test.json'
   let uninstall: () => void
 
   beforeAll(() => {
@@ -94,7 +94,7 @@ describe('jsonPersisted', () => {
 // parse logic. jsdom provides localStorage; clear between each test.
 
 describe('booleanPersisted', () => {
-  const key = 'midee.test.bool'
+  const key = 'midora.test.bool'
   beforeEach(() => localStorage.clear())
 
   it('round-trips true', () => {
@@ -125,7 +125,7 @@ describe('booleanPersisted', () => {
 })
 
 describe('numberPersisted', () => {
-  const key = 'midee.test.num'
+  const key = 'midora.test.num'
   beforeEach(() => localStorage.clear())
 
   it('round-trips a value in range', () => {
@@ -165,7 +165,7 @@ describe('numberPersisted', () => {
 })
 
 describe('indexPersisted', () => {
-  const key = 'midee.test.idx'
+  const key = 'midora.test.idx'
   beforeEach(() => localStorage.clear())
 
   it('round-trips a valid index', () => {

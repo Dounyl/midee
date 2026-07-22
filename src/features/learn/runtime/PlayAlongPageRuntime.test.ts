@@ -238,7 +238,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     resetRunnerState()
     localStorage.clear()
     localStorage.setItem(
-      'midee.learn.playAlong.state.v1',
+      'midora.learn.playAlong.state.v1',
       JSON.stringify({
         prefs: {
           waitEnabled: true,
@@ -677,7 +677,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
 
   it('uses the previously persisted mode as the default timed choice', async () => {
     localStorage.setItem(
-      'midee.learn.playAlong.state.v1',
+      'midora.learn.playAlong.state.v1',
       JSON.stringify({
         prefs: {
           waitEnabled: true,
@@ -704,7 +704,7 @@ describe('PlayAlongPageRuntime pending MIDI flow', () => {
     guidedModePromptOptions?.onConfirm('practice')
     await flushMicrotasks()
 
-    const stored = JSON.parse(localStorage.getItem('midee.learn.playAlong.state.v1') ?? '{}')
+    const stored = JSON.parse(localStorage.getItem('midora.learn.playAlong.state.v1') ?? '{}')
     expect(stored.prefs?.guidedMode).toBe('practice')
   })
 })

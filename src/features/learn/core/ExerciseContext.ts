@@ -48,7 +48,7 @@ export interface ExerciseLog {
   event(name: string, data?: Record<string, unknown>): void
 }
 
-// Per-exercise persistence, scoped under `midee.learn.ex.<id>.<key>` so
+// Per-exercise persistence, scoped under `midora.learn.ex.<id>.<key>` so
 // settings don't collide across exercises. For one-off values — larger
 // structured state should live on LearnProgressStore.
 export interface ExerciseStorage {

@@ -12,6 +12,7 @@ export class SessionRecorder {
   private events: CapturedEvent[] = []
   private startClockTime = 0
   private rafHandle: number | null = null
+  private lastElapsedSecond = -1
 
   constructor(private clock: MasterClock) {}
 
@@ -19,6 +20,7 @@ export class SessionRecorder {
     if (this.recording.value) return
     this.events = []
     this.startClockTime = this.clock.currentTime
+    this.lastElapsedSecond = 0
     this.elapsed.set(0)
     this.recording.set(true)
     this.tick()
@@ -29,6 +31,7 @@ export class SessionRecorder {
     this.recording.set(false)
     if (this.rafHandle !== null) cancelAnimationFrame(this.rafHandle)
     this.rafHandle = null
+    this.lastElapsedSecond = -1
     const duration = this.clock.currentTime - this.startClockTime
     return { events: this.events, duration: Math.max(0, duration) }
   }
@@ -38,6 +41,7 @@ export class SessionRecorder {
     this.rafHandle = null
     this.recording.set(false)
     this.events = []
+    this.lastElapsedSecond = -1
     this.elapsed.set(0)
   }
 
@@ -72,7 +76,12 @@ export class SessionRecorder {
 
   private tick = (): void => {
     if (!this.recording.value) return
-    this.elapsed.set(this.clock.currentTime - this.startClockTime)
+    const elapsed = this.clock.currentTime - this.startClockTime
+    const wholeSeconds = Math.floor(Math.max(0, elapsed))
+    if (wholeSeconds !== this.lastElapsedSecond) {
+      this.lastElapsedSecond = wholeSeconds
+      this.elapsed.set(elapsed)
+    }
     this.rafHandle = requestAnimationFrame(this.tick)
   }
 }

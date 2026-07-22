@@ -136,7 +136,7 @@ export function TopStripView(props: TopStripProps) {
         aria-label={t('home.aria')}
         data-tip={t('topStrip.home')}
         onClick={() => props.onHome()}
-        innerHTML={`${icons.wordmark()}<span class="ts-home-name">midee</span>`}
+        innerHTML={`${icons.wordmark()}<span class="ts-home-name">midora</span>`}
       />
 
       <div
@@ -301,7 +301,7 @@ export function HudView(props: HudProps) {
     <FloatingHud
       id="hud"
       dragBtnId="hud-drag"
-      storageKey="midee.hud"
+      storageKey="midora.hud"
       classList={() => ({
         'hud--active': props.showPlayHud() || props.showLiveHud(),
         'hud--playing': isPlayRouteTarget(props.routeTarget()) && props.status() === 'playing',
@@ -716,7 +716,7 @@ export function loopLabel(state: LiveLooperState, layerCount: number): string {
   }
 }
 
-const KEY_HINT_HIDDEN_KEY = 'midee.keyHintHidden'
+const KEY_HINT_HIDDEN_KEY = 'midora.keyHintHidden'
 
 export function loadKeyHintHidden(): boolean {
   return localStorage.getItem(KEY_HINT_HIDDEN_KEY) === 'true'
@@ -726,7 +726,7 @@ export function saveKeyHintHidden(hidden: boolean): void {
   localStorage.setItem(KEY_HINT_HIDDEN_KEY, String(hidden))
 }
 
-const HUD_HAS_DRAGGED_KEY = 'midee.hudHasDragged'
+const HUD_HAS_DRAGGED_KEY = 'midora.hudHasDragged'
 
 export function loadHudHasDragged(): boolean {
   try {

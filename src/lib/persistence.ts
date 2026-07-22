@@ -2,7 +2,7 @@
 // how to parse the stored string — so call sites just see `.load()` and
 // `.save(value)` without repeating the parse/fallback dance.
 //
-// Everything is namespaced under `midee.*` in localStorage. Bump the prefix
+// Everything is namespaced under `midora.*` in localStorage. Bump the prefix
 // here if we ever need a schema reset.
 
 export interface Persisted<T> {

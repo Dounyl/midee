@@ -5,9 +5,8 @@ import type { MidiKeySignature, MidiTrack } from '@/types/midi/types'
 import { getTrackColor, type Theme } from './theme'
 import { type Viewport, visibleNoteRange } from './viewport'
 
-// One Graphics object per track 鈥?same-color draws are batched together.
-// A separate glow container holds only the notes currently being struck,
-// so the expensive GlowFilter only runs over a small subset each frame.
+// One Graphics object per track so same-color draws batch together.
+// A separate glow container holds only the notes currently being struck.
 
 const PRACTICE_INACTIVE_ALPHA_SCALE = 0.24
 const NOTE_LABEL_BOTTOM_INSET = 16
@@ -18,6 +17,7 @@ export class NoteRenderer {
   private trackGraphics = new Map<string, Graphics>()
   private labelContainer: Container
   private labelPool: Text[] = []
+  private labelMeta = new WeakMap<Text, { text: string; fontSize: number; strokeColor: number }>()
   private glowContainer: Container
   private glowGraphics: Graphics
   private glowFilter: GlowFilter
@@ -48,9 +48,7 @@ export class NoteRenderer {
     this.container.addChild(this.glowContainer)
   }
 
-  // Call once when tracks are loaded 鈥?sets up one Graphics per track
   setTracks(tracks: MidiTrack[]): void {
-    // Remove stale graphics
     const incomingIds = new Set(tracks.map((t) => t.id))
     for (const [id, g] of this.trackGraphics) {
       if (!incomingIds.has(id)) {
@@ -64,17 +62,12 @@ export class NoteRenderer {
       if (!this.trackGraphics.has(track.id)) {
         const g = new Graphics()
         g.label = `notes-${track.id}`
-        // Insert before the label layer so labels stay above note bodies and
-        // below the expensive active-note glow.
         this.container.addChildAt(g, this.container.children.indexOf(this.labelContainer))
         this.trackGraphics.set(track.id, g)
       }
     }
   }
 
-  // Called every frame from the main render loop.
-  // Draws base notes and active-note glow in a single pass; accumulates the
-  // glow-filter tint inline so no intermediate array is allocated per frame.
   draw(
     tracks: MidiTrack[],
     currentTime: number,
@@ -90,9 +83,9 @@ export class NoteRenderer {
     this.resetLabelPool()
 
     let activeCount = 0
-    let sumR = 0,
-      sumG = 0,
-      sumB = 0
+    let sumR = 0
+    let sumG = 0
+    let sumB = 0
     let labelIndex = 0
 
     const visStart = currentTime - viewport.trailSeconds - 0.5
@@ -103,7 +96,6 @@ export class NoteRenderer {
       if (!g) continue
 
       g.clear()
-
       if (!visibleTrackIds.has(track.id)) continue
 
       const noteColor = getTrackColor(track, this.theme)
@@ -124,7 +116,6 @@ export class NoteRenderer {
         const h = Math.max(noteBottom - noteTop, 3)
         const y = noteTop
 
-        // Velocity 鈫?alpha (0.5 minimum so faint notes are still visible)
         const noteActive = note.time <= currentTime && note.time + note.duration >= currentTime
         const practiceActivated =
           noteActive &&
@@ -180,19 +171,28 @@ export class NoteRenderer {
     if (w < 12 || h < 14) return index
 
     const text = this.labelAt(index)
-    const fontSize = Math.max(10, Math.min(18, Math.min(w * 0.72, h * 0.42)))
-    text.text = pitchToJianpuLabel(pitch, this.keySignature)
-    text.style = {
-      fontFamily: 'Inter, sans-serif',
-      fontSize,
-      fontWeight: '700',
-      fill: 0xffffff,
-      align: 'center',
-      stroke: { color: noteColor, width: 3 },
+    const labelText = pitchToJianpuLabel(pitch, this.keySignature)
+    const fontSize = Math.round(Math.max(10, Math.min(18, Math.min(w * 0.72, h * 0.42))))
+    const meta = this.labelMeta.get(text)
+
+    if (meta?.text !== labelText) text.text = labelText
+    if (!meta || meta.fontSize !== fontSize || meta.strokeColor !== noteColor) {
+      text.style = {
+        fontFamily: 'Inter, sans-serif',
+        fontSize,
+        fontWeight: '700',
+        fill: 0xffffff,
+        align: 'center',
+        stroke: { color: noteColor, width: 3 },
+      }
+      this.labelMeta.set(text, { text: labelText, fontSize, strokeColor: noteColor })
+    } else if (meta.text !== labelText) {
+      this.labelMeta.set(text, { ...meta, text: labelText })
     }
+
     text.x = x + w / 2
-    // Keep labels visually anchored near the foot of the note so short and
-    // long waterfalls share the same bottom spacing.
+    // Keep labels anchored near the foot of the note so short and long notes
+    // share the same bottom spacing.
     text.y = y + h - NOTE_LABEL_BOTTOM_INSET
     text.alpha = Math.min(1, alpha + 0.18)
     text.visible = true

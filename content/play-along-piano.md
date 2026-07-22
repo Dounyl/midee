@@ -8,13 +8,13 @@ modified: 2026-05-07
 
 # Play-along piano trainer with wait mode
 
-[midee](/) includes a play-along piano trainer for practicing MIDI files in the browser. Drop in a MIDI, open Learn mode, and use wait mode so the piece pauses at each chord until you play the right notes.
+[midora](/) includes a play-along piano trainer for practicing MIDI files in the browser. Drop in a MIDI, open Learn mode, and use wait mode so the piece pauses at each chord until you play the right notes.
 
-This is the most Synthesia-like part of midee: falling notes, live input, practice hints, speed control, hand focus, loop points, and score feedback.
+This is the most Synthesia-like part of midora: falling notes, live input, practice hints, speed control, hand focus, loop points, and score feedback.
 
 ## How play-along practice works
 
-1. Open [midee.app](/).
+1. Open [midora.top](/).
 2. Load a MIDI file.
 3. Choose **Learn this piece** or open Learn mode.
 4. Start **Play along**.
@@ -26,7 +26,7 @@ The goal is simple: the music waits for you, so you can practice the right notes
 
 ## What wait mode does
 
-Wait mode pauses at each target chord. midee listens for your input and only moves forward when the expected notes are played.
+Wait mode pauses at each target chord. midora listens for your input and only moves forward when the expected notes are played.
 
 That helps when:
 
@@ -74,7 +74,7 @@ Play-along mode works well for:
 
 ## Common questions
 
-**Does midee have wait mode?**
+**Does midora have wait mode?**
 Yes. Play-along mode can pause at each chord until you play the expected notes.
 
 **Can I use my own MIDI files?**
@@ -94,4 +94,4 @@ A MIDI controller gives the best experience, but computer keyboard input works t
 
 ## Try it
 
-[Open midee](/), load a MIDI, then choose Learn mode. Start with wait mode on and a slow speed, then ramp up after clean passes.
+[Open midora](/), load a MIDI, then choose Learn mode. Start with wait mode on and a slow speed, then ramp up after clean passes.

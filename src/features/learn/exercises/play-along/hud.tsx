@@ -91,7 +91,7 @@ export function PlayAlongHudView(props: PlayAlongHudOptions) {
   return (
     <FloatingHud
       class="pa-hud"
-      storageKey="midee.learn.pa"
+      storageKey="midora.learn.pa"
       idleEnabled={() => engine.state.userWantsToPlay}
       wakeRef={(fn) => {
         hudWake = fn

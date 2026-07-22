@@ -2,7 +2,7 @@ import type { Messages } from './en'
 
 const es: Messages = {
   // ── Home / dropzone ─────────────────────────────────────────
-  'home.kicker': 'midee · visualizador MIDI',
+  'home.kicker': 'midora · visualizador MIDI',
   'home.title.html': 'Toca <em>notas</em>,<br/>míralas florecer.',
   'home.subtitle':
     'Abre un archivo MIDI para visualizarlo, o toca en vivo con tu teclado, ratón o un controlador MIDI.',
@@ -22,8 +22,8 @@ const es: Messages = {
   'home.metaLink.blog': 'Leer el blog',
   'home.metaLink.github': 'Código en GitHub',
   'home.metaLink.discord': 'Únete a la comunidad de Discord',
-  'home.metaLinks.aria': 'enlaces de midee',
-  'home.aria': 'inicio de midee',
+  'home.metaLinks.aria': 'enlaces de midora',
+  'home.aria': 'inicio de midora',
 
   // ── Top strip (primary nav) ─────────────────────────────────
   'topStrip.home': 'Inicio',
@@ -70,6 +70,8 @@ const es: Messages = {
   'customize.chord': 'Lectura de acordes',
   'customize.chord.sub': 'Nombra lo que está sonando · modo en vivo',
   'customize.language': 'Idioma',
+  'customize.credits': 'Créditos',
+  'customize.credits.github': 'aayushdutt/midee en GitHub',
   'feedback.menu': 'Opiniones y sugerencias',
   'feedback.postSession': '¿Te gustaría que funcionara distinto? Cuéntanos',
 
@@ -223,9 +225,9 @@ const es: Messages = {
   'modeError.retry': 'Reintentar',
 
   // ── Document title ──────────────────────────────────────────
-  'doc.title.home': 'midee — suelta un MIDI, míralo cantar',
-  'doc.title.live': 'midee · en vivo',
-  'doc.title.learn': 'midee · aprender',
+  'doc.title.home': 'midora — suelta un MIDI, míralo cantar',
+  'doc.title.live': 'midora · en vivo',
+  'doc.title.learn': 'midora · aprender',
 
   // ── Learn hub ───────────────────────────────────────────────
   'learn.hub.recommended': 'Recomendado',
@@ -505,8 +507,8 @@ const es: Messages = {
 
   // ── Toasts / confirmations ─────────────────────────────────
   'toast.export.ready': '{filename} listo',
-  'toast.session.saved': 'midee-session.mid · {seconds}s',
-  'toast.loop.saved': 'midee-loop.mid',
+  'toast.session.saved': 'midora-session.mid · {seconds}s',
+  'toast.loop.saved': 'midora-loop.mid',
   'toast.recording.empty': 'Nada grabado — toca algunas notas mientras Grabar está activo.',
 
   'onboarding.localeDetected': 'Mostrando en {language} · cambia en Apariencia',

@@ -1,5 +1,6 @@
 import { createSignal, For } from 'solid-js'
 import { render } from 'solid-js/web'
+import { icons } from '@/components/common/icons'
 import { isNarrowViewport } from '@/components/common/utils'
 import { LOCALES, type LocaleCode, locale, t } from '@/i18n'
 import type { ParticleStyle, ParticleStyleInfo } from '@/services/renderer/ParticleSystem'
@@ -180,6 +181,21 @@ function MenuView(props: MenuProps) {
               )}
             </For>
           </div>
+        </div>
+
+        <div class={`${styles.customizeSection} ${styles.customizeSectionFooter}`}>
+          <div class={styles.customizeSectionHead}>
+            <span class={styles.customizeSectionLabel}>{t('customize.credits')}</span>
+          </div>
+          <a
+            class={styles.customizeFeedbackCard}
+            href="https://github.com/aayushdutt/midee"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <span class={styles.customizeFeedbackIcon} aria-hidden="true" innerHTML={icons.github()} />
+            <span class={styles.customizeFeedbackLabel}>{t('customize.credits.github')}</span>
+          </a>
         </div>
 
         <div class={`${styles.customizeSection} ${styles.customizeSectionToggle}`}>

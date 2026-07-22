@@ -1,7 +1,7 @@
 // Persistence shape for the learn suite. Everything the user accumulates
 // across sessions lives here — streak, XP, per-exercise stats, per-pitch
 // heatmap, per-piece state, user settings — stored as a single JSON blob
-// under `midee.learn.v1` so schema migrations are one file, not many keys.
+// under `midora.learn.v1` so schema migrations are one file, not many keys.
 //
 // This file is intentionally types-only + factory. Pure helpers that mutate
 // the schema live in `./progress-actions.ts`; the stateful store binding is

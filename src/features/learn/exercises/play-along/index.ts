@@ -10,7 +10,7 @@ import type { LoopRegion } from '@/features/learn/engines/LoopRegion'
 import type { BusNoteEvent } from '@/services/input/InputBus'
 import { watch } from '@/stores/app/watch'
 import type { MidiFile } from '@/types/midi/types'
-import { DEFAULT_SPEED_PRESETS, PlayAlongEngine } from './engine'
+import { DEFAULT_SPEED_PRESETS, PlayAlongEngine, type PlayAlongNoteOnResult } from './engine'
 import { createPlayAlongHud, type PlayAlongHudOptions } from './hud'
 import { playAlongMeta } from './meta'
 import {
@@ -162,11 +162,13 @@ class PlayAlongExercise implements Exercise {
   }
 
   onNoteOn(evt: BusNoteEvent): void {
-    const kind = this.engine.onNoteOn(evt)
-    if (kind === 'advanced') {
+    const result = this.engine.onNoteOn(evt)
+    if (result.kind === 'advanced') {
       this.ctx.log.hit(evt.pitch)
-      if (this.shouldRenderPracticeFeedback(evt.pitch)) this.emitPracticeSuccessFeedback(evt.pitch)
-    } else if (kind === 'rejected') {
+      if (this.shouldRenderPracticeFeedback(result, evt.pitch)) {
+        this.emitPracticeSuccessFeedback(evt.pitch)
+      }
+    } else if (result.kind === 'rejected') {
       this.ctx.log.error()
     }
   }
@@ -273,21 +275,14 @@ class PlayAlongExercise implements Exercise {
     this.ctx.overlay.practiceSuccessBurst(viewport.config.canvasWidth / 2, viewport.nowLineY, color)
   }
 
-  private shouldRenderPracticeFeedback(pitch: number): boolean {
-    if (this.engine.state.guidedMode !== 'practice') return false
-    const midi = this.ctx.learnState.state.loadedMidi
-    if (!midi) return false
+  private shouldRenderPracticeFeedback(result: PlayAlongNoteOnResult, pitch: number): boolean {
+    if (result.kind !== 'advanced' || this.engine.state.guidedMode !== 'practice') return false
     const currentTime = this.ctx.services.clock.currentTime
-    const practiceTrackIds = resolvePracticeTrackIdsForFeedback(midi, this.engine.state.hand)
-    for (const track of midi.tracks) {
-      if (track.isDrum) continue
-      if (practiceTrackIds !== null && !practiceTrackIds.has(track.id)) continue
-      for (const note of track.notes) {
-        if (note.pitch !== pitch) continue
-        if (note.time <= currentTime && currentTime <= note.time + note.duration) return true
-      }
-    }
-    return false
+    return (
+      result.clearedStep.pitches.has(pitch) &&
+      result.clearedStep.time <= currentTime &&
+      currentTime <= result.clearedStep.latestEnd
+    )
   }
 
   private syncGuidedModePresentation(): void {
@@ -321,21 +316,4 @@ class PlayAlongExercise implements Exercise {
     this.completionLoopRegion = target === 'loop-end' ? this.engine.state.loopRegion : null
     queueMicrotask(() => this.ctx.onClose('completed'))
   }
-}
-
-function resolvePracticeTrackIdsForFeedback(
-  midi: MidiFile,
-  hand: 'left' | 'right' | 'both',
-): ReadonlySet<string> | null {
-  if (hand === 'both') return null
-  const ids = midi.tracks
-    .filter((track) => {
-      if (track.isDrum || track.notes.length === 0) return false
-      let sum = 0
-      for (const note of track.notes) sum += note.pitch
-      const avg = sum / track.notes.length
-      return hand === 'left' ? avg < 60 : avg >= 60
-    })
-    .map((track) => track.id)
-  return new Set(ids)
 }

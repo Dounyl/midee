@@ -130,7 +130,7 @@ describe('LearnProgressStore', () => {
     // entirely. A shallow spread would leave the field undefined at runtime
     // and break any `if (settings.showScoreCounter)` check downstream.
     localStorage.setItem(
-      'midee.learn.v1',
+      'midora.learn.v1',
       JSON.stringify({
         version: 1,
         streak: { days: 3, lastDay: '2026-04-22' },

@@ -9,7 +9,7 @@ import {
 } from './progress-schema'
 import type { ExerciseResult } from './Result'
 
-const STORAGE_KEY = 'midee.learn.v1'
+const STORAGE_KEY = 'midora.learn.v1'
 
 // Stateful façade over the progress schema + pure action helpers. The
 // underlying state is a `createStore` so consumers get fine-grained tracking:

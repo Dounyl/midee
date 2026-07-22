@@ -48,7 +48,7 @@ export async function applyPlayRouteEntry(
     shell.trackPanel.close()
     shell.dropzone.hide()
     shell.keyboardInput.enable()
-    document.title = `midee - ${t('topStrip.mode.play.label')}`
+    document.title = `midora - ${t('topStrip.mode.play.label')}`
     return
   }
 
@@ -62,7 +62,7 @@ export async function applyPlayRouteEntry(
   shell.trackPanel.render(midi)
   shell.dropzone.hide()
   shell.keyboardInput.enable()
-  document.title = `${midi.name} - midee`
+  document.title = `${midi.name} - midora`
   if (!skipAnalytics) {
     const props = { duration_s: Math.round(midi.duration) }
     trackEvent('play_mode_entered', props)

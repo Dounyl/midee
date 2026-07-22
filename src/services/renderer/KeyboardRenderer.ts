@@ -62,6 +62,7 @@ function getIvoryNoiseCanvas(): HTMLCanvasElement {
 }
 
 export class KeyboardRenderer {
+  private static readonly PRACTICE_HINT_REDRAW_INTERVAL_MS = 50
   readonly container: Container
   private keyboardMode: KeyboardMode = '88'
 
@@ -87,6 +88,7 @@ export class KeyboardRenderer {
   private blackPracticeHintLayer: Graphics
   private practiceSignature = ''
   private practicePulsePhase = 0
+  private practiceRedrawBudgetMs = 0
   private practiceTickerHandler: ((ticker: import('pixi.js').Ticker) => void) | null = null
   private practicePending: ReadonlySet<number> | null = null
   private practiceAccepted: ReadonlySet<number> | null = null
@@ -480,10 +482,14 @@ export class KeyboardRenderer {
 
     const wantTicker = !!pending && pending.size > 0
     if (wantTicker && !this.practiceTickerHandler) {
+      this.practiceRedrawBudgetMs = 0
       this.practiceTickerHandler = (ticker) => {
         // ticker.deltaTime is Pixi units (~1 per 16.6ms). Scale to a slow
         // pulse 鈥?about one full breath every 1.4 seconds.
         this.practicePulsePhase += ticker.deltaTime * 0.075
+        this.practiceRedrawBudgetMs += ticker.deltaMS
+        if (this.practiceRedrawBudgetMs < KeyboardRenderer.PRACTICE_HINT_REDRAW_INTERVAL_MS) return
+        this.practiceRedrawBudgetMs %= KeyboardRenderer.PRACTICE_HINT_REDRAW_INTERVAL_MS
         this.drawPracticeHints()
       }
       this.app.ticker.add(this.practiceTickerHandler)
@@ -491,7 +497,7 @@ export class KeyboardRenderer {
       this.app.ticker.remove(this.practiceTickerHandler)
       this.practiceTickerHandler = null
       this.practicePulsePhase = 0
-      this.drawPracticeHints()
+      this.practiceRedrawBudgetMs = 0
     }
   }
 

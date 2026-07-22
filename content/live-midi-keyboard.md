@@ -8,14 +8,14 @@ modified: 2026-05-07
 
 # Play live with a MIDI keyboard in your browser
 
-[midee](/) lets you play live with a MIDI keyboard in your browser. Connect a USB MIDI controller, open Live mode, and your notes become a real-time piano-roll visualization with sound, glowing keys, particles, recording, and looping.
+[midora](/) lets you play live with a MIDI keyboard in your browser. Connect a USB MIDI controller, open Live mode, and your notes become a real-time piano-roll visualization with sound, glowing keys, particles, recording, and looping.
 
 You do not need a DAW just to jam, sketch a phrase, or make something beautiful happen on screen.
 
 ## Quick steps
 
 1. Connect your MIDI keyboard by USB.
-2. Open [midee.app](/).
+2. Open [midora.top](/).
 3. Choose **Live**.
 4. Allow MIDI access if your browser asks.
 5. Play your controller.
@@ -25,7 +25,7 @@ No MIDI controller nearby? Your computer keyboard and mouse can play notes too.
 
 ## What live mode is for
 
-Live mode is the performance side of midee. Instead of loading a MIDI file first, you play the notes yourself and midee visualizes them as they happen.
+Live mode is the performance side of midora. Instead of loading a MIDI file first, you play the notes yourself and midora visualizes them as they happen.
 
 Use it for:
 
@@ -45,7 +45,7 @@ If Synthesia is the "follow the falling notes" workflow, live mode is the "make 
 | Web MIDI input | Receives notes from compatible MIDI controllers |
 | Computer keyboard input | Lets you play even without hardware |
 | Real-time visualizer | Shows live notes as piano-roll trails |
-| Instrument sounds | Plays notes through midee's browser audio engine |
+| Instrument sounds | Plays notes through midora's browser audio engine |
 | Metronome | Keeps loops and practice grounded in tempo |
 | Session recording | Captures what you play as MIDI |
 | Loop station | Records a phrase, repeats it, and lets you overdub |
@@ -86,7 +86,7 @@ For more detail, read [Playing your MIDI keyboard in the browser](/blog/playing-
 ## Common questions
 
 **Can I play a MIDI keyboard in the browser?**
-Yes. midee uses Web MIDI where the browser and device support it.
+Yes. midora uses Web MIDI where the browser and device support it.
 
 **Do I need to install a driver?**
 Most class-compliant USB MIDI controllers work without special drivers. Older proprietary devices may vary.
@@ -98,11 +98,11 @@ Yes. Live mode can record a session and save MIDI.
 Yes. The loop station arms, records from your first note, repeats the phrase, and lets you overdub.
 
 **Can I use my laptop keyboard instead?**
-Yes. midee also supports computer keyboard input.
+Yes. midora also supports computer keyboard input.
 
 **Is this a replacement for a DAW?**
 No. It is a fast live instrument, visualizer, looper, and recorder. Use a DAW for editing, mixing, plugins, and production.
 
 ## Try it
 
-[Open midee](/), switch to Live, and play a few notes. If your controller is connected, the visual feedback should be immediate.
+[Open midora](/), switch to Live, and play a few notes. If your controller is connected, the visual feedback should be immediate.

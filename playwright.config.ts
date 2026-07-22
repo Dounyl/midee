@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// E2E config for midee (Tier 3 of docs/TESTING_STRATEGY_2026-06-21.md).
+// E2E config for midora (Tier 3 of docs/TESTING_STRATEGY_2026-06-21.md).
 //
-// midee is a static Vite SPA whose flagship feature — MP4 export — runs entirely
+// midora is a static Vite SPA whose flagship feature — MP4 export — runs entirely
 // in the browser via WebCodecs (`VideoEncoder`/`AudioEncoder`) + Mediabunny. jsdom
 // cannot exercise that, so these tests drive a real headless Chromium.
 //

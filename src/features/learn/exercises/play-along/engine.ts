@@ -12,7 +12,7 @@ import {
   ramp,
   wrapIfAtEnd,
 } from '@/features/learn/engines/LoopRegion'
-import { PracticeEngine } from '@/features/learn/engines/PracticeEngine'
+import { PracticeEngine, type PracticeStep } from '@/features/learn/engines/PracticeEngine'
 import type { BusNoteEvent } from '@/services/input/InputBus'
 import { watch } from '@/stores/app/watch'
 import type { AppServices } from '@/types/app/AppServices'
@@ -71,6 +71,11 @@ export interface PlayAlongState {
   currentTime: number
   duration: number
 }
+
+export type PlayAlongNoteOnResult =
+  | { kind: 'advanced'; clearedStep: PracticeStep }
+  | { kind: 'rejected' }
+  | { kind: 'none' }
 
 export class PlayAlongEngine {
   readonly practice: PracticeEngine
@@ -270,9 +275,9 @@ export class PlayAlongEngine {
     }
   }
 
-  onNoteOn(evt: BusNoteEvent): 'advanced' | 'rejected' | 'none' {
-    if (!this.active) return 'none'
-    if (this.state.guidedMode !== 'practice') return 'none'
+  onNoteOn(evt: BusNoteEvent): PlayAlongNoteOnResult {
+    if (!this.active) return { kind: 'none' }
+    if (this.state.guidedMode !== 'practice') return { kind: 'none' }
     this.pressedPitches.add(evt.pitch)
     const outcome = this.practice.notePressed(evt.pitch)
     if (outcome.kind === 'advanced') {
@@ -284,16 +289,16 @@ export class PlayAlongEngine {
       batch(() => {
         this.setState(next)
       })
-      return 'advanced'
+      return { kind: 'advanced', clearedStep: outcome.clearedStep }
     }
     if (outcome.kind === 'rejected' && this.practice.isWaiting) {
       const next = applyPerformanceReject(this.state)
       batch(() => {
         this.setState(next)
       })
-      return 'rejected'
+      return { kind: 'rejected' }
     }
-    return 'none'
+    return { kind: 'none' }
   }
 
   onNoteOff(evt: BusNoteEvent): void {

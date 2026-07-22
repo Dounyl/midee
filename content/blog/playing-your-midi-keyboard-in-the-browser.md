@@ -9,13 +9,13 @@ readingTime: 7 min read
 
 # Playing your MIDI keyboard in the browser
 
-Everything I know about using a MIDI keyboard with a browser-based music app in 2026 — learned the hard way building [midee](/). What actually works, what's janky, and the realistic latency you should expect.
+Everything I know about using a MIDI keyboard with a browser-based music app in 2026 — learned the hard way building [midora](/). What actually works, what's janky, and the realistic latency you should expect.
 
 ## The short version
 
 1. Plug your MIDI keyboard into your computer via USB. (Bluetooth MIDI works too but adds 15–40ms of latency.)
 2. Open a browser that supports Web MIDI (Chrome, Edge, Opera, Safari 18+).
-3. Open any Web MIDI app (midee, an online piano, etc.) and accept the MIDI permission prompt.
+3. Open any Web MIDI app (midora, an online piano, etc.) and accept the MIDI permission prompt.
 4. Start playing. Most apps auto-detect devices and start receiving notes within a second.
 
 If that works on the first try, you're done. The rest of this post is for when it doesn't, or when you want to understand what's actually happening.
@@ -100,25 +100,25 @@ input.addEventListener('midimessage', (e) => {
 })
 ```
 
-This is sample-accurate — the audio fires at exactly the right moment regardless of JavaScript jitter. midee's live-play path uses this pattern; the visualization is deferred slightly to match, so the falling particles line up with the audio even when the browser is under load.
+This is sample-accurate — the audio fires at exactly the right moment regardless of JavaScript jitter. midora's live-play path uses this pattern; the visualization is deferred slightly to match, so the falling particles line up with the audio even when the browser is under load.
 
 ## The quirks nobody warns you about
 
 ### First-note delay with sampled instruments
 
-Real piano samples are big. A good sampled piano (like [Salamander](https://sfzinstruments.github.io/pianos/salamander), which midee uses) is ~15 MB of audio data. The first keypress has to wait for the samples to decode and load into the audio graph. Subsequent notes are instant.
+Real piano samples are big. A good sampled piano (like [Salamander](https://sfzinstruments.github.io/pianos/salamander), which midora uses) is ~15 MB of audio data. The first keypress has to wait for the samples to decode and load into the audio graph. Subsequent notes are instant.
 
-The workaround: start loading samples on app startup instead of on first keypress. midee does this — by the time you actually play, the samples are warm.
+The workaround: start loading samples on app startup instead of on first keypress. midora does this — by the time you actually play, the samples are warm.
 
 ### Chrome's "autoplay policy" needs a gesture first
 
 Chrome and Safari won't let an `AudioContext` start making sound until there's been a "user gesture" — a click, tap, or keypress. If you plug in a MIDI keyboard, open the app, and immediately start playing without ever clicking anything, you'll hear silence until your first click.
 
-Workaround: the first MIDI note can unlock the audio context, if you wire it that way. Some apps require an explicit "Click to enable audio" button; midee treats the first gesture (click, keypress, or even a MIDI note with the keyboard input path) as the unlock.
+Workaround: the first MIDI note can unlock the audio context, if you wire it that way. Some apps require an explicit "Click to enable audio" button; midora treats the first gesture (click, keypress, or even a MIDI note with the keyboard input path) as the unlock.
 
 ### Held notes across tab switches
 
-If you're holding a key when you switch tabs, the browser may stop dispatching events to the background tab. The note-off never arrives, and when you switch back, the note is still ringing. Defensive code in the app should release all held notes on `visibilitychange` and `blur` events. midee handles this in [`src/app.ts`](https://github.com/aayushdutt/midee/blob/master/src/app.ts) — it's ~5 lines, but it's the difference between a polished experience and a phantom-held-note bug.
+If you're holding a key when you switch tabs, the browser may stop dispatching events to the background tab. The note-off never arrives, and when you switch back, the note is still ringing. Defensive code in the app should release all held notes on `visibilitychange` and `blur` events. midora handles this in [`src/app.ts`](https://github.com/aayushdutt/midee/blob/master/src/app.ts) — it's ~5 lines, but it's the difference between a polished experience and a phantom-held-note bug.
 
 ### Permission prompts
 
@@ -147,8 +147,8 @@ For quick jamming, practice, and turning a MIDI into a nice video to share, the 
 
 ## Try it
 
-[midee](/) is one use case. Plug in your MIDI keyboard, open the app, play a few notes. You'll know within ten seconds whether it feels responsive enough for you.
+[midora](/) is one use case. Plug in your MIDI keyboard, open the app, play a few notes. You'll know within ten seconds whether it feels responsive enough for you.
 
 ---
 
-*midee is a free, open-source MIDI visualizer and loop station built around this stack. [Source on GitHub](https://github.com/aayushdutt/midee).*
+*midora is a free MIDI visualizer and loop station built around this stack. [Source repository on GitHub](https://github.com/aayushdutt/midee).*
