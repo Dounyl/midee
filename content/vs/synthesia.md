@@ -1,29 +1,28 @@
 ---
-title: midee vs Synthesia: honest comparison
-description: Compare Synthesia and midee for MIDI playback, falling notes, wait-mode practice, live MIDI, looping, sight reading, and MP4 export.
+title: Midora vs Synthesia: honest comparison
+description: Compare Synthesia and Midora for MIDI playback, falling notes, wait-mode practice, live MIDI, looping, sight reading, and MP4 export.
 path: /vs/synthesia/
 type: page
 modified: 2026-05-07
 ---
 
-# midee vs Synthesia: honest comparison
+# Midora vs Synthesia: honest comparison
 
 If you've searched for "Synthesia alternative" you probably want one of two things:
 
 1. A free tool to watch MIDI files play on a piano roll without paying for Synthesia's custom-song unlock.
 2. A browser-based way to practice, play live, loop ideas, or turn a MIDI into a nice-looking video.
 
-Synthesia is great at what it does, but it's a native Windows/Mac/iOS/Android app focused on learning. **[midee](/)** is the browser-native alternative: a free, open-source MIDI player, visualizer, live instrument, practice trainer, loop station, recorder, and MP4 exporter.
+Synthesia is great at what it does, but it's a native Windows/Mac/iOS/Android app focused on learning. **[Midora](/)** is the browser-native alternative: a free MIDI player, visualizer, live instrument, practice trainer, loop station, recorder, and MP4 exporter.
 
 This page is a genuine comparison, not a hatchet job — Synthesia is the right choice for plenty of people. Here's how the two differ and when each makes sense.
 
 ## Quick comparison
 
-|  | Synthesia | midee |
+|  | Synthesia | Midora |
 | --- | --- | --- |
 | Platform | Windows, macOS, iOS, Android | Any browser (Chrome, Safari, Firefox) |
-| Cost | Free built-in songs; paid desktop unlock for custom MIDIs | **Free, forever** |
-| Open source | No | Yes, MIT license |
+| Cost | Free built-in songs; paid desktop unlock for custom MIDIs | **Currently free to use** |
 | Install required | Yes | No — just visit the URL |
 | Primary focus | Learning to play the piano | Browser MIDI playback, live play, learning, looping, and export |
 | Falling-notes display | Yes | Yes |
@@ -48,15 +47,15 @@ Synthesia is the established tool in the category and there are real reasons to 
 
 If learning piano is the main thing, Synthesia is probably the right fit.
 
-## Where midee fits
+## Where Midora fits
 
-midee didn't start as a Synthesia clone — it started because there was no browser-native tool that turned a MIDI into a nice-looking video without uploading anything or installing anything.
+Midora didn't start as a Synthesia clone — it started because there was no browser-native tool that turned a MIDI into a nice-looking video without uploading anything or installing anything.
 
-- **Zero install.** Open [midee.app](/) and it's running. No account, no download. If you want to share a link with a friend who's never heard of it, they can try it in five seconds.
-- **Built-in MP4 export.** This is the thing Synthesia doesn't do. Hit record inside midee and you get a frame-accurate 1080p MP4 with audio baked in. 720p, 1080p, vertical for TikTok and Reels, square, or native resolution. Rendered locally in your browser via WebCodecs — no server, no upload.
+- **Zero install.** Open [midora.top](/) and it's running. No account, no download. If you want to share a link with a friend who's never heard of it, they can try it in five seconds.
+- **Built-in MP4 export.** This is the thing Synthesia doesn't do. Hit record inside Midora and you get a frame-accurate 1080p MP4 with audio baked in. 720p, 1080p, vertical for TikTok and Reels, square, or native resolution. Rendered locally in your browser via WebCodecs — no server, no upload.
 - **Beautiful out of the box.** Five themes (Dark, Midnight, Neon, Sunset, Ocean), sampled piano plus multiple synth and acoustic voices, and a rotating roster of particle styles. Your picks persist across reloads.
 - **Learn mode.** Drop a MIDI into play-along practice, turn on wait mode, slow it down, focus hands, loop hard sections, and track accuracy. Learn also includes sight reading and interval training.
-- **Free and open source.** MIT-licensed. No paywall, no unlock code for custom MIDIs. The [source code is on GitHub](https://github.com/aayushdutt/midee) and PRs are welcome.
+- **Currently free to use.** No paywall or unlock code for custom MIDIs. The [project repository](https://github.com/Dounyl/midee) documents the implementation and its upstream origin.
 - **Live mode + loop station.** Plug in a MIDI keyboard (Web MIDI) or use your laptop keyboard. Loop a phrase bar-snapped to the metronome. Record a session and export to `.mid` or straight to video.
 - **Fully client-side.** Your MIDI file and the rendered video never leave your browser. There's no server to store, mine, or leak them.
 
@@ -68,41 +67,41 @@ Use **Synthesia** if:
 - You're on iPad or Android and don't want a web app.
 - You want a polished library of teacher-selected songs ready to play.
 
-Use **midee** if:
+Use **Midora** if:
 
 - You want to turn a MIDI into a shareable video for YouTube, TikTok, Reels, or Instagram.
 - You want to watch a MIDI file play beautifully without installing software.
 - You want Synthesia-style wait-mode practice in a browser.
 - You want a sight-reading trainer and interval practice alongside MIDI playback.
 - You're on a Chromebook, a locked-down work machine, or any platform where you can't install apps.
-- You value open source, no watermark, no account, fully client-side.
+- You value local processing, no watermark, and no account requirement.
 - You want to jam on your MIDI controller without firing up a DAW.
 
-The two tools don't cancel each other out — plenty of piano learners use Synthesia to practice and midee to render a final "here's what I've been working on" clip.
+The two tools don't cancel each other out — plenty of piano learners use Synthesia to practice and Midora to render a final "here's what I've been working on" clip.
 
 ## Common questions
 
-**Is midee really free, or free-with-upsell?**
-Really free. MIT licensed. There's no paid tier, no custom-song unlock, no export watermark. No account required.
+**Is Midora really free, or free-with-upsell?**
+Currently free to use. There's no paid tier, no custom-song unlock, and no export watermark. No account required.
 
 **Can I use the MIDI files I bought for Synthesia?**
-Yes. midee reads any standard `.mid` or `.midi` file. Drag it into the browser window.
+Yes. Midora reads any standard `.mid` or `.midi` file. Drag it into the browser window.
 
-**Does midee have wait mode like Synthesia?**
+**Does Midora have wait mode like Synthesia?**
 Yes. Learn mode's play-along exercise can pause at each chord until you play the expected notes.
 
-**Can midee train sight reading?**
+**Can Midora train sight reading?**
 Yes. Learn mode includes a sight-reading trainer with scrolling staff notes, clef controls, tempo controls, accuracy, streaks, and weak-note practice.
 
-**Does midee upload my MIDI to a server?**
-No. Everything runs in your browser. The MIDI file is parsed locally; audio and video are rendered locally; the exported MP4 is produced locally. Nothing is uploaded to midee at any point.
+**Does Midora upload my MIDI to a server?**
+No. Everything runs in your browser. The MIDI file is parsed locally; audio and video are rendered locally; the exported MP4 is produced locally. Nothing is uploaded to Midora at any point.
 
 **Which browsers work?**
 Chrome 94+, Safari 16.4+, Firefox 130+. The bottleneck is WebCodecs (for video export) and Web MIDI (for controller input). Desktop recommended; iPad works; phones are limited.
 
 **Is it as pretty as SeeMusic?**
-Different aesthetic. SeeMusic leans cinematic and heavy; midee leans design-forward and clean. Try both and pick the look you prefer. midee has the advantage that trying it is one click.
+Different aesthetic. SeeMusic leans cinematic and heavy; Midora leans design-forward and clean. Try both and pick the look you prefer. Midora has the advantage that trying it is one click.
 
 ## Try it
 
-midee is one URL away. [Open it](/), drop in a `.mid`, try Live and Learn, and see whether it earns a spot next to Synthesia in your workflow.
+Midora is one URL away. [Open it](/), drop in a `.mid`, try Live and Learn, and see whether it earns a spot next to Synthesia in your workflow.

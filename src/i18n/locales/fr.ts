@@ -5,7 +5,7 @@ import type { Messages } from './en'
 
 const fr: Messages = {
   // ── Home / dropzone ─────────────────────────────────────────
-  'home.kicker': 'midee · visualiseur MIDI',
+  'home.kicker': 'Midora · visualiseur MIDI',
   'home.title.html': 'Jouez des <em>notes</em>,<br/>voyez-les éclore.',
   'home.subtitle':
     'Ouvrez un fichier MIDI pour le visualiser, ou jouez en direct avec votre clavier, votre souris, ou un contrôleur MIDI.',
@@ -25,8 +25,8 @@ const fr: Messages = {
   'home.metaLink.blog': 'Lire le blog',
   'home.metaLink.github': 'Code source sur GitHub',
   'home.metaLink.discord': 'Rejoindre la communauté Discord',
-  'home.metaLinks.aria': 'liens midee',
-  'home.aria': 'accueil midee',
+  'home.metaLinks.aria': 'liens Midora',
+  'home.aria': 'accueil Midora',
 
   // ── Top strip (primary nav) ─────────────────────────────────
   'topStrip.home': 'Accueil',
@@ -227,9 +227,9 @@ const fr: Messages = {
   'modeError.retry': 'Réessayer',
 
   // ── Document title ──────────────────────────────────────────
-  'doc.title.home': 'midee — déposez un MIDI, regardez-le chanter',
-  'doc.title.live': 'midee · direct',
-  'doc.title.learn': 'midee · apprendre',
+  'doc.title.home': 'Midora — déposez un MIDI, regardez-le chanter',
+  'doc.title.live': 'Midora · direct',
+  'doc.title.learn': 'Midora · apprendre',
 
   // ── Learn hub ───────────────────────────────────────────────
   'learn.hub.recommended': 'Recommandé',
@@ -509,8 +509,8 @@ const fr: Messages = {
 
   // ── Toasts / confirmations ─────────────────────────────────
   'toast.export.ready': '{filename} prêt',
-  'toast.session.saved': 'midee-session.mid · {seconds} s',
-  'toast.loop.saved': 'midee-loop.mid',
+  'toast.session.saved': 'midora-session.mid · {seconds} s',
+  'toast.loop.saved': 'midora-loop.mid',
   'toast.recording.empty':
     "Rien d'enregistré — jouez quelques notes pendant que Record est activé.",
 

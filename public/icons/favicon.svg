@@ -1,5 +1,5 @@
 <!--
-  midee favicon — canonical source.
+  Midora favicon — canonical source.
   Used for browser tabs, Google SERPs, and PWA launcher icons.
   Rastered by `npm run icons` via scripts/build-icons.mjs into public/icons/.
 

@@ -21,7 +21,7 @@ const layout = readFileSync(resolve(contentDir, '_layout.html'), 'utf8')
 // ~360 ms render-blocking on first load.
 const { fontFaces, fontPreload } = renderFontTags(resolve(distDir, 'assets'))
 
-const SITE = 'https://midee.app'
+const SITE = 'https://midora.top'
 
 marked.setOptions({ gfm: true, breaks: false })
 
@@ -79,10 +79,13 @@ function buildJsonLd({ data, html }) {
     description: data.description,
     url: `${SITE}${data.path}`,
     image: `${SITE}/og.png`,
-    author: { '@type': 'Person', name: 'Aayush Dutt' },
+    author: data.author
+      ? { '@type': 'Person', name: data.author }
+      : { '@type': 'Organization', name: 'Midora' },
+    ...(data.source ? { isBasedOn: data.source } : {}),
     publisher: {
       '@type': 'Organization',
-      name: 'midee',
+      name: 'Midora',
       url: SITE,
     },
   }
@@ -104,7 +107,7 @@ function buildJsonLd({ data, html }) {
 // trail that Google shows above a result's URL.
 function buildBreadcrumbJsonLd({ data }) {
   const items = [
-    { '@type': 'ListItem', position: 1, name: 'midee', item: `${SITE}/` },
+    { '@type': 'ListItem', position: 1, name: 'Midora', item: `${SITE}/` },
   ]
   if (data.path.startsWith('/blog/')) {
     items.push({ '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE}/blog/` })
@@ -124,10 +127,11 @@ function buildBreadcrumbJsonLd({ data }) {
 function buildArticleMeta(data) {
   if (data.type !== 'post') return ''
   const iso = new Date(data.date).toISOString()
+  const modified = new Date(data.modified || data.date).toISOString()
   return [
     `<meta property="article:published_time" content="${iso}" />`,
-    `<meta property="article:modified_time" content="${iso}" />`,
-    `<meta property="article:author" content="Aayush Dutt" />`,
+    `<meta property="article:modified_time" content="${modified}" />`,
+    `<meta property="article:author" content="${escapeAttr(data.author || 'Midora')}" />`,
     `<meta property="article:section" content="Blog" />`,
   ].join('\n    ')
 }
@@ -136,7 +140,10 @@ function postMetaBlock(data) {
   if (data.type !== 'post') return ''
   const date = new Date(data.date)
   const pretty = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-  return `<div class="post-meta"><time datetime="${data.date}">${pretty}</time><span class="dot">·</span><span>${data.readingTime || '5 min read'}</span></div>`
+  const attribution = data.source
+    ? `<p class="post-meta-inline">Originally written by ${escapeHtml(data.author)} for the upstream midee project. <a href="${escapeAttr(data.source)}" rel="noopener">Original article source</a>. Site navigation and project links adapted for Midora.</p>`
+    : ''
+  return `<div class="post-meta"><time datetime="${data.date}">${pretty}</time><span class="dot">·</span><span>${data.readingTime || '5 min read'}</span></div>${attribution}`
 }
 
 function wrapContent({ html, data }) {
@@ -181,7 +188,7 @@ function render(mdPath) {
     throw new Error(`Missing required frontmatter in ${relative(root, mdPath)}`)
   }
 
-  // Inline CTAs in markdown — `[midee](/)`, `[Open it](/)`, etc. — all
+  // Inline CTAs in markdown — `[Midora](/)`, `[Open it](/)`, etc. — all
   // render as <a href="/">. Rewrite them so authors don't have to hand-
   // attach UTMs in every post. Scoped to <a …> so future markdown features
   // that emit other href="/" values (e.g. canonical <link>) aren't caught.
@@ -195,6 +202,7 @@ function render(mdPath) {
   const page = layout
     .replaceAll('{{title}}', escapeAttr(data.title))
     .replaceAll('{{description}}', escapeAttr(data.description))
+    .replaceAll('{{author}}', escapeAttr(data.author || 'Midora'))
     .replaceAll('{{path}}', data.path)
     .replaceAll('{{ogType}}', ogType)
     .replaceAll('{{articleMeta}}', buildArticleMeta(data))
@@ -259,14 +267,14 @@ function writeBlogIndex(results) {
     .map(([href, label]) => `<a href="${href}">${escapeHtml(label)}</a>`)
     .join(' · ')
 
-  const body = `<h1>Blog</h1>\n<p class="lede">Writing about midee — how it is built, technical decisions, and how to get more out of the browser MIDI player, visualizer, live mode, and Learn mode.</p>\n<h2>Latest posts</h2>\n<ul class="post-list">\n${listHtml}\n</ul>\n<details>\n<summary class="post-meta-inline">More midee guides</summary>\n<p class="post-meta-inline">${guidesHtml}</p>\n</details>`
+  const body = `<h1>Blog</h1>\n<p class="lede">Writing about Midora — how it is built, technical decisions, and how to get more out of the browser MIDI player, visualizer, live mode, and Learn mode.</p>\n<h2>Latest posts</h2>\n<ul class="post-list">\n${listHtml}\n</ul>\n<details>\n<summary class="post-meta-inline">More Midora guides</summary>\n<p class="post-meta-inline">${guidesHtml}</p>\n</details>`
 
-  const indexData = { title: 'Blog', description: 'Writing about midee — how it is built, technical decisions, and how to get more out of the MIDI visualizer.', path: '/blog/' }
+  const indexData = { title: 'Blog', description: 'Writing about Midora — how it is built, technical decisions, and how to get more out of the MIDI visualizer.', path: '/blog/' }
   const breadcrumb = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'midee', item: `${SITE}/` },
+      { '@type': 'ListItem', position: 1, name: 'Midora', item: `${SITE}/` },
       { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE}/blog/` },
     ],
   }, null, 2)
@@ -274,18 +282,19 @@ function writeBlogIndex(results) {
   const page = layout
     .replaceAll('{{title}}', escapeAttr(indexData.title))
     .replaceAll('{{description}}', escapeAttr(indexData.description))
+    .replaceAll('{{author}}', 'Midora')
     .replaceAll('{{path}}', indexData.path)
     .replaceAll('{{ogType}}', 'website')
     .replaceAll('{{articleMeta}}', '')
     .replaceAll('{{jsonLd}}', JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Blog',
-      name: 'midee blog',
+      name: 'Midora blog',
       description: indexData.description,
       url: `${SITE}/blog/`,
       publisher: {
         '@type': 'Organization',
-        name: 'midee',
+        name: 'Midora',
         url: SITE,
       },
     }, null, 2))
@@ -325,17 +334,17 @@ function writeRssFeed(posts) {
       <guid isPermaLink="true">${url}</guid>
       <pubDate>${pubDate}</pubDate>
       <description>${escapeXml(p.description)}</description>
-      <author>hello@midee.app (Aayush Dutt)</author>
+      <dc:creator>${escapeXml(p.author || 'Midora')}</dc:creator>
     </item>`
   }).join('\n')
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>midee blog</title>
+    <title>Midora blog</title>
     <link>${SITE}/blog/</link>
     <atom:link href="${SITE}/blog/rss.xml" rel="self" type="application/rss+xml" />
-    <description>Writing about midee — a free, open-source MIDI visualizer in the browser. Technical decisions, release notes, and how to get more out of the app.</description>
+    <description>Writing about Midora — a free MIDI player and visualizer in the browser. Technical decisions, release notes, and how to get more out of the app.</description>
     <language>en-us</language>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
 ${items}

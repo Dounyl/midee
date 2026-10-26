@@ -8,9 +8,9 @@ modified: 2026-05-07
 
 # Free Synthesia alternative in your browser
 
-[midee](/) is a free Synthesia alternative for people who want to open MIDI files in the browser, play along with them, use a MIDI controller live, loop ideas, record sessions, and export beautiful piano-roll videos.
+[Midora](/) is a free Synthesia alternative for people who want to open MIDI files in the browser, play along with them, use a MIDI controller live, loop ideas, record sessions, and export beautiful piano-roll videos.
 
-Synthesia is still a great native piano-learning app. midee is different: it is web-native, open source, no-install, no-account, and built around three fast workflows: play a MIDI, play live, and practice.
+Synthesia is still a great native piano-learning app. Midora is different: it is web-native, no-install, no-account, and built around three fast workflows: play a MIDI, play live, and practice.
 
 ## Why people look for a Synthesia alternative
 
@@ -23,11 +23,11 @@ Most searches for "Synthesia alternative" come from one of these needs:
 - "I want to record or loop what I play."
 - "I want a shareable MP4 piano-roll video."
 
-midee is strongest when you want the browser version of that idea: instant, visual, private, and easy to share.
+Midora is strongest when you want the browser version of that idea: instant, visual, private, and easy to share.
 
 ## Quick comparison
 
-| Feature | Synthesia | midee |
+| Feature | Synthesia | Midora |
 | --- | --- | --- |
 | Runs in browser | No | Yes |
 | Install required | Yes | No |
@@ -40,11 +40,10 @@ midee is strongest when you want the browser version of that idea: instant, visu
 | Loop station | No | Yes |
 | Session recording to MIDI | No | Yes |
 | MP4 export | No built-in export | Yes, built in |
-| Open source | No | Yes, MIT |
 
 ## The hero difference: live mode
 
-Live mode turns midee into a visual instrument. Plug in a MIDI controller, use your computer keyboard, or click the on-screen keys. Notes appear as live falling trails, the keyboard lights up, and the sound is routed through the same browser audio engine as playback.
+Live mode turns Midora into a visual instrument. Plug in a MIDI controller, use your computer keyboard, or click the on-screen keys. Notes appear as live falling trails, the keyboard lights up, and the sound is routed through the same browser audio engine as playback.
 
 Live mode is useful when you want to:
 
@@ -59,7 +58,7 @@ Read more in the [live MIDI keyboard guide](/live-midi-keyboard/).
 
 ## Learn mode: play along and train
 
-midee's Learn mode is the reason it is more than a visualizer. It includes guided exercises for practicing with your MIDI keyboard or computer keyboard:
+Midora's Learn mode is the reason it is more than a visualizer. It includes guided exercises for practicing with your MIDI keyboard or computer keyboard:
 
 | Exercise | What it does |
 | --- | --- |
@@ -75,7 +74,7 @@ Sight reading is different from Synthesia. It trains the skill underneath the fa
 
 Use Synthesia if you want a mature native app focused primarily on piano lessons, mobile/tablet workflows, built-in song libraries, and long-established practice behavior.
 
-Use midee if you want:
+Use Midora if you want:
 
 - A free browser-based MIDI player and visualizer.
 - Live MIDI controller play with beautiful visuals.
@@ -85,28 +84,28 @@ Use midee if you want:
 - MP4 export for YouTube, TikTok, Reels, or sharing.
 - No upload, no account, no install.
 
-For a direct feature-by-feature comparison, see [midee vs Synthesia](/vs/synthesia/).
+For a direct feature-by-feature comparison, see [Midora vs Synthesia](/vs/synthesia/).
 
 ## Common questions
 
-**Is midee actually a Synthesia alternative?**
+**Is Midora actually a Synthesia alternative?**
 Yes, for browser-based MIDI playback, falling-note visualization, live play, wait-mode play-along, and export. Synthesia remains stronger as a dedicated native lesson app.
 
 **Can I use my MIDI controller?**
-Yes. midee supports Web MIDI controllers in browsers that expose the Web MIDI API.
+Yes. Midora supports Web MIDI controllers in browsers that expose the Web MIDI API.
 
 **Can I practice a MIDI file with wait mode?**
 Yes. Learn mode's play-along exercise pauses at each chord until you play the expected notes.
 
 **Can I train sight reading?**
-Yes. midee includes a sight-reading trainer with scrolling staff notes, clef options, tempo controls, accuracy, streaks, and weak-note practice.
+Yes. Midora includes a sight-reading trainer with scrolling staff notes, clef options, tempo controls, accuracy, streaks, and weak-note practice.
 
 **Can I record what I play?**
 Yes. Live mode can record sessions and save loops as MIDI.
 
 **Can I export a video like Synthesia videos on YouTube?**
-Yes. midee exports piano-roll MP4 videos with audio. See [MIDI to MP4](/midi-to-mp4/).
+Yes. Midora exports piano-roll MP4 videos with audio. See [MIDI to MP4](/midi-to-mp4/).
 
 ## Try it
 
-[Open midee](/), load a MIDI, then try Play, Live, and Learn. If you came looking for a Synthesia alternative, start with a MIDI file you already know.
+[Open Midora](/), load a MIDI, then try Play, Live, and Learn. If you came looking for a Synthesia alternative, start with a MIDI file you already know.

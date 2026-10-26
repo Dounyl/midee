@@ -92,10 +92,10 @@ export class RuntimeOverlayController {
       const bytes = await encodeCapturedEvents(pending.events, {
         bpm: this.opts.services.metronome.bpm.value,
         closeOrphansAt: pending.duration,
-        midiName: 'midee session',
+        midiName: 'Midora session',
         trackName: 'Live performance',
       })
-      triggerMidiDownload(bytes, 'midee-session.mid')
+      triggerMidiDownload(bytes, 'midora-session.mid')
       this.opts.ui.showSuccess(
         `-> ${t('toast.session.saved', { seconds: Math.round(pending.duration) })}`,
       )
@@ -119,10 +119,10 @@ export class RuntimeOverlayController {
     const bytes = await encodeCapturedEvents(snap.events, {
       bpm: this.opts.services.metronome.bpm.value,
       closeOrphansAt: snap.duration,
-      midiName: 'midee loop',
+      midiName: 'Midora loop',
       trackName: 'Loop',
     })
-    triggerMidiDownload(bytes, 'midee-loop.mid')
+    triggerMidiDownload(bytes, 'midora-loop.mid')
     this.opts.ui.showSuccess(`-> ${t('toast.loop.saved')}`)
     track('loop_saved', {
       duration_s: Math.round(snap.duration),

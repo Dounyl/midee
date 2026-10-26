@@ -1,11 +1,11 @@
-# midee
+# Midora (米多拉)
 
 简体中文: [README.md](./README.md)
 
-`midee` is a browser-native MIDI visualizer, live-play, practice, and export tool.
+`Midora` is a browser-native MIDI visualizer, live-play, practice, and export tool.
 
 Live site:
-[http://139.196.37.239/](http://139.196.37.239/)
+[https://midora.top/](https://midora.top/)
 
 GitHub:
 [https://github.com/Dounyl/midee](https://github.com/Dounyl/midee)
@@ -17,13 +17,13 @@ This repository is a fork of the upstream project:
 - Upstream: `aayushdutt/midee`
 - Current repository: `Dounyl/midee`
 
-We have authorization from the original author to continue development, adaptation, and publication based on that work.
+The upstream midee project was created by Aayush Dutt. This project retains its origin and author attribution. According to the maintainer's email correspondence, the author agreed to code modifications; the scope of permission for public hosting, distribution of modified versions, and commercial use has not been confirmed.
 
 This repository will keep evolving in its own direction. Over time, its features, structure, docs, and deployment may diverge significantly from upstream, so it should not be treated as a mirror of the original project.
 
 ## Current position
 
-`midee` is still a static Vite SPA. Its core capabilities run in the browser, including:
+`Midora` is still a static Vite SPA. Its core capabilities run in the browser, including:
 
 - MIDI loading and playback
 - audio synthesis and live input
@@ -144,4 +144,6 @@ pnpm run check
 
 ## License
 
-The project is currently maintained under MIT terms. If you plan to redistribute or commercialize it further, also verify the top-level license file and any third-party asset licenses used in the repository.
+A complete licensing basis for the project as a whole has not yet been confirmed. This repository therefore does not claim a confirmed MIT license or comprehensive permission for publication, sublicensing, or commercial use. Public source availability, free access, and a new brand do not grant additional rights.
+
+Retain the rights notices of the original author and other contributors. Third-party dependencies, fonts, instrument samples, and example MIDI files remain subject to their own licenses and attribution requirements. Future licensing statements must be based on verified permissions.

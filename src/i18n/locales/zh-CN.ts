@@ -1,7 +1,7 @@
 import type { Messages } from './en'
 
 const zhCN: Messages = {
-  'home.kicker': 'midee · MIDI 可视化',
+  'home.kicker': '米多拉 Midora · MIDI 可视化',
   'home.title.html': '弹奏<em>音符</em>，<br/>看它们盛放。',
   'home.subtitle': '打开 MIDI 文件让它动起来，或直接用键盘、鼠标或 MIDI 控制器实时弹奏。',
   'home.cta.openMidi': '打开 MIDI',
@@ -20,8 +20,8 @@ const zhCN: Messages = {
   'home.metaLink.blog': '阅读博客',
   'home.metaLink.github': 'GitHub 源码',
   'home.metaLink.discord': '加入 Discord 社区',
-  'home.metaLinks.aria': 'midee 链接',
-  'home.aria': 'midee 首页',
+  'home.metaLinks.aria': '米多拉链接',
+  'home.aria': '米多拉首页',
 
   'topStrip.home': '首页',
   'topStrip.modePlay': '播放 MIDI 文件',
@@ -207,9 +207,9 @@ const zhCN: Messages = {
   'modeError.title': '出了点问题',
   'modeError.retry': '重试',
 
-  'doc.title.home': 'midee · 拖入 MIDI，看它唱起来',
-  'doc.title.live': 'midee · 实时弹奏',
-  'doc.title.learn': 'midee · 学习',
+  'doc.title.home': '米多拉 Midora · 拖入 MIDI，看它唱起来',
+  'doc.title.live': '米多拉 Midora · 实时弹奏',
+  'doc.title.learn': '米多拉 Midora · 学习',
 
   'learn.hub.recommended': '推荐',
   'learn.hub.uploadMidi': '上传 MIDI',
@@ -473,8 +473,8 @@ const zhCN: Messages = {
   'postSession.stats.other': '{duration} · {count} 个音符',
 
   'toast.export.ready': '{filename} 已准备好',
-  'toast.session.saved': 'midee-session.mid · {seconds}s',
-  'toast.loop.saved': 'midee-loop.mid',
+  'toast.session.saved': 'midora-session.mid · {seconds}s',
+  'toast.loop.saved': 'midora-loop.mid',
   'toast.recording.empty': '还没有录到内容 · 请在录制开启时弹几个音符。',
 
   'onboarding.localeDetected': '当前显示为 {language} · 可在“外观”中切换',

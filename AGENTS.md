@@ -1,4 +1,4 @@
-**Reality:** The product is **midee** (`package.json` → `"name": "midee"`). Everything user-facing is a **static Vite SPA**: MIDI, audio, Pixi canvas, and MP4 export run in the **browser only**; there is no app server for core features (deploy is static assets + optional analytics keys).
+**Reality:** The product is **Midora（米多拉）** (`package.json` → `"name": "midora"`), served at **https://midora.top/**. Everything user-facing is a **static Vite SPA**: MIDI, audio, Pixi canvas, and MP4 export run in the **browser only**; there is no app server for core features (deploy is static assets + optional analytics keys).
 
 ## CodeGraph
 

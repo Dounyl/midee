@@ -136,7 +136,7 @@ export function TopStripView(props: TopStripProps) {
         aria-label={t('home.aria')}
         data-tip={t('topStrip.home')}
         onClick={() => props.onHome()}
-        innerHTML={`${icons.wordmark()}<span class="ts-home-name">midee</span>`}
+        innerHTML={`${icons.wordmark()}<span class="ts-home-name">Midora</span>`}
       />
 
       <div

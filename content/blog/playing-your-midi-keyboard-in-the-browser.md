@@ -3,13 +3,16 @@ title: Playing your MIDI keyboard in the browser — a 2026 guide to Web MIDI
 description: How to plug a MIDI keyboard into a browser tab and play notes, including what actually works, what doesn't, and the latency expectations you should set.
 path: /blog/playing-your-midi-keyboard-in-the-browser/
 type: post
+author: Aayush Dutt
+source: https://github.com/aayushdutt/midee/blob/master/content/blog/playing-your-midi-keyboard-in-the-browser.md
+modified: 2026-10-26
 date: 2026-04-17
 readingTime: 7 min read
 ---
 
 # Playing your MIDI keyboard in the browser
 
-Everything I know about using a MIDI keyboard with a browser-based music app in 2026 — learned the hard way building [midee](/). What actually works, what's janky, and the realistic latency you should expect.
+Everything I know about using a MIDI keyboard with a browser-based music app in 2026 — learned the hard way building [midee](https://github.com/aayushdutt/midee). What actually works, what's janky, and the realistic latency you should expect.
 
 ## The short version
 
@@ -147,8 +150,8 @@ For quick jamming, practice, and turning a MIDI into a nice video to share, the 
 
 ## Try it
 
-[midee](/) is one use case. Plug in your MIDI keyboard, open the app, play a few notes. You'll know within ten seconds whether it feels responsive enough for you.
+[midee](https://github.com/aayushdutt/midee) is one use case. Plug in your MIDI keyboard, open the app, play a few notes. You'll know within ten seconds whether it feels responsive enough for you.
 
 ---
 
-*midee is a free, open-source MIDI visualizer and loop station built around this stack. [Source on GitHub](https://github.com/aayushdutt/midee).*
+*[Open Midora](/) to play, practice, and visualize MIDI in your browser. Midora is based on [midee by Aayush Dutt](https://github.com/aayushdutt/midee).*

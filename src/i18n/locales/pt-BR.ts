@@ -2,7 +2,7 @@ import type { Messages } from './en'
 
 const ptBR: Messages = {
   // ── Home / dropzone ─────────────────────────────────────────
-  'home.kicker': 'midee · visualizador MIDI',
+  'home.kicker': 'Midora · visualizador MIDI',
   'home.title.html': 'Toque <em>notas</em>,<br/>veja-as florescer.',
   'home.subtitle':
     'Abra um arquivo MIDI para visualizá-lo, ou toque ao vivo com seu teclado, mouse ou um controlador MIDI.',
@@ -22,8 +22,8 @@ const ptBR: Messages = {
   'home.metaLink.blog': 'Leia o blog',
   'home.metaLink.github': 'Código no GitHub',
   'home.metaLink.discord': 'Entre na comunidade do Discord',
-  'home.metaLinks.aria': 'links do midee',
-  'home.aria': 'início do midee',
+  'home.metaLinks.aria': 'links do Midora',
+  'home.aria': 'início do Midora',
 
   // ── Top strip (primary nav) ─────────────────────────────────
   'topStrip.home': 'Início',
@@ -223,9 +223,9 @@ const ptBR: Messages = {
   'modeError.retry': 'Tentar novamente',
 
   // ── Document title ──────────────────────────────────────────
-  'doc.title.home': 'midee — solte um MIDI, veja-o cantar',
-  'doc.title.live': 'midee · ao vivo',
-  'doc.title.learn': 'midee · aprender',
+  'doc.title.home': 'Midora — solte um MIDI, veja-o cantar',
+  'doc.title.live': 'Midora · ao vivo',
+  'doc.title.learn': 'Midora · aprender',
 
   // ── Learn hub ───────────────────────────────────────────────
   'learn.hub.recommended': 'Recomendado',
@@ -496,8 +496,8 @@ const ptBR: Messages = {
 
   // ── Toasts / confirmations ─────────────────────────────────
   'toast.export.ready': '{filename} pronto',
-  'toast.session.saved': 'midee-session.mid · {seconds}s',
-  'toast.loop.saved': 'midee-loop.mid',
+  'toast.session.saved': 'midora-session.mid · {seconds}s',
+  'toast.loop.saved': 'midora-loop.mid',
   'toast.recording.empty': 'Nada gravado — toque algumas notas com o Gravar ativo.',
 
   'onboarding.localeDetected': 'Mostrando em {language} · troque em Aparência',

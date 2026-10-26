@@ -3,9 +3,11 @@
 // from @fontsource packages. Runs during postbuild so the OG image is always
 // fresh and in sync with whatever the SVG declares.
 
-import { readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, rmdirSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { basename, join, resolve } from 'node:path'
 import { Resvg } from '@resvg/resvg-js'
+import { decodeWoff } from './woff-font.mjs'
 
 const root = process.cwd()
 const svgPath = resolve(root, 'content/og.svg')
@@ -24,19 +26,39 @@ const fontFiles = [
 
 const svg = readFileSync(svgPath, 'utf8')
 
-const resvg = new Resvg(svg, {
-  fitTo: { mode: 'width', value: 1200 },
-  font: {
-    fontFiles,
+// Native resvg silently drops text when passed the WOFF files directly.
+// Decode our bundled fonts instead of depending on machine-specific fonts.
+const tempDir = mkdtempSync(join(tmpdir(), 'midora-og-fonts-'))
+const decodedFiles = []
+try {
+  for (const file of fontFiles) {
+    const out = join(tempDir, `${basename(file, '.woff')}.ttf`)
+    writeFileSync(out, decodeWoff(readFileSync(file)))
+    decodedFiles.push(out)
+  }
+  const font = {
+    fontFiles: decodedFiles,
     loadSystemFonts: false,
     defaultFontFamily: 'Inter',
-  },
-  background: '#05050a',
-})
+  }
+  // Fail the build if any brand font cannot produce visible text.
+  for (const family of ['Inter', 'Instrument Serif', 'JetBrains Mono']) {
+    const probe = new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="80"><text x="0" y="60" font-family="${family}" font-size="40">Midora</text></svg>`, { font })
+    if (!probe.innerBBox()?.width) throw new Error(`OG font did not render: ${family}`)
+  }
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: 'width', value: 1200 },
+    font,
+    background: '#05050a',
+  })
 
-const pngBuffer = resvg.render().asPng()
-writeFileSync(pngOut, pngBuffer)
-writeFileSync(svgOut, svg)
+  const pngBuffer = resvg.render().asPng()
+  writeFileSync(pngOut, pngBuffer)
+  writeFileSync(svgOut, svg)
 
-const kb = (pngBuffer.byteLength / 1024).toFixed(1)
-console.log(`[build-og] wrote dist/og.png (${kb} KB, 1200×630) + dist/og.svg`)
+  const kb = (pngBuffer.byteLength / 1024).toFixed(1)
+  console.log(`[build-og] wrote dist/og.png (${kb} KB, 1200×630) + dist/og.svg`)
+} finally {
+  for (const file of decodedFiles) rmSync(file, { force: true })
+  rmdirSync(tempDir)
+}

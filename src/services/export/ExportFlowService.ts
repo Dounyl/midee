@@ -31,7 +31,7 @@ interface ExportFlowServiceOptions {
 
 function sanitiseFilename(name: string): string {
   const cleaned = name.replace(/[\\/:*?"<>|]+/g, ' ').trim()
-  return cleaned.length > 0 ? cleaned : 'midee'
+  return cleaned.length > 0 ? cleaned : 'midora'
 }
 
 export class ExportFlowService {
@@ -109,7 +109,7 @@ export class ExportFlowService {
       }
     }
 
-    const filename = settings.output === 'audio-only' ? 'midee.m4a' : 'midee.mp4'
+    const filename = settings.output === 'audio-only' ? 'midora.m4a' : 'midora.mp4'
 
     try {
       let audioBuffer: AudioBuffer | undefined

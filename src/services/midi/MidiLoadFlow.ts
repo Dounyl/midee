@@ -144,7 +144,7 @@ export class MidiLoadFlow {
     this.opts.keyboardInput.enable()
     this.opts.ui.renderTrackPanel(midi)
     this.opts.ui.hideDropzone()
-    document.title = `${midi.name} - midee`
+    document.title = `${midi.name} - Midora`
     this.opts.navigation.navigate({ kind: 'play' })
   }
 

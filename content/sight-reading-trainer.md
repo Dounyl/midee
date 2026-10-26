@@ -8,13 +8,13 @@ modified: 2026-05-07
 
 # Free sight-reading trainer for piano
 
-[midee](/) includes a free sight-reading trainer for piano. Notes scroll across a staff toward a hit line, and you press the matching key in time with a MIDI controller or computer keyboard.
+[Midora](/) includes a free sight-reading trainer for piano. Notes scroll across a staff toward a hit line, and you press the matching key in time with a MIDI controller or computer keyboard.
 
 It is built for the skill that falling-note visualizers do not fully teach: reading notation quickly enough to play the right pitch at the right moment.
 
 ## How it works
 
-1. Open [midee.app](/).
+1. Open [midora.top](/).
 2. Go to **Learn**.
 3. Start **Sight Reading**.
 4. Choose a clef mode if needed.
@@ -39,7 +39,7 @@ A good sight-reading trainer should help you practice:
 - Timing under light pressure.
 - Weak notes that keep causing mistakes.
 
-midee's trainer focuses on that loop: see note, identify pitch, play in time, get feedback.
+Midora's trainer focuses on that loop: see note, identify pitch, play in time, get feedback.
 
 ## Sight-reading features
 
@@ -67,7 +67,7 @@ Both live in Learn mode, but they train different skills:
 
 If you came from Synthesia, play-along will feel familiar. Sight reading is the next step: less following, more reading.
 
-If you came from a focused browser trainer like sightread.dev, midee's main difference is breadth: sight reading lives beside play-along wait mode, interval training, live mode, looping, MIDI playback, and MP4 export. See the [midee vs sightread.dev comparison](/vs/sightread-dev/) for the fuller breakdown.
+If you came from a focused browser trainer like sightread.dev, Midora's main difference is breadth: sight reading lives beside play-along wait mode, interval training, live mode, looping, MIDI playback, and MP4 export. See the [Midora vs sightread.dev comparison](/vs/sightread-dev/) for the fuller breakdown.
 
 ## Practice tips
 
@@ -83,7 +83,7 @@ Sight reading improves through many small correct repetitions. The trainer is me
 ## Common questions
 
 **Can I train sight reading online for free?**
-Yes. midee includes a browser-based sight-reading exercise.
+Yes. Midora includes a browser-based sight-reading exercise.
 
 **Do I need a MIDI keyboard?**
 A MIDI controller is best, but computer keyboard input also works.
@@ -102,4 +102,4 @@ Yes. It starts with simple pitch pools such as landmark notes and C major ranges
 
 ## Try it
 
-[Open midee](/), go to Learn, and start Sight Reading. Keep the first session slow and short; the point is accuracy before speed.
+[Open Midora](/), go to Learn, and start Sight Reading. Keep the first session slow and short; the point is accuracy before speed.

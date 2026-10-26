@@ -8,13 +8,13 @@ modified: 2026-05-07
 
 # Free piano roll video maker for MIDI files
 
-[midee](/) is a free piano roll video maker for MIDI files. Drop in a `.mid`, preview the falling-note visualization, choose a theme, and export an MP4 video for YouTube, TikTok, Reels, Instagram, or sharing with friends.
+[Midora](/) is a free piano roll video maker for MIDI files. Drop in a `.mid`, preview the falling-note visualization, choose a theme, and export an MP4 video for YouTube, TikTok, Reels, Instagram, or sharing with friends.
 
-If you have ever seen a video where piano notes fall toward a keyboard in sync with the music, that is the style midee creates - directly in your browser, without screen recording.
+If you have ever seen a video where piano notes fall toward a keyboard in sync with the music, that is the style Midora creates - directly in your browser, without screen recording.
 
 ## Quick steps
 
-1. Open [midee.app](/).
+1. Open [midora.top](/).
 2. Drag in a `.mid` or `.midi` file.
 3. Pick a theme and instrument.
 4. Preview the falling notes.
@@ -35,7 +35,7 @@ A good piano-roll video is easy to read, pleasant to watch, and synced tightly e
 - An aspect ratio that fits the platform.
 - Enough visual style to feel intentional.
 
-midee is built around that middle ground: more polished than a plain MIDI preview, much faster than a full video-editing setup.
+Midora is built around that middle ground: more polished than a plain MIDI preview, much faster than a full video-editing setup.
 
 ## Export sizes for each platform
 
@@ -67,7 +67,7 @@ The best piano-roll videos usually have one clear mood. Do not change every sett
 
 | Method | Pros | Cons |
 | --- | --- | --- |
-| midee export | Direct MP4, synced audio, no capture setup | Browser support depends on WebCodecs |
+| Midora export | Direct MP4, synced audio, no capture setup | Browser support depends on WebCodecs |
 | OBS / QuickTime screen recording | Works with many apps | Manual crop, trimming, audio routing |
 | Native visualizer app | More deep controls | Install, license, longer workflow |
 | Upload render service | Easy if you trust it | Your MIDI leaves your device |
@@ -89,16 +89,16 @@ If the MIDI is interesting to hear, it is often more interesting when people can
 ## Common questions
 
 **Can I make piano-roll videos for free?**
-Yes. midee is free and exports MP4 videos without a watermark.
+Yes. Midora is free and exports MP4 videos without a watermark.
 
 **Do I need to install anything?**
-No. midee runs in a modern browser.
+No. Midora runs in a modern browser.
 
 **Can I make vertical piano-roll videos?**
 Yes. Use the vertical export preset for TikTok, Reels, and Shorts.
 
 **Can I use any MIDI file?**
-midee reads standard `.mid` and `.midi` files. Very unusual or corrupted files may not import cleanly.
+Midora reads standard `.mid` and `.midi` files. Very unusual or corrupted files may not import cleanly.
 
 **Does the video include sound?**
 Yes. The exported MP4 includes rendered audio.
@@ -108,4 +108,4 @@ It can be useful for quick demonstrations and shareable examples. If you need de
 
 ## Try it
 
-[Open midee](/), drop in a MIDI file, and make your first piano-roll MP4 in a few clicks.
+[Open Midora](/), drop in a MIDI file, and make your first piano-roll MP4 in a few clicks.

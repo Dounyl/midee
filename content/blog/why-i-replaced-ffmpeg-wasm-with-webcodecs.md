@@ -3,6 +3,9 @@ title: Why I replaced ffmpeg.wasm with WebCodecs for video export
 description: How ditching MediaRecorder + ffmpeg.wasm for WebCodecs cut browser video export time by 10×, dropped peak memory 40%, and removed 30 MB of WASM.
 path: /blog/why-i-replaced-ffmpeg-wasm-with-webcodecs/
 type: post
+author: Aayush Dutt
+source: https://github.com/aayushdutt/midee/blob/master/content/blog/why-i-replaced-ffmpeg-wasm-with-webcodecs.md
+modified: 2026-10-26
 date: 2026-04-18
 readingTime: 8 min read
 ---
@@ -219,4 +222,4 @@ If you're shipping a browser app that needs to produce a video file — a record
 
 ---
 
-*[midee](/) is the MIDI visualizer I built this pipeline for. It's free, open source, and runs entirely in your browser. [Source on GitHub](https://github.com/aayushdutt/midee).*
+*This article describes the export pipeline originally built for [midee by Aayush Dutt](https://github.com/aayushdutt/midee). [Open Midora](/) to play MIDI and export videos in your browser.*
