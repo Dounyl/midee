@@ -57,6 +57,55 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "echo deploy-ssh-ok"
 
+      - name: Verify deployment directory
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        run: |
+          printf -v quoted_path '%q' "$DEPLOY_PATH"
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$DEPLOY_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- $quoted_path" <<'REMOTE'
+          set -eu
+          target=$1
+          case "$target" in
+            ''|/|/var|/var/www|/etc|/usr|/home|/tmp)
+              echo "Refusing unsafe deployment directory: $target" >&2
+              exit 1
+              ;;
+            /*) ;;
+            *) echo "Deployment directory must be absolute: $target" >&2; exit 1 ;;
+          esac
+          parent=$(dirname -- "$target")
+          if [ -d "$target" ] && [ -w "$target" ]; then
+            echo "Deployment directory is writable: $target"
+            exit 0
+          fi
+          if [ ! -e "$target" ] && [ -d "$parent" ] && [ -w "$parent" ]; then
+            echo "Deployment directory can be created: $target"
+            exit 0
+          fi
+          echo "Deployment user cannot write to $target. Check DEPLOY_PATH and site ownership." >&2
+          id
+          ls -ld -- "$parent" "$target" 2>/dev/null || true
+          # Show only routing directives for this site, never full server config.
+          for config in /etc/nginx/nginx.conf /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+            [ -r "$config" ] || continue
+            if grep -Eq 'midora[.]top|midee' "$config" || [ "$(basename -- "$config")" = default ]; then
+              echo "Site configuration: $config"
+              grep -En '^[[:space:]]*(server_name|root|alias)[[:space:]]' "$config" || true
+            fi
+          done
+          exit 1
+          REMOTE
+
       - name: Package dist
         run: tar -czf /tmp/midee-dist.tar.gz -C dist .
 
